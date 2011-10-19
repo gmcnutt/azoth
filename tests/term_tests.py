@@ -2,7 +2,8 @@ import cPickle
 import curses
 from tools import *
 import hax2
-from hax2 import plane, pragma, rules, term, terrain, terrainmap
+from hax2 import plane, pragma, rules, terrain, terrainmap
+from azoth import azoth
 
 class Default(unittest.TestCase):
     def setUp(self):
@@ -16,14 +17,15 @@ class Default(unittest.TestCase):
                                  terrain=terrain.Grass)
 
     def runviewer(self, scr):
-        term.setup()
+        azoth.setup()
         self.plane.push_terrain_map(0, 0, self.tmap)
 
         self.obj.mmode = 'walk'
         self.rules.set_passability('walk', 'wall', rules.PASS_NONE)
 
         self.hax2.put(self.obj, self.plane, 10, 10)
-        mview = term.MapViewer(x=0, y=0, w=21, h=21, plane=self.plane)
+        mview = azoth.MapViewer(scrx=0, scry=0, width=21, height=21)
+        mview.plane=self.plane
         scr.refresh()
         mview.paint()
 

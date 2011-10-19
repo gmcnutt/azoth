@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import cPickle
 import curses
 import hax2
@@ -49,15 +51,15 @@ class MessageConsole(object):
 
 class MapViewer(object):
 
-    def __init__(self, x=0, y=0, w=16, h=16, plane=None):
+    def __init__(self, scrx=0, scry=0, width=16, height=16):
         # ???: if I don't make the width +1 extra, than addch() raises an error
         # on the last column
-        self.win = curses.newwin(h, w+1, y, x)
-        self.x = 0
-        self.y = 0
-        self.w = w
-        self.h = h
-        self.plane = plane
+        self.win = curses.newwin(height, width + 1, scry, scrx)
+        self.width = width
+        self.height = height
+        self.mapx = 0
+        self.mapy = 0
+        self.plane = None
         self.glyphs = {
             terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(GREEN)),
             terrain.Forest:('t', curses.A_BOLD|curses.color_pair(GREEN)),
@@ -68,12 +70,18 @@ class MapViewer(object):
             terrain.Water:('~', curses.A_BOLD|curses.color_pair(BLUE)),
             terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(WHITE)),
             terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(YELLOW)),
-            terrain.Bog:('%', curses.A_BOLD|curses.color_pair(MAGENTA)),
+            terrain.Bog:('.', curses.A_BOLD|curses.color_pair(MAGENTA)),
             terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(RED)),
             terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY))
             }
 
+    def focus(self, obj):
+        self.plane = obj.place
+        self.mapx = obj.x - self.width / 2
+        self.mapy = obj.y - self.height / 2
+
     def scroll(self, direction):
+        """ Scroll the view over the current place. """
         dx, dy = {'north'    :( 0, -1),
                   'northeast':( 1, -1),
                   'east'     :( 1,  0),
@@ -82,15 +90,16 @@ class MapViewer(object):
                   'southwest':(-1,  1),
                   'west'     :(-1,  0),
                   'northwest':(-1, -1)}[direction]
-        self.x += dx
-        self.y += dy
+        self.mapx += dx
+        self.mapy += dy
 
     def paint(self):
+        """ Show the region under the view. """
         self.win.erase()
-        for y in range(self.h):
-            for x in range(self.w):
-                mx = self.x + x
-                my = self.y + y
+        for y in range(self.height):
+            for x in range(self.width):
+                mx = self.mapx + x
+                my = self.mapy + y
                 occ = self.plane.get(mx, my)
                 if occ:
                     self.win.addch(y, x, ord(occ[0].glyph))
@@ -113,35 +122,46 @@ class Term(object):
     def clear(self):
         self.scr.erase()
 
+class Game(object):
+    def __init__(self, scr):
+        self.scr = scr
+        self.term = Term(scr)
+        self.session = None
+    def load(self, fname):
+        loadfile = open(fname)
+        self.session = session.load(open(fname))
+        loadfile.close()
+        self.term.mview.focus(self.session.player)
+        self.term.mview.paint()
+    def run(self):
+        ch = self.scr.getch()
+        while ch != ord('q'):
+            direction = {
+                curses.KEY_DOWN:'south',
+                curses.KEY_UP:'north',
+                curses.KEY_RIGHT:'east',
+                curses.KEY_LEFT:'west'
+                }.get(ch, None)
+            if direction:
+                try:
+                    self.session.hax2.move(self.session.player, direction)
+                    self.term.mview.scroll(direction)
+                except rules.RuleError:
+                    pass
+                self.term.mview.paint()
+            elif ch == ord('s'):
+                savefile = open('save.p', 'w')
+                self.session.dump(savefile)
+                savefile.close()
+            elif ch == ord('l'):
+                self.load('save.p')
+            ch = self.scr.getch()
+
 def main(stdscr, fname):
-
     setup()
-    sesh = cPickle.load(open(fname))
-    term = Term(stdscr)
-    term.mview.plane = sesh.world
-    term.mview.paint()
-
-    ch = stdscr.getch()
-    while ch != ord('q'):
-        direction = {
-            curses.KEY_DOWN:'south',
-            curses.KEY_UP:'north',
-            curses.KEY_RIGHT:'east',
-            curses.KEY_LEFT:'west'
-            }.get(ch, None)
-        if direction:
-            try:
-                sesh.hax2.move(sesh.player, direction)
-                term.mview.scroll(direction)
-            except rules.RuleError:
-                pass
-            term.mview.paint()
-        elif ch == ord('s'):
-            savefile = open('save.p', 'w')
-            cPickle.dump(sesh, savefile)
-            savefile.close()
-            
-        ch = stdscr.getch()
+    game = Game(stdscr)
+    game.load(fname)
+    game.run()
 
 
 if __name__ == "__main__":
