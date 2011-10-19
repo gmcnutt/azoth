@@ -1,6 +1,7 @@
 import cPickle
 import curses
-import hax2.terrain as terrain
+import hax2
+from hax2 import rules, session, terrain
 import hax2.plane
 import sys
 
@@ -115,12 +116,33 @@ class Term(object):
 def main(stdscr, fname):
 
     setup()
-
+    sesh = cPickle.load(open(fname))
     term = Term(stdscr)
-
-    term.mview.plane = cPickle.load(open(fname))
+    term.mview.plane = sesh.world
     term.mview.paint()
-    stdscr.getch()
+
+    ch = stdscr.getch()
+    while ch != ord('q'):
+        direction = {
+            curses.KEY_DOWN:'south',
+            curses.KEY_UP:'north',
+            curses.KEY_RIGHT:'east',
+            curses.KEY_LEFT:'west'
+            }.get(ch, None)
+        if direction:
+            try:
+                sesh.hax2.move(sesh.player, direction)
+                term.mview.scroll(direction)
+            except rules.RuleError:
+                pass
+            term.mview.paint()
+        elif ch == ord('s'):
+            savefile = open('save.p', 'w')
+            cPickle.dump(sesh, savefile)
+            savefile.close()
+            
+        ch = stdscr.getch()
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
