@@ -2,6 +2,7 @@ import cPickle
 import curses
 import hax2.terrain as terrain
 import hax2.plane
+import sys
 
 #
 # Initialize color pairs
@@ -111,15 +112,17 @@ class Term(object):
     def clear(self):
         self.scr.erase()
 
-def main(stdscr):
+def main(stdscr, fname):
 
     setup()
 
     term = Term(stdscr)
 
-    term.mview.plane = cPickle.load(open('test.p'))
+    term.mview.plane = cPickle.load(open(fname))
     term.mview.paint()
     stdscr.getch()
 
 if __name__ == "__main__":
-    curses.wrapper(main)
+    if len(sys.argv) < 2:
+        sys.exit('Usage: %s <file>'%sys.argv[0])
+    curses.wrapper(main, sys.argv[1])

@@ -1,0 +1,5 @@
+Curses companion for hax2 (https://github.com/gmcnutt/hax2) project.
+
+# first install hax2 (https://github.com/gmcnutt/hax2)
+$ cd azoth
+$ python azoth.py /var/games/hax2/start.p
