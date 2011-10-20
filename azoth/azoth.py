@@ -22,7 +22,7 @@ BLUE = 9
 
 DEFAULT_GLYPH = ('?', curses.A_REVERSE|curses.A_BOLD)
 
-def setup():
+def setup(scr):
     """ Finish custom init of curses. Must be called after normal init done by
     curses.wrapper(). """
 
@@ -41,14 +41,20 @@ def setup():
                 curses.init_pair(pair, fg, bg)
                 pair += 1
 
+    scr.refresh() # XXX: must do this once before window.refresh() works?
+
+
 class Window(object):
     """ Base class for terminal windows. """
 
     def __init__(self, x=0, y=0, width=0, height=0, boxed=False, title=None,
-                 win=None):
+                 win=None, style=None):
         self.win = win or curses.newwin(height, width, y, x)
         self.boxed = boxed
         self.title = title
+        self.top = 0 if not boxed else 1
+        self.left = 0 if not boxed else 1
+        self.style = style or {}
 
     @property
     def x(self):
@@ -79,9 +85,21 @@ class Window(object):
         self.win.erase()
         self.on_paint()
         if self.boxed:
+            attr = 0
+            color = self.style.get('border-color')
+            if color == 'blue':
+                attr = curses.color_pair(BLUE)
+            self.win.attron(attr)
             self.win.box()
+            self.win.attroff(attr)
         if self.title:
+            attr = 0
+            color = self.style.get('title-color')
+            if color == 'yellow':
+                attr = curses.color_pair(YELLOW)
+            self.win.attron(attr)
             self.win.addstr(0, 1, '(%s)' % self.title)
+            self.win.attroff(attr)
         self.win.refresh()
 
 
@@ -90,6 +108,9 @@ class TileViewer(Window):
 
     def __init__(self, **kwargs):
         super(TileViewer, self).__init__(**kwargs)
+        self.place = None
+        self.mapx = 0
+        self.mapy = 0
 
     def focus(self, place, x, y):
         self.place = place
@@ -97,8 +118,9 @@ class TileViewer(Window):
         self.mapy = y
 
     def on_paint(self):
-        terrain = self.place.get_terrain(self.mapx, self.mapy)
-        self.win.addstr(0, 0, 'terrain: %s' % terrain.name)
+        if self.place:
+            terrain = self.place.get_terrain(self.mapx, self.mapy)
+            self.win.addstr(self.top, self.left, 'terrain: %s' % terrain.name)
         
 
 class MessageConsole(Window):
@@ -203,7 +225,6 @@ class Term(Window):
                                       width=self.width - self.mview.width, 
                                       height=self.height - self.tview.height,
                                       boxed=True)
-        scr.refresh() # XXX: must do this once before newwin refresh works?
 
     def clear(self):
         self.scr.erase()
@@ -255,7 +276,7 @@ class Game(object):
             ch = self.scr.getch()
 
 def main(stdscr, fname):
-    setup()
+    setup(stdscr)
     game = Game(stdscr)
     game.load(fname)
     game.run()
