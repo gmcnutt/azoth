@@ -3,7 +3,7 @@
 import cPickle
 import curses
 import hax2
-from hax2 import rules, session, terrain
+from hax2 import being, rules, session, terrain, weapon
 import hax2.plane
 import sys
 
@@ -19,6 +19,8 @@ WHITE = (0)
 RED = (41)
 MAGENTA = (33)
 BLUE = 9
+
+DEFAULT_GLYPH = ('?', curses.A_REVERSE|curses.A_BOLD)
 
 def setup():
     """ Finish custom init of curses. Must be called after normal init done by
@@ -72,9 +74,11 @@ class MapViewer(object):
             terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(YELLOW)),
             terrain.Bog:('.', curses.A_BOLD|curses.color_pair(MAGENTA)),
             terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(RED)),
-            terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY))
+            terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY)),
+            weapon.Sword:('|', curses.color_pair(WHITE)),
+            being.Player:('@', curses.A_BOLD|curses.color_pair(WHITE))
             }
-
+        
     def focus(self, obj):
         self.plane = obj.place
         self.mapx = obj.x - self.width / 2
@@ -102,11 +106,11 @@ class MapViewer(object):
                 my = self.mapy + y
                 occ = self.plane.get(mx, my)
                 if occ:
-                    self.win.addch(y, x, ord(occ[0].glyph))
+                    glyph = self.glyphs.get(type(occ[0]), DEFAULT_GLYPH)
+                    self.win.addch(y, x, ord(glyph[0]), glyph[1])
                 else:
                     terrain = self.plane.get_terrain(mx, my)
-                    glyph = self.glyphs.get(terrain, ('?', curses.A_REVERSE|\
-                                                          curses.A_BOLD))
+                    glyph = self.glyphs.get(terrain, DEFAULT_GLYPH)
                     self.win.addch(y, x, ord(glyph[0]), glyph[1])
         self.win.refresh()
 
@@ -133,6 +137,7 @@ class Game(object):
         loadfile.close()
         self.term.mview.focus(self.session.player)
         self.term.mview.paint()
+        self.term.console.write('%s'%type(self.session.player))
     def run(self):
         ch = self.scr.getch()
         while ch != ord('q'):
