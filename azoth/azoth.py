@@ -41,27 +41,93 @@ def setup():
                 curses.init_pair(pair, fg, bg)
                 pair += 1
 
+class Window(object):
+    """ Base class for terminal windows. """
 
-class MessageConsole(object):
+    def __init__(self, x=0, y=0, width=0, height=0, boxed=False, title=None,
+                 win=None):
+        self.win = win or curses.newwin(height, width, y, x)
+        self.boxed = boxed
+        self.title = title
 
-    def __init__(self, x, y, w, h):
-        self.win = curses.newwin(h, w, y, x)
+    @property
+    def x(self):
+        """ Screen x-coordinate of upper left corner. """
+        return self.win.getyx()[1]
 
-    def write(self, msg):
-        self.win.addstr(0, 0, msg)
+    @property
+    def y(self):
+        """ Screen y-coordinate of upper left corner. """
+        return self.win.getyx()[0]
+
+    @property
+    def width(self):
+        """ Number of columns. """
+        return self.win.getmaxyx()[1]
+
+    @property
+    def height(self):
+        """ Number of rows. """
+        return self.win.getmaxyx()[0]
+
+    def on_paint(self):
+        """ Hook for subclasses. """
+        raise NotImplemented()
+
+    def paint(self):
+        """ Paint the window. Subclasses should implement on_paint(). """
+        self.win.erase()
+        self.on_paint()
+        if self.boxed:
+            self.win.box()
+        if self.title:
+            self.win.addstr(0, 1, '(%s)' % self.title)
         self.win.refresh()
 
-class MapViewer(object):
 
-    def __init__(self, scrx=0, scry=0, width=16, height=16):
-        # ???: if I don't make the width +1 extra, than addch() raises an error
-        # on the last column
-        self.win = curses.newwin(height, width + 1, scry, scrx)
-        self.width = width
-        self.height = height
+class TileViewer(Window):
+    """ Describe contents of current tile  """
+
+    def __init__(self, **kwargs):
+        super(TileViewer, self).__init__(**kwargs)
+
+    def focus(self, place, x, y):
+        self.place = place
+        self.mapx = x
+        self.mapy = y
+
+    def on_paint(self):
+        terrain = self.place.get_terrain(self.mapx, self.mapy)
+        self.win.addstr(0, 0, 'terrain: %s' % terrain.name)
+        
+
+class MessageConsole(Window):
+    """ Print messages.  """
+
+    def __init__(self, **kwargs):
+        super(MessageConsole, self).__init__(**kwargs)
+
+    def on_paint(self):
+        """ Do nothing -- write() paints directly. """
+        pass
+
+    def write(self, msg):
+        """ Write a message and paint now. """
+        self.win.erase()
+        self.win.addstr(0, 0, msg)
+        if self.boxed:
+            self.win.box()
+        self.win.refresh()
+
+
+class MapViewer(Window):
+    """ Show the map. """
+
+    def __init__(self, **kwargs):
+        super(MapViewer, self).__init__(**kwargs)
         self.mapx = 0
         self.mapy = 0
-        self.plane = None
+        self.place = None
         self.glyphs = {
             terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(GREEN)),
             terrain.Forest:('t', curses.A_BOLD|curses.color_pair(GREEN)),
@@ -80,9 +146,12 @@ class MapViewer(object):
             }
         
     def focus(self, obj):
-        self.plane = obj.place
+        """ Center the viewer on an object.  """
+        # XXX: just keep the obj and have paint recompute the rest every time?
+        self.place = obj.place
         self.mapx = obj.x - self.width / 2
         self.mapy = obj.y - self.height / 2
+        self.title = self.place.name
 
     def scroll(self, direction):
         """ Scroll the view over the current place. """
@@ -97,47 +166,67 @@ class MapViewer(object):
         self.mapx += dx
         self.mapy += dy
 
-    def paint(self):
+    def on_paint(self):
         """ Show the region under the view. """
-        self.win.erase()
         for y in range(self.height):
-            for x in range(self.width):
+            # addch(y, width) raises an error, so cut back by 1
+            for x in range(self.width-1):
                 mx = self.mapx + x
                 my = self.mapy + y
-                occ = self.plane.get(mx, my)
+                occ = self.place.get(mx, my)
                 if occ:
                     glyph = self.glyphs.get(type(occ[0]), DEFAULT_GLYPH)
                     self.win.addch(y, x, ord(glyph[0]), glyph[1])
                 else:
-                    terrain = self.plane.get_terrain(mx, my)
+                    terrain = self.place.get_terrain(mx, my)
                     glyph = self.glyphs.get(terrain, DEFAULT_GLYPH)
                     self.win.addch(y, x, ord(glyph[0]), glyph[1])
-        self.win.refresh()
+        #self.win.box()
 
-class Term(object):
+class Term(Window):
+    """ Divide the screen into widgets.  """
 
     def __init__(self, scr):
-        self.scr = scr
-        self.height, self.width = scr.getmaxyx()
-        self.mview = MapViewer(0, 0, self.width, self.height - 1)
-        self.console = MessageConsole(0, self.height - 1, self.width, 1)
-        scr.refresh() # must do this once before newwin refresh works?
+        super(Term, self).__init__(win=scr)
+        # 
+        # Make the map as big as possible on the left side. Put a tile viewer
+        # on the top right next to it. Put the console on the bottom right
+        # below that.
+        #
+        self.mview = MapViewer(width=self.height, height=self.height, 
+                               boxed=False)
+        self.tview = TileViewer(x=self.mview.width, y=0, 
+                                width=self.width - self.mview.width, 
+                                height=self.height / 2, boxed=False)
+        self.console = MessageConsole(x=self.mview.width, 
+                                      y=self.tview.height, 
+                                      width=self.width - self.mview.width, 
+                                      height=self.height - self.tview.height,
+                                      boxed=True)
+        scr.refresh() # XXX: must do this once before newwin refresh works?
 
     def clear(self):
         self.scr.erase()
 
+
 class Game(object):
+    """ Run a session in a terminal. """
+
     def __init__(self, scr):
         self.scr = scr
         self.term = Term(scr)
         self.session = None
+
     def load(self, fname):
         loadfile = open(fname)
         self.session = session.load(open(fname))
         loadfile.close()
         self.term.mview.focus(self.session.player)
         self.term.mview.paint()
+        self.term.tview.focus(*self.session.player.loc)
+        self.term.tview.paint()
         self.term.console.write('%s'%type(self.session.player))
+
     def run(self):
         ch = self.scr.getch()
         while ch != ord('q'):
@@ -150,10 +239,13 @@ class Game(object):
             if direction:
                 try:
                     self.session.hax2.move(self.session.player, direction)
-                    self.term.mview.scroll(direction)
                 except rules.RuleError:
                     pass
-                self.term.mview.paint()
+                else:
+                    self.term.mview.scroll(direction)
+                    self.term.mview.paint()
+                    self.term.tview.focus(*self.session.player.loc)
+                    self.term.tview.paint()
             elif ch == ord('s'):
                 savefile = open('save.p', 'w')
                 self.session.dump(savefile)
