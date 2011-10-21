@@ -41,7 +41,29 @@ def setup(scr):
                 curses.init_pair(pair, fg, bg)
                 pair += 1
 
-    scr.refresh() # XXX: must do this once before window.refresh() works?
+    # XXX: experiments show I must call scr.refresh() at least once before
+    # window.refresh() will work. I don't know why.
+    scr.refresh()
+
+    # Most Window descendants are going to want access to the glyph map, so
+    # I'll make it an attribute of the Window class. I can't declare it until
+    # after curses has been initialized.
+    Window.glyphs = {
+        terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(GREEN)),
+        terrain.Forest:('t', curses.A_BOLD|curses.color_pair(GREEN)),
+        terrain.Grass:('.', curses.A_BOLD|curses.color_pair(GREEN)),
+        terrain.Trail:('_', curses.color_pair(YELLOW)),
+        terrain.RockWall:('#', curses.A_BOLD|curses.color_pair(GRAY)),
+        terrain.CounterTop:('[', curses.A_BOLD|curses.color_pair(GRAY)),
+        terrain.Water:('~', curses.A_BOLD|curses.color_pair(BLUE)),
+        terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(WHITE)),
+        terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(YELLOW)),
+        terrain.Bog:('.', curses.A_BOLD|curses.color_pair(MAGENTA)),
+        terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(RED)),
+        terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY)),
+        weapon.Sword:('|', curses.color_pair(WHITE)),
+        being.Player:('@', curses.A_BOLD|curses.color_pair(WHITE))
+        }
 
 
 class Window(object):
@@ -76,6 +98,10 @@ class Window(object):
         """ Number of rows. """
         return self.win.getmaxyx()[0]
 
+    def addglyph(self, row, col, glyph):
+        """ Like addch() but uses a tuple for (char, attr). """
+        self.win.addch(row, col, glyph[0], glyph[1])
+
     def on_paint(self):
         """ Hook for subclasses. """
         raise NotImplemented()
@@ -98,7 +124,8 @@ class Window(object):
             if color == 'yellow':
                 attr = curses.color_pair(YELLOW)
             self.win.attron(attr)
-            self.win.addstr(0, 1, '(%s)' % self.title)
+            n = self.width - 2
+            self.win.addnstr(0, 1, '%s' % self.title, n)
             self.win.attroff(attr)
         self.win.refresh()
 
@@ -107,21 +134,32 @@ class TileViewer(Window):
     """ Describe contents of current tile  """
 
     def __init__(self, **kwargs):
-        super(TileViewer, self).__init__(**kwargs)
+        super(TileViewer, self).__init__(boxed=True, title='Tile', **kwargs)
+        self.original_title = self.title
         self.place = None
         self.mapx = 0
         self.mapy = 0
 
     def focus(self, place, x, y):
+        self.title = self.original_title + ':%d,%d' % (x, y)
         self.place = place
         self.mapx = x
         self.mapy = y
 
     def on_paint(self):
         if self.place:
+            row = self.top
             terrain = self.place.get_terrain(self.mapx, self.mapy)
-            self.win.addstr(self.top, self.left, 'terrain: %s' % terrain.name)
-        
+            self.addglyph(row, self.left, self.glyphs.get(terrain, 
+                                                               DEFAULT_GLYPH))
+            self.win.addstr(row, self.left + 2, '%s' % terrain.name)
+            row += 1
+            items = self.place.get(self.mapx, self.mapy)
+            for item in items:
+                self.addglyph(row, self.left, self.glyphs.get(type(item),
+                                                              DEFAULT_GLYPH))
+                self.win.addstr(row, self.left + 2, '%s' % item)
+                row += 1
 
 class MessageConsole(Window):
     """ Print messages.  """
@@ -150,22 +188,6 @@ class MapViewer(Window):
         self.mapx = 0
         self.mapy = 0
         self.place = None
-        self.glyphs = {
-            terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(GREEN)),
-            terrain.Forest:('t', curses.A_BOLD|curses.color_pair(GREEN)),
-            terrain.Grass:('.', curses.A_BOLD|curses.color_pair(GREEN)),
-            terrain.Trail:('_', curses.color_pair(YELLOW)),
-            terrain.RockWall:('#', curses.A_BOLD|curses.color_pair(GRAY)),
-            terrain.CounterTop:('[', curses.A_BOLD|curses.color_pair(GRAY)),
-            terrain.Water:('~', curses.A_BOLD|curses.color_pair(BLUE)),
-            terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(WHITE)),
-            terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(YELLOW)),
-            terrain.Bog:('.', curses.A_BOLD|curses.color_pair(MAGENTA)),
-            terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(RED)),
-            terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY)),
-            weapon.Sword:('|', curses.color_pair(WHITE)),
-            being.Player:('@', curses.A_BOLD|curses.color_pair(WHITE))
-            }
         
     def focus(self, obj):
         """ Center the viewer on an object.  """
@@ -219,7 +241,7 @@ class Term(Window):
                                boxed=False)
         self.tview = TileViewer(x=self.mview.width, y=0, 
                                 width=self.width - self.mview.width, 
-                                height=self.height / 2, boxed=False)
+                                height=self.height / 2)
         self.console = MessageConsole(x=self.mview.width, 
                                       y=self.tview.height, 
                                       width=self.width - self.mview.width, 
