@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
 import cPickle
+import colors
 import curses
+import gui
 import hax2
 from hax2 import being, rules, session, terrain, weapon
 import hax2.plane
@@ -11,14 +13,6 @@ import sys
 # Initialize color pairs
 #
 
-# On-black colors
-GREEN = (25)
-YELLOW = (56)
-GRAY = (1)
-WHITE = (0)
-RED = (41)
-MAGENTA = (33)
-BLUE = 9
 
 DEFAULT_GLYPH = ('?', curses.A_REVERSE|curses.A_BOLD)
 
@@ -30,13 +24,13 @@ def setup(scr):
     except curses.error: stdscr.leaveok(0)
 
     # initialize all color pairs
-    colors = (curses.COLOR_BLACK, curses.COLOR_BLUE,
+    _colors = (curses.COLOR_BLACK, curses.COLOR_BLUE,
               curses.COLOR_CYAN, curses.COLOR_GREEN,
               curses.COLOR_MAGENTA, curses.COLOR_RED,
               curses.COLOR_WHITE, curses.COLOR_YELLOW)
     pair = 1
-    for fg in colors:
-        for bg in colors:
+    for fg in _colors:
+        for bg in _colors:
             if fg != curses.COLOR_WHITE or bg != curses.COLOR_BLACK:
                 curses.init_pair(pair, fg, bg)
                 pair += 1
@@ -48,89 +42,25 @@ def setup(scr):
     # Most Window descendants are going to want access to the glyph map, so
     # I'll make it an attribute of the Window class. I can't declare it until
     # after curses has been initialized.
-    Window.glyphs = {
-        terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(GREEN)),
-        terrain.Forest:('t', curses.A_BOLD|curses.color_pair(GREEN)),
-        terrain.Grass:('.', curses.A_BOLD|curses.color_pair(GREEN)),
-        terrain.Trail:('_', curses.color_pair(YELLOW)),
-        terrain.RockWall:('#', curses.A_BOLD|curses.color_pair(GRAY)),
-        terrain.CounterTop:('[', curses.A_BOLD|curses.color_pair(GRAY)),
-        terrain.Water:('~', curses.A_BOLD|curses.color_pair(BLUE)),
-        terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(WHITE)),
-        terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(YELLOW)),
-        terrain.Bog:('.', curses.A_BOLD|curses.color_pair(MAGENTA)),
-        terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(RED)),
-        terrain.Window:('=', curses.A_BOLD|curses.color_pair(GRAY)),
-        weapon.Sword:('|', curses.color_pair(WHITE)),
-        being.Player:('@', curses.A_BOLD|curses.color_pair(WHITE))
+    gui.Window.glyphs = {
+        terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(colors.GREEN)),
+        terrain.Forest:('t', curses.A_BOLD|curses.color_pair(colors.GREEN)),
+        terrain.Grass:('.', curses.A_BOLD|curses.color_pair(colors.GREEN)),
+        terrain.Trail:('_', curses.color_pair(colors.YELLOW)),
+        terrain.RockWall:('#', curses.A_BOLD|curses.color_pair(colors.GRAY)),
+        terrain.CounterTop:('[', curses.A_BOLD|curses.color_pair(colors.GRAY)),
+        terrain.Water:('~', curses.A_BOLD|curses.color_pair(colors.BLUE)),
+        terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(colors.WHITE)),
+        terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(colors.YELLOW)),
+        terrain.Bog:('.', curses.A_BOLD|curses.color_pair(colors.MAGENTA)),
+        terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(colors.RED)),
+        terrain.Window:('=', curses.A_BOLD|curses.color_pair(colors.GRAY)),
+        weapon.Sword:('|', curses.color_pair(colors.WHITE)),
+        being.Player:('@', curses.A_BOLD|curses.color_pair(colors.WHITE))
         }
 
 
-class Window(object):
-    """ Base class for terminal windows. """
-
-    def __init__(self, x=0, y=0, width=0, height=0, boxed=False, title=None,
-                 win=None, style=None):
-        self.win = win or curses.newwin(height, width, y, x)
-        self.boxed = boxed
-        self.title = title
-        self.top = 0 if not boxed else 1
-        self.left = 0 if not boxed else 1
-        self.style = style or {}
-
-    @property
-    def x(self):
-        """ Screen x-coordinate of upper left corner. """
-        return self.win.getyx()[1]
-
-    @property
-    def y(self):
-        """ Screen y-coordinate of upper left corner. """
-        return self.win.getyx()[0]
-
-    @property
-    def width(self):
-        """ Number of columns. """
-        return self.win.getmaxyx()[1]
-
-    @property
-    def height(self):
-        """ Number of rows. """
-        return self.win.getmaxyx()[0]
-
-    def addglyph(self, row, col, glyph):
-        """ Like addch() but uses a tuple for (char, attr). """
-        self.win.addch(row, col, glyph[0], glyph[1])
-
-    def on_paint(self):
-        """ Hook for subclasses. """
-        raise NotImplemented()
-
-    def paint(self):
-        """ Paint the window. Subclasses should implement on_paint(). """
-        self.win.erase()
-        self.on_paint()
-        if self.boxed:
-            attr = 0
-            color = self.style.get('border-color')
-            if color == 'blue':
-                attr = curses.color_pair(BLUE)
-            self.win.attron(attr)
-            self.win.box()
-            self.win.attroff(attr)
-        if self.title:
-            attr = 0
-            color = self.style.get('title-color')
-            if color == 'yellow':
-                attr = curses.color_pair(YELLOW)
-            self.win.attron(attr)
-            n = self.width - 2
-            self.win.addnstr(0, 1, '%s' % self.title, n)
-            self.win.attroff(attr)
-        self.win.refresh()
-
-
-class TileViewer(Window):
+class TileViewer(gui.Window):
     """ Describe contents of current tile  """
 
     def __init__(self, **kwargs):
@@ -148,20 +78,20 @@ class TileViewer(Window):
 
     def on_paint(self):
         if self.place:
-            row = self.top
+            row = self.top_margin
+            col = self.left_margin
             terrain = self.place.get_terrain(self.mapx, self.mapy)
-            self.addglyph(row, self.left, self.glyphs.get(terrain, 
-                                                               DEFAULT_GLYPH))
-            self.win.addstr(row, self.left + 2, '%s' % terrain.name)
+            self.addglyph(row, col, self.glyphs.get(terrain, DEFAULT_GLYPH))
+            self.win.addstr(row, col + 2, '%s' % terrain.name)
             row += 1
             items = self.place.get(self.mapx, self.mapy)
             for item in items:
-                self.addglyph(row, self.left, self.glyphs.get(type(item),
+                self.addglyph(row, col, self.glyphs.get(type(item),
                                                               DEFAULT_GLYPH))
-                self.win.addstr(row, self.left + 2, '%s' % item)
+                self.win.addstr(row, col + 2, '%s' % item)
                 row += 1
 
-class MessageConsole(Window):
+class MessageConsole(gui.Window):
     """ Print messages.  """
 
     def __init__(self, **kwargs):
@@ -180,7 +110,7 @@ class MessageConsole(Window):
         self.win.refresh()
 
 
-class MapViewer(Window):
+class MapViewer(gui.Window):
     """ Show the map. """
 
     def __init__(self, **kwargs):
@@ -227,7 +157,7 @@ class MapViewer(Window):
                     self.win.addch(y, x, ord(glyph[0]), glyph[1])
         #self.win.box()
 
-class Term(Window):
+class Term(gui.Window):
     """ Divide the screen into widgets.  """
 
     def __init__(self, scr):
@@ -237,14 +167,17 @@ class Term(Window):
         # on the top right next to it. Put the console on the bottom right
         # below that.
         #
-        self.mview = MapViewer(width=self.height, height=self.height, 
-                               boxed=False)
-        self.tview = TileViewer(x=self.mview.width, y=0, 
-                                width=self.width - self.mview.width, 
-                                height=self.height / 2)
-        self.console = MessageConsole(x=self.mview.width, 
-                                      y=self.tview.height, 
-                                      width=self.width - self.mview.width, 
+        self.mview = MapViewer(width=self.width / 2, height=self.height - 1, 
+                               boxed=True)
+        tv_width = self.width / 4
+        tv_height = self.height / 2
+        self.tview = TileViewer(x=self.mview.right,
+                                y=self.top, 
+                                width=self.width - self.mview.width,
+                                height = self.height / 2)
+        self.console = MessageConsole(x=self.mview.right,
+                                      y=self.tview.bottom,
+                                      width=self.width - self.mview.width,
                                       height=self.height - self.tview.height,
                                       boxed=True)
 
