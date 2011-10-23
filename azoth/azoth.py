@@ -2,63 +2,33 @@
 
 import cPickle
 import colors
-import curses
 import gui
 import hax2
 from hax2 import being, rules, session, terrain, weapon
 import hax2.plane
+import libtcodpy as tcod
+import logging
+import os
 import sys
 
-#
-# Initialize color pairs
-#
+DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
-
-DEFAULT_GLYPH = ('?', curses.A_REVERSE|curses.A_BOLD)
-
-def setup(scr):
-    """ Finish custom init of curses. Must be called after normal init done by
-    curses.wrapper(). """
-
-    try: curses.curs_set(0) # disable blinking cursor
-    except curses.error: stdscr.leaveok(0)
-
-    # initialize all color pairs
-    _colors = (curses.COLOR_BLACK, curses.COLOR_BLUE,
-              curses.COLOR_CYAN, curses.COLOR_GREEN,
-              curses.COLOR_MAGENTA, curses.COLOR_RED,
-              curses.COLOR_WHITE, curses.COLOR_YELLOW)
-    pair = 1
-    for fg in _colors:
-        for bg in _colors:
-            if fg != curses.COLOR_WHITE or bg != curses.COLOR_BLACK:
-                curses.init_pair(pair, fg, bg)
-                pair += 1
-
-    # XXX: experiments show I must call scr.refresh() at least once before
-    # window.refresh() will work. I don't know why.
-    scr.refresh()
-
-    # Most Window descendants are going to want access to the glyph map, so
-    # I'll make it an attribute of the Window class. I can't declare it until
-    # after curses has been initialized.
-    gui.Window.glyphs = {
-        terrain.HeavyForest:('T', curses.A_BOLD|curses.color_pair(colors.GREEN)),
-        terrain.Forest:('t', curses.A_BOLD|curses.color_pair(colors.GREEN)),
-        terrain.Grass:('.', curses.A_BOLD|curses.color_pair(colors.GREEN)),
-        terrain.Trail:('_', curses.color_pair(colors.YELLOW)),
-        terrain.RockWall:('#', curses.A_BOLD|curses.color_pair(colors.GRAY)),
-        terrain.CounterTop:('[', curses.A_BOLD|curses.color_pair(colors.GRAY)),
-        terrain.Water:('~', curses.A_BOLD|curses.color_pair(colors.BLUE)),
-        terrain.Boulder:('o', curses.A_BOLD|curses.color_pair(colors.WHITE)),
-        terrain.CobbleStone:(',', curses.A_BOLD|curses.color_pair(colors.YELLOW)),
-        terrain.Bog:('.', curses.A_BOLD|curses.color_pair(colors.MAGENTA)),
-        terrain.FirePlace:('^', curses.A_BOLD|curses.color_pair(colors.RED)),
-        terrain.Window:('=', curses.A_BOLD|curses.color_pair(colors.GRAY)),
-        weapon.Sword:('|', curses.color_pair(colors.WHITE)),
-        being.Player:('@', curses.A_BOLD|curses.color_pair(colors.WHITE))
-        }
-
+GLYPHS = {
+    terrain.HeavyForest:('T', tcod.green, tcod.black),
+    terrain.Forest:('t', tcod.green, tcod.black),
+    terrain.Grass:('.', tcod.green, tcod.black),
+    terrain.Trail:('_', tcod.yellow, tcod.black),
+    terrain.RockWall:('#', tcod.gray, tcod.black),
+    terrain.CounterTop:('[', tcod.gray, tcod.black),
+    terrain.Water:('~', tcod.blue, tcod.black),
+    terrain.Boulder:('o', tcod.white, tcod.black),
+    terrain.CobbleStone:(',', tcod.yellow, tcod.black),
+    terrain.Bog:('.', tcod.magenta, tcod.black),
+    terrain.FirePlace:('^', tcod.red, tcod.black),
+    terrain.Window:('=', tcod.gray, tcod.black),
+    weapon.Sword:('|', tcod.white, tcod.black),
+    being.Player:('@', tcod.white, tcod.black)
+    }
 
 class TileViewer(gui.Window):
     """ Describe contents of current tile  """
@@ -81,14 +51,14 @@ class TileViewer(gui.Window):
             row = self.top_margin
             col = self.left_margin
             terrain = self.place.get_terrain(self.mapx, self.mapy)
-            self.addglyph(row, col, self.glyphs.get(terrain, DEFAULT_GLYPH))
-            self.win.addstr(row, col + 2, '%s' % terrain.name)
+            self.addglyph(col, row, GLYPHS.get(terrain, DEFAULT_GLYPH))
+            self.addstr(col + 2, row, '%s' % terrain.name)
             row += 1
             items = self.place.get(self.mapx, self.mapy)
             for item in items:
-                self.addglyph(row, col, self.glyphs.get(type(item),
+                self.addglyph(col, row, GLYPHS.get(type(item),
                                                               DEFAULT_GLYPH))
-                self.win.addstr(row, col + 2, '%s' % item)
+                self.addstr(col + 2, row, '%s' % item)
                 row += 1
 
 class MessageConsole(gui.Window):
@@ -96,18 +66,15 @@ class MessageConsole(gui.Window):
 
     def __init__(self, **kwargs):
         super(MessageConsole, self).__init__(**kwargs)
+        self.msg = None
 
     def on_paint(self):
-        """ Do nothing -- write() paints directly. """
-        pass
+        """ Write the message. """
+        self.addstr(0, 0, self.msg)
 
     def write(self, msg):
-        """ Write a message and paint now. """
-        self.win.erase()
-        self.win.addstr(0, 0, msg)
-        if self.boxed:
-            self.win.box()
-        self.win.refresh()
+        """ Save the message for painting. """
+        self.msg = msg
 
 
 class MapViewer(gui.Window):
@@ -143,32 +110,30 @@ class MapViewer(gui.Window):
     def on_paint(self):
         """ Show the region under the view. """
         for y in range(self.height):
-            # addch(y, width) raises an error, so cut back by 1
-            for x in range(self.width-1):
+            for x in range(self.width):
                 mx = self.mapx + x
                 my = self.mapy + y
                 occ = self.place.get(mx, my)
                 if occ:
-                    glyph = self.glyphs.get(type(occ[0]), DEFAULT_GLYPH)
-                    self.win.addch(y, x, ord(glyph[0]), glyph[1])
+                    glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
+                    self.addglyph(x, y, glyph)
                 else:
                     terrain = self.place.get_terrain(mx, my)
-                    glyph = self.glyphs.get(terrain, DEFAULT_GLYPH)
-                    self.win.addch(y, x, ord(glyph[0]), glyph[1])
-        #self.win.box()
+                    glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                    self.addglyph(x, y, glyph)
 
 class Term(gui.Window):
     """ Divide the screen into widgets.  """
 
-    def __init__(self, scr):
-        super(Term, self).__init__(win=scr)
+    def __init__(self, **kwargs):
+        super(Term, self).__init__(**kwargs)
         # 
         # Make the map as big as possible on the left side. Put a tile viewer
         # on the top right next to it. Put the console on the bottom right
         # below that.
         #
         self.mview = MapViewer(width=self.width / 2, height=self.height - 1, 
-                               boxed=True)
+                               boxed=False)
         tv_width = self.width / 4
         tv_height = self.height / 2
         self.tview = TileViewer(x=self.mview.right,
@@ -179,19 +144,18 @@ class Term(gui.Window):
                                       y=self.tview.bottom,
                                       width=self.width - self.mview.width,
                                       height=self.height - self.tview.height,
-                                      boxed=True)
+                                      boxed=False)
 
-    def clear(self):
-        self.scr.erase()
 
 
 class Game(object):
     """ Run a session in a terminal. """
 
-    def __init__(self, scr):
-        self.scr = scr
-        self.term = Term(scr)
+    def __init__(self):
+        self.term = Term(width=tcod.console_get_width(None), 
+                         height=tcod.console_get_height(None))
         self.session = None
+        self.log = logging.getLogger('game')
 
     def load(self, fname):
         loadfile = open(fname)
@@ -202,16 +166,18 @@ class Game(object):
         self.term.tview.focus(*self.session.player.loc)
         self.term.tview.paint()
         self.term.console.write('%s'%type(self.session.player))
+        tcod.console_flush()
 
     def run(self):
-        ch = self.scr.getch()
-        while ch != ord('q'):
+        ch = tcod.console_wait_for_keypress(False)
+        while ch.c != ord('q'):
+            self.log.debug('ch.c={} .vk={}'.format(ch.c, ch.vk))
             direction = {
-                curses.KEY_DOWN:'south',
-                curses.KEY_UP:'north',
-                curses.KEY_RIGHT:'east',
-                curses.KEY_LEFT:'west'
-                }.get(ch, None)
+                tcod.KEY_DOWN:'south',
+                tcod.KEY_UP:'north',
+                tcod.KEY_RIGHT:'east',
+                tcod.KEY_LEFT:'west'
+                }.get(ch.vk, None)
             if direction:
                 try:
                     self.session.hax2.move(self.session.player, direction)
@@ -222,22 +188,24 @@ class Game(object):
                     self.term.mview.paint()
                     self.term.tview.focus(*self.session.player.loc)
                     self.term.tview.paint()
-            elif ch == ord('s'):
+                    tcod.console_flush()
+            elif ch.c == ord('s'):
                 savefile = open('save.p', 'w')
                 self.session.dump(savefile)
                 savefile.close()
-            elif ch == ord('l'):
+            elif ch.c == ord('l'):
                 self.load('save.p')
-            ch = self.scr.getch()
-
-def main(stdscr, fname):
-    setup(stdscr)
-    game = Game(stdscr)
-    game.load(fname)
-    game.run()
+            ch =  tcod.console_wait_for_keypress(False)
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit('Usage: %s <file>'%sys.argv[0])
-    curses.wrapper(main, sys.argv[1])
+
+    os.unlink('azoth.log')
+    logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
+    tcod.console_set_custom_font("data/fonts/consolas12x12_gs_tc.png", tcod.FONT_LAYOUT_TCOD | tcod.FONT_TYPE_GREYSCALE)
+    tcod.console_init_root(80, 40, "Haxima", False)
+    game = Game()
+    game.load(sys.argv[1])
+    game.run()
