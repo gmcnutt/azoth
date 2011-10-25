@@ -14,20 +14,20 @@ import sys
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
 GLYPHS = {
-    terrain.HeavyForest:('T', tcod.darker_green, tcod.black),
-    terrain.Forest:('t', tcod.dark_green, tcod.black),
-    terrain.Grass:('.', tcod.light_green, tcod.black),
-    terrain.Trail:('_', tcod.dark_orange, tcod.black),
-    terrain.RockWall:('#', tcod.gray, tcod.black),
-    terrain.CounterTop:('[', tcod.gray, tcod.black),
-    terrain.Water:('~', tcod.blue, tcod.black),
-    terrain.Boulder:('o', tcod.white, tcod.black),
-    terrain.CobbleStone:(',', tcod.light_yellow, tcod.black),
-    terrain.Bog:('.', tcod.dark_magenta, tcod.black),
-    terrain.FirePlace:('^', tcod.red, tcod.black),
-    terrain.Window:('=', tcod.gray, tcod.black),
-    weapon.Sword:('|', tcod.white, tcod.black),
-    being.Player:('@', tcod.white, tcod.black)
+    terrain.HeavyForest:('T', tcod.darker_green, tcod.darker_green * 0.5),
+    terrain.Forest:('t', tcod.dark_green, tcod.dark_green * 0.5),
+    terrain.Grass:('.', tcod.light_green, tcod.light_green * 0.5),
+    terrain.Trail:('_', tcod.dark_orange, tcod.dark_orange * 0.5),
+    terrain.RockWall:('#', tcod.gray, tcod.gray * 0.5),
+    terrain.CounterTop:('[', tcod.gray, tcod.gray * 0.5),
+    terrain.Water:('~', tcod.blue, tcod.blue * 0.5),
+    terrain.Boulder:('o', tcod.white, tcod.white * 0.5),
+    terrain.CobbleStone:(',', tcod.light_yellow, tcod.light_yellow * 0.5),
+    terrain.Bog:('.', tcod.dark_magenta, tcod.dark_magenta * 0.5),
+    terrain.FirePlace:('^', tcod.red, tcod.red * 0.5),
+    terrain.Window:('=', tcod.gray, tcod.gray * 0.5),
+    weapon.Sword:('|', tcod.white, tcod.white * 0.5),
+    being.Player:('@', tcod.white, tcod.white * 0.5)
     }
 
 class TileViewer(gui.Window):
@@ -127,13 +127,16 @@ class MapViewer(gui.Window):
         """ Show the region under the view. """
         for y in range(self.height):
             my = self.mapy + y
+            scry = self.y + y
             for x in range(self.width):
                 mx = self.mapx + x
+                scrx = self.x + x
                 if not tcod.map_is_in_fov(self.fov_map, x, y):
                     if self.place.get_explored(mx, my):
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                        self.addglyph(x, y, glyph, divisor=0.5)
+                        tcod.console_put_char_ex(None, scrx, scry,
+                                                 glyph[0], glyph[2], None)
                 else:
                     self.place.set_explored(mx, my, True)
                     occ = self.place.get(mx, my)
@@ -142,7 +145,8 @@ class MapViewer(gui.Window):
                     else:
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                    self.addglyph(x, y, glyph)
+                    tcod.console_put_char_ex(None, scrx, scry,
+                                     glyph[0], glyph[1], None)
 
 class Term(gui.Window):
     """ Divide the screen into widgets.  """
@@ -192,6 +196,8 @@ class Game(object):
 
     def run(self):
         ch = tcod.console_wait_for_keypress(False)
+        turn_time = 0
+        time_start = tcod.sys_elapsed_milli()
         while ch.c != ord('q'):
             self.log.debug('ch.c={} .vk={}'.format(ch.c, ch.vk))
             direction = {
@@ -208,9 +214,14 @@ class Game(object):
                 else:
                     tcod.console_clear(None)
                     self.term.mview.scroll(direction)
+                    time_mark =  tcod.sys_elapsed_milli()
                     self.term.mview.paint()
+                    time_mark2 =  tcod.sys_elapsed_milli()
                     self.term.tview.focus(*self.session.player.loc)
                     self.term.tview.paint()
+                    tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, "scroll: %d ms" % (time_mark - time_start))
+                    tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, " paint: %d ms" % (time_mark2 - time_mark))
+                    tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, " total: %d ms" % turn_time)
                     tcod.console_flush()
             elif ch.c == ord('s'):
                 savefile = open('save.p', 'w')
@@ -218,7 +229,10 @@ class Game(object):
                 savefile.close()
             elif ch.c == ord('l'):
                 self.load('save.p')
+            time_stop = tcod.sys_elapsed_milli()
+            turn_time = (time_stop - time_start)
             ch =  tcod.console_wait_for_keypress(False)
+            time_start = tcod.sys_elapsed_milli()
 
 
 if __name__ == "__main__":
