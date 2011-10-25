@@ -14,16 +14,16 @@ import sys
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
 GLYPHS = {
-    terrain.HeavyForest:('T', tcod.green, tcod.black),
-    terrain.Forest:('t', tcod.green, tcod.black),
-    terrain.Grass:('.', tcod.green, tcod.black),
-    terrain.Trail:('_', tcod.yellow, tcod.black),
+    terrain.HeavyForest:('T', tcod.darker_green, tcod.black),
+    terrain.Forest:('t', tcod.dark_green, tcod.black),
+    terrain.Grass:('.', tcod.light_green, tcod.black),
+    terrain.Trail:('_', tcod.dark_orange, tcod.black),
     terrain.RockWall:('#', tcod.gray, tcod.black),
     terrain.CounterTop:('[', tcod.gray, tcod.black),
     terrain.Water:('~', tcod.blue, tcod.black),
     terrain.Boulder:('o', tcod.white, tcod.black),
-    terrain.CobbleStone:(',', tcod.yellow, tcod.black),
-    terrain.Bog:('.', tcod.magenta, tcod.black),
+    terrain.CobbleStone:(',', tcod.light_yellow, tcod.black),
+    terrain.Bog:('.', tcod.dark_magenta, tcod.black),
     terrain.FirePlace:('^', tcod.red, tcod.black),
     terrain.Window:('=', tcod.gray, tcod.black),
     weapon.Sword:('|', tcod.white, tcod.black),
@@ -85,7 +85,21 @@ class MapViewer(gui.Window):
         self.mapx = 0
         self.mapy = 0
         self.place = None
-        
+        self.fov_map = tcod.map_new(self.width, self.height)
+    
+    def reset_fov_map(self):
+        """ Recompute the FOV map. """
+        for y in range(self.height):
+            my = self.mapy + y
+            for x in range(self.width):
+                mx = self.mapx + x
+                terrain = self.place.get_terrain(mx, my)
+                tcod.map_set_properties(self.fov_map, x, y, not terrain.blocks_sight, True)
+        RADIUS = max(self.width, self.height)
+        LIGHT_WALLS = True
+        FOV_ALGO = 0
+        tcod.map_compute_fov(self.fov_map, self.x + self.width / 2, self.y + self.height / 2, RADIUS, LIGHT_WALLS, FOV_ALGO)
+
     def focus(self, obj):
         """ Center the viewer on an object.  """
         # XXX: just keep the obj and have paint recompute the rest every time?
@@ -93,6 +107,7 @@ class MapViewer(gui.Window):
         self.mapx = obj.x - self.width / 2
         self.mapy = obj.y - self.height / 2
         self.title = self.place.name
+        self.reset_fov_map()
 
     def scroll(self, direction):
         """ Scroll the view over the current place. """
@@ -106,20 +121,27 @@ class MapViewer(gui.Window):
                   'northwest':(-1, -1)}[direction]
         self.mapx += dx
         self.mapy += dy
+        self.reset_fov_map() # brute force for now
 
     def on_paint(self):
         """ Show the region under the view. """
         for y in range(self.height):
+            my = self.mapy + y
             for x in range(self.width):
                 mx = self.mapx + x
-                my = self.mapy + y
-                occ = self.place.get(mx, my)
-                if occ:
-                    glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
-                    self.addglyph(x, y, glyph)
+                if not tcod.map_is_in_fov(self.fov_map, x, y):
+                    if self.place.get_explored(mx, my):
+                        terrain = self.place.get_terrain(mx, my)
+                        glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                        self.addglyph(x, y, glyph, divisor=0.5)
                 else:
-                    terrain = self.place.get_terrain(mx, my)
-                    glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                    self.place.set_explored(mx, my, True)
+                    occ = self.place.get(mx, my)
+                    if occ:
+                        glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
+                    else:
+                        terrain = self.place.get_terrain(mx, my)
+                        glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
                     self.addglyph(x, y, glyph)
 
 class Term(gui.Window):
@@ -184,6 +206,7 @@ class Game(object):
                 except rules.RuleError:
                     pass
                 else:
+                    tcod.console_clear(None)
                     self.term.mview.scroll(direction)
                     self.term.mview.paint()
                     self.term.tview.focus(*self.session.player.loc)
@@ -205,6 +228,9 @@ if __name__ == "__main__":
     os.unlink('azoth.log')
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
     tcod.console_set_custom_font("data/fonts/consolas12x12_gs_tc.png", tcod.FONT_LAYOUT_TCOD | tcod.FONT_TYPE_GREYSCALE)
+    tcod.console_set_custom_font('data/fonts/arial10x10.png', 
+                                 tcod.FONT_TYPE_GREYSCALE | 
+                                 tcod.FONT_LAYOUT_TCOD)
     tcod.console_init_root(80, 40, "Haxima", False)
     game = Game()
     game.load(sys.argv[1])

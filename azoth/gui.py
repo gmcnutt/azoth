@@ -50,11 +50,11 @@ class Window(object):
         """ Return iterator over columns. """
         return range(self.width)
 
-    def addglyph(self, col, row, glyph):
+    def addglyph(self, col, row, glyph, divisor=1):
         """ Like addch() but uses a tuple for (character, foreground color,
         background color). """
         tcod.console_put_char_ex(None, self.x + col, self.y + row, 
-                                 glyph[0], glyph[1], glyph[2])
+                                 glyph[0], glyph[1] * divisor, glyph[2] * divisor)
 
     def addstr(self, col, row, string):
         """ Safe version of curses.addstr that will catch the exception if row
@@ -73,6 +73,10 @@ class Window(object):
             return
         self.width = nw
         self.height = nh
+
+    def set_background_color(self, x, y, color):
+        tcod.console_set_back(None, self.x + x, self.y + y, color, 
+                              tcod.BKGND_SET)
 
     def move(self, dx=0, dy=0):
         """ Move the window around within the screen. """
