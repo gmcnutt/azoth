@@ -227,8 +227,7 @@ if __name__ == "__main__":
 
     os.unlink('azoth.log')
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
-    tcod.console_set_custom_font("data/fonts/consolas12x12_gs_tc.png", tcod.FONT_LAYOUT_TCOD | tcod.FONT_TYPE_GREYSCALE)
-    tcod.console_set_custom_font('data/fonts/arial10x10.png', 
+    tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
                                  tcod.FONT_TYPE_GREYSCALE | 
                                  tcod.FONT_LAYOUT_TCOD)
     tcod.console_init_root(80, 40, "Haxima", False)
