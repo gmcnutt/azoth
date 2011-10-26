@@ -13,6 +13,7 @@ import sys
 
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
+# (character, normal color, fog-of-war color)
 GLYPHS = {
     terrain.HeavyForest:('T', tcod.darker_green, tcod.darker_green * 0.5),
     terrain.Forest:('t', tcod.dark_green, tcod.dark_green * 0.5),
@@ -56,8 +57,7 @@ class TileViewer(gui.Window):
             row += 1
             items = self.place.get(self.mapx, self.mapy)
             for item in items:
-                self.addglyph(col, row, GLYPHS.get(type(item),
-                                                              DEFAULT_GLYPH))
+                self.addglyph(col, row, GLYPHS.get(type(item), DEFAULT_GLYPH))
                 self.addstr(col + 2, row, '%s' % item)
                 row += 1
 
@@ -94,11 +94,14 @@ class MapViewer(gui.Window):
             for x in range(self.width):
                 mx = self.mapx + x
                 terrain = self.place.get_terrain(mx, my)
-                tcod.map_set_properties(self.fov_map, x, y, not terrain.blocks_sight, True)
+                tcod.map_set_properties(self.fov_map, x, y, 
+                                        not terrain.blocks_sight, True)
         RADIUS = max(self.width, self.height)
         LIGHT_WALLS = True
         FOV_ALGO = 0
-        tcod.map_compute_fov(self.fov_map, self.x + self.width / 2, self.y + self.height / 2, RADIUS, LIGHT_WALLS, FOV_ALGO)
+        tcod.map_compute_fov(self.fov_map, self.x + self.width / 2, 
+                             self.y + self.height / 2, RADIUS, LIGHT_WALLS, 
+                             FOV_ALGO)
 
     def focus(self, obj):
         """ Center the viewer on an object.  """
@@ -135,8 +138,8 @@ class MapViewer(gui.Window):
                     if self.place.get_explored(mx, my):
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                        tcod.console_put_char_ex(None, scrx, scry,
-                                                 glyph[0], glyph[2], None)
+                        tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
+                                                 glyph[2], None)
                 else:
                     self.place.set_explored(mx, my, True)
                     occ = self.place.get(mx, my)
@@ -145,8 +148,8 @@ class MapViewer(gui.Window):
                     else:
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                    tcod.console_put_char_ex(None, scrx, scry,
-                                     glyph[0], glyph[1], None)
+                    tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
+                                             glyph[1], None)
 
 class Term(gui.Window):
     """ Divide the screen into widgets.  """
@@ -187,6 +190,7 @@ class Game(object):
         loadfile = open(fname)
         self.session = session.load(open(fname))
         loadfile.close()
+        tcod.console_clear(None)
         self.term.mview.focus(self.session.player)
         self.term.mview.paint()
         self.term.tview.focus(*self.session.player.loc)
@@ -194,21 +198,28 @@ class Game(object):
         self.term.console.write('%s'%type(self.session.player))
         tcod.console_flush()
 
+    def get_cmd(self):
+        items = [i for i in self.place.get(self.player.x, self.player.y) \
+                     if i != self.player]
+        if items:
+            self.hax2.move_from_map_to_bag(self.player, items[0])
+
     def run(self):
-        ch = tcod.console_wait_for_keypress(False)
+        key = tcod.console_wait_for_keypress(False)
         turn_time = 0
         time_start = tcod.sys_elapsed_milli()
-        while ch.c != ord('q'):
-            self.log.debug('ch.c={} .vk={}'.format(ch.c, ch.vk))
+        while key.c != ord('q'):
+            self.log.debug('key.c={} .vk={}'.format(key.c, key.vk))
             direction = {
                 tcod.KEY_DOWN:'south',
                 tcod.KEY_UP:'north',
                 tcod.KEY_RIGHT:'east',
                 tcod.KEY_LEFT:'west'
-                }.get(ch.vk, None)
+                }.get(key.vk, None)
             if direction:
                 try:
-                    self.session.hax2.move(self.session.player, direction)
+                    self.session.hax2.move_on_map(self.session.player, 
+                                                  direction)
                 except rules.RuleError:
                     pass
                 else:
@@ -219,19 +230,28 @@ class Game(object):
                     time_mark2 =  tcod.sys_elapsed_milli()
                     self.term.tview.focus(*self.session.player.loc)
                     self.term.tview.paint()
-                    tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, "scroll: %d ms" % (time_mark - time_start))
-                    tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, " paint: %d ms" % (time_mark2 - time_mark))
-                    tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, " total: %d ms" % turn_time)
+                    tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
+                                            "scroll: %d ms" % \
+                                                (time_mark - time_start))
+                    tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, 
+                                            " paint: %d ms" % \
+                                                (time_mark2 - time_mark))
+                    tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, 
+                                            " total: %d ms" % turn_time)
                     tcod.console_flush()
-            elif ch.c == ord('s'):
-                savefile = open('save.p', 'w')
-                self.session.dump(savefile)
-                savefile.close()
-            elif ch.c == ord('l'):
-                self.load('save.p')
+            else:
+                ch = chr(key.c)
+                if ch == 's':
+                    savefile = open('save.p', 'w')
+                    self.session.dump(savefile)
+                    savefile.close()
+                elif ch == 'l':
+                    self.load('save.p')
+                elif ch == 'g':
+                    self.get_cmd()
             time_stop = tcod.sys_elapsed_milli()
             turn_time = (time_stop - time_start)
-            ch =  tcod.console_wait_for_keypress(False)
+            key =  tcod.console_wait_for_keypress(False)
             time_start = tcod.sys_elapsed_milli()
 
 
