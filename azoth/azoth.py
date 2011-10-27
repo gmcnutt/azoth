@@ -180,6 +180,8 @@ class Term(gui.Window):
 class Game(object):
     """ Run a session in a terminal. """
 
+    DEFAULT_SAVE_FILE_NAME = 'save.p'
+
     def __init__(self):
         self.term = Term(width=tcod.console_get_width(None), 
                          height=tcod.console_get_height(None))
@@ -198,16 +200,57 @@ class Game(object):
         self.term.console.write('%s'%type(self.session.player))
         tcod.console_flush()
 
-    def get_cmd(self):
-        items = [i for i in self.place.get(self.player.x, self.player.y) \
-                     if i != self.player]
+    def handle_get_from_map(self):
+        """ Get the top item from the ground. """
+        items = [i for i in self.session.world.get(self.session.player.x, 
+                                                   self.session.player.y) \
+                     if i != self.session.player]
         if items:
-            self.hax2.move_from_map_to_bag(self.player, items[0])
+            self.session.hax2.move_from_map_to_bag(
+                items[0], 
+                self.session.player.inventory)
+
+    def handle_load_session(self):
+        self.load(self.DEFAULT_SAVE_FILE_NAME)
+
+    def handle_move_on_map(self, direction):
+        """ Move the player and update viewers. """
+        try:
+            self.session.hax2.move_on_map(self.session.player, direction)
+        except rules.RuleError:
+            pass
+        else:
+            time_start = tcod.sys_elapsed_milli()
+            tcod.console_clear(None)
+            self.term.mview.scroll(direction)
+            time_mark =  tcod.sys_elapsed_milli()
+            self.term.mview.paint()
+            time_mark2 = tcod.sys_elapsed_milli()
+            self.term.tview.focus(*self.session.player.loc)
+            self.term.tview.paint()
+            time_stop = tcod.sys_elapsed_milli()
+            tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
+                                    "scroll: %d ms" % (time_mark - time_start))
+            tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, 
+                                    " paint: %d ms" % (time_mark2 - time_mark))
+            tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, 
+                                    " total: %d ms" % (time_stop - time_start))
+            tcod.console_flush()
+
+    def handle_save_session(self):
+        savefile = open(self.DEFAULT_SAVE_FILE_NAME, 'w')
+        self.session.dump(savefile)
+        savefile.close()
 
     def run(self):
+        """ Main loop. """
+        keymap = {
+            #'d': self.handle_drop_on_map,
+            'g': self.handle_get_from_map,
+            'l': self.handle_load_session,
+            's': self.handle_save_session,
+            }
         key = tcod.console_wait_for_keypress(False)
-        turn_time = 0
-        time_start = tcod.sys_elapsed_milli()
         while key.c != ord('q'):
             self.log.debug('key.c={} .vk={}'.format(key.c, key.vk))
             direction = {
@@ -217,42 +260,12 @@ class Game(object):
                 tcod.KEY_LEFT:'west'
                 }.get(key.vk, None)
             if direction:
-                try:
-                    self.session.hax2.move_on_map(self.session.player, 
-                                                  direction)
-                except rules.RuleError:
-                    pass
-                else:
-                    tcod.console_clear(None)
-                    self.term.mview.scroll(direction)
-                    time_mark =  tcod.sys_elapsed_milli()
-                    self.term.mview.paint()
-                    time_mark2 =  tcod.sys_elapsed_milli()
-                    self.term.tview.focus(*self.session.player.loc)
-                    self.term.tview.paint()
-                    tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
-                                            "scroll: %d ms" % \
-                                                (time_mark - time_start))
-                    tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, 
-                                            " paint: %d ms" % \
-                                                (time_mark2 - time_mark))
-                    tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, 
-                                            " total: %d ms" % turn_time)
-                    tcod.console_flush()
+                self.handle_move_on_map(direction)
             else:
-                ch = chr(key.c)
-                if ch == 's':
-                    savefile = open('save.p', 'w')
-                    self.session.dump(savefile)
-                    savefile.close()
-                elif ch == 'l':
-                    self.load('save.p')
-                elif ch == 'g':
-                    self.get_cmd()
-            time_stop = tcod.sys_elapsed_milli()
-            turn_time = (time_stop - time_start)
+                handler = keymap.get(chr(key.c))
+                if handler:
+                    handler()
             key =  tcod.console_wait_for_keypress(False)
-            time_start = tcod.sys_elapsed_milli()
 
 
 if __name__ == "__main__":
