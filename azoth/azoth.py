@@ -66,16 +66,30 @@ class MessageConsole(gui.Window):
 
     def __init__(self, **kwargs):
         super(MessageConsole, self).__init__(**kwargs)
-        self.msg = None
+        self.messages = []
+        self.max_messages = 5
+        self.debug_color = tcod.gray
+        self.error_color = tcod.red
+        self.warning_color = tcod.yellow
+
+    def add_message(self, message, color):
+        if len(self.messages == self.max_messages):
+            del self.messages[0]
+        self.messages.append((message, color))
 
     def on_paint(self):
         """ Write the message. """
-        self.addstr(0, 0, self.msg)
+        for y, pair in enumerate(self.messages):
+            self.addstr(0, y, pair[0])
 
-    def write(self, msg):
-        """ Save the message for painting. """
-        self.msg = msg
+    def debug(self, message):
+        self.messages.append((message, self.debug_color))
 
+    def error(self, message):
+        self.messages.append((message, self.error_color))
+
+    def warn(self, message):
+        self.messages.append((message, self.warning_color))
 
 class MapViewer(gui.Window):
     """ Show the map. """
@@ -197,8 +211,23 @@ class Game(object):
         self.term.mview.paint()
         self.term.tview.focus(*self.session.player.loc)
         self.term.tview.paint()
-        self.term.console.write('%s'%type(self.session.player))
+        self.term.console.debug('%s'%type(self.session.player))
         tcod.console_flush()
+
+    def handle_drop_on_map(self):
+        """ Drop first item in inventory onto the ground. """
+        if not self.session.player.inventory:
+            self.term.console.warn('Nothing to drop!')
+        else:
+            try:
+                self.session.hax2.move_from_bag_to_map(
+                    self.session.player.inventory[0],
+                    self.session.player.place, self.session.player.x, 
+                    self.session.player.y)
+            except rules.RuleError as e:
+                self.term.console.warn('%s' % e)
+            except Exception as e:
+                self.term.console.error('%s' % e)
 
     def handle_get_from_map(self):
         """ Get the top item from the ground. """
@@ -206,6 +235,7 @@ class Game(object):
                                                    self.session.player.y) \
                      if i != self.session.player]
         if items:
+            # XXX: handle exceptions
             self.session.hax2.move_from_map_to_bag(
                 items[0], 
                 self.session.player.inventory)
@@ -228,6 +258,7 @@ class Game(object):
             time_mark2 = tcod.sys_elapsed_milli()
             self.term.tview.focus(*self.session.player.loc)
             self.term.tview.paint()
+            self.term.console.paint()
             time_stop = tcod.sys_elapsed_milli()
             tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
                                     "scroll: %d ms" % (time_mark - time_start))
@@ -245,7 +276,7 @@ class Game(object):
     def run(self):
         """ Main loop. """
         keymap = {
-            #'d': self.handle_drop_on_map,
+            'd': self.handle_drop_on_map,
             'g': self.handle_get_from_map,
             'l': self.handle_load_session,
             's': self.handle_save_session,
