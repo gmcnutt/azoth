@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 
+MAX_FPS = 20
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
 # (character, normal color, fog-of-war color)
@@ -70,6 +71,7 @@ class MessageConsole(gui.Window):
         self.max_messages = 5
         self.debug_color = tcod.gray
         self.error_color = tcod.red
+        self.info_color = tcod.white
         self.warning_color = tcod.yellow
 
     def add_message(self, message, color):
@@ -87,6 +89,9 @@ class MessageConsole(gui.Window):
 
     def error(self, message):
         self.messages.append((message, self.error_color))
+
+    def info(self, message):
+        self.messages.append((message, self.info_color))
 
     def warn(self, message):
         self.messages.append((message, self.warning_color))
@@ -164,7 +169,6 @@ class MapViewer(gui.Window):
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
                     tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
                                              glyph[1], None)
-
 class Term(gui.Window):
     """ Divide the screen into widgets.  """
 
@@ -281,7 +285,7 @@ class Game(object):
             'l': self.handle_load_session,
             's': self.handle_save_session,
             }
-        key = tcod.console_wait_for_keypress(False)
+        key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
         while key.c != ord('q'):
             self.log.debug('key.c={} .vk={}'.format(key.c, key.vk))
             direction = {
@@ -296,7 +300,7 @@ class Game(object):
                 handler = keymap.get(chr(key.c))
                 if handler:
                     handler()
-            key =  tcod.console_wait_for_keypress(False)
+            key =  tcod.console_check_for_keypress(tcod.KEY_PRESSED)
 
 
 if __name__ == "__main__":
@@ -309,6 +313,7 @@ if __name__ == "__main__":
                                  tcod.FONT_TYPE_GREYSCALE | 
                                  tcod.FONT_LAYOUT_TCOD)
     tcod.console_init_root(80, 40, "Haxima", False)
+    tcod.sys_set_fps(MAX_FPS)
     game = Game()
     game.load(sys.argv[1])
     game.run()
