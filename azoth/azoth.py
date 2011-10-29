@@ -11,7 +11,7 @@ import logging
 import os
 import sys
 
-MAX_FPS = 20
+MAX_FPS = 40
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
 # (character, normal color, fog-of-war color)
@@ -105,6 +105,8 @@ class MapViewer(gui.Window):
         self.mapy = 0
         self.place = None
         self.fov_map = tcod.map_new(self.width, self.height)
+        self.scroll_time = 0
+        self.render_time = 0
     
     def reset_fov_map(self):
         """ Recompute the FOV map. """
@@ -133,6 +135,7 @@ class MapViewer(gui.Window):
 
     def scroll(self, direction):
         """ Scroll the view over the current place. """
+        start_ms = tcod.sys_elapsed_milli()
         dx, dy = {'north'    :( 0, -1),
                   'northeast':( 1, -1),
                   'east'     :( 1,  0),
@@ -144,9 +147,11 @@ class MapViewer(gui.Window):
         self.mapx += dx
         self.mapy += dy
         self.reset_fov_map() # brute force for now
+        self.scroll_time = tcod.sys_elapsed_milli() - start_ms
 
     def on_paint(self):
         """ Show the region under the view. """
+        start_ms = tcod.sys_elapsed_milli()
         for y in range(self.height):
             my = self.mapy + y
             scry = self.y + y
@@ -169,6 +174,8 @@ class MapViewer(gui.Window):
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
                     tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
                                              glyph[1], None)
+        self.render_time = tcod.sys_elapsed_milli() - start_ms
+
 class Term(gui.Window):
     """ Divide the screen into widgets.  """
 
@@ -254,28 +261,25 @@ class Game(object):
         except rules.RuleError:
             pass
         else:
-            time_start = tcod.sys_elapsed_milli()
-            tcod.console_clear(None)
             self.term.mview.scroll(direction)
-            time_mark =  tcod.sys_elapsed_milli()
-            self.term.mview.paint()
-            time_mark2 = tcod.sys_elapsed_milli()
             self.term.tview.focus(*self.session.player.loc)
-            self.term.tview.paint()
-            self.term.console.paint()
-            time_stop = tcod.sys_elapsed_milli()
-            tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
-                                    "scroll: %d ms" % (time_mark - time_start))
-            tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, 
-                                    " paint: %d ms" % (time_mark2 - time_mark))
-            tcod.console_print_left(None, 0, 2, tcod.BKGND_NONE, 
-                                    " total: %d ms" % (time_stop - time_start))
-            tcod.console_flush()
 
     def handle_save_session(self):
         savefile = open(self.DEFAULT_SAVE_FILE_NAME, 'w')
         self.session.dump(savefile)
         savefile.close()
+
+    def render(self):
+        tcod.console_clear(None)
+        self.term.mview.paint()
+        self.term.tview.paint()
+        self.term.console.paint()
+        tcod.console_print_left(None, 0, 0, tcod.BKGND_NONE, 
+                                "scroll: %d ms" % self.term.mview.scroll_time)
+        tcod.console_print_left(None, 0, 1, tcod.BKGND_NONE, 
+                                " paint: %d ms" % self.term.mview.render_time)
+        tcod.console_flush()
+        
 
     def run(self):
         """ Main loop. """
@@ -300,7 +304,9 @@ class Game(object):
                 handler = keymap.get(chr(key.c))
                 if handler:
                     handler()
-            key =  tcod.console_check_for_keypress(tcod.KEY_PRESSED)
+            self.render()
+            #key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
+            key = tcod.console_wait_for_keypress(True)
 
 
 if __name__ == "__main__":
