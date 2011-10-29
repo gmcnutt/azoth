@@ -215,13 +215,9 @@ class Game(object):
         loadfile = open(fname)
         self.session = session.load(open(fname))
         loadfile.close()
-        tcod.console_clear(None)
         self.term.mview.focus(self.session.player)
-        self.term.mview.paint()
         self.term.tview.focus(*self.session.player.loc)
-        self.term.tview.paint()
-        self.term.console.debug('%s'%type(self.session.player))
-        tcod.console_flush()
+        self.term.console.info('Welcome back!')
 
     def handle_drop_on_map(self):
         """ Drop first item in inventory onto the ground. """
@@ -287,6 +283,7 @@ class Game(object):
             'l': self.handle_load_session,
             's': self.handle_save_session,
             }
+        self.render()
         key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
         while key.c != ord('q'):
             self.log.debug('key.c={} .vk={}'.format(key.c, key.vk))
