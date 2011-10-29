@@ -18,6 +18,7 @@ class Window(object):
         self.left_margin = 0 if not boxed else 1
         self.style = style or {}
         self.hide = hide
+        self.console = tcod.console_new(width, height)
 
     @property
     def left(self):
@@ -54,17 +55,16 @@ class Window(object):
         """ Like addch() but uses a tuple for (character, foreground color,
         background color). """
         if fade:
-            tcod.console_put_char_ex(None, self.x + col, self.y + row, 
+            tcod.console_put_char_ex(self.console, col, row, 
                                      glyph[0], glyph[2], None)
         else:
-            tcod.console_put_char_ex(None, self.x + col, self.y + row, 
+            tcod.console_put_char_ex(self.console, col, row, 
                                      glyph[0], glyph[1], None)
 
     def addstr(self, col, row, string):
         """ Safe version of curses.addstr that will catch the exception if row
         is not in the window.  """
-        tcod.console_print_left(None, self.x + col, self.y + row, 
-                                tcod.BKGND_NONE, string)
+        tcod.console_print_left(self.console, col, row, tcod.BKGND_NONE, string)
 
     def box(self):
         pass
@@ -79,8 +79,7 @@ class Window(object):
         self.height = nh
 
     def set_background_color(self, x, y, color):
-        tcod.console_set_back(None, self.x + x, self.y + y, color, 
-                              tcod.BKGND_SET)
+        tcod.console_set_back(self.console, x, y, color, tcod.BKGND_SET)
 
     def move(self, dx=0, dy=0):
         """ Move the window around within the screen. """
@@ -95,6 +94,7 @@ class Window(object):
         """ Paint the window. Subclasses should implement on_paint(). """
         if self.hide:
             return
+        tcod.console_clear(self.console)
         self.on_paint()
         if self.boxed:
             attr = 0
@@ -102,15 +102,17 @@ class Window(object):
             if color == 'blue':
                 attr = tcod.blue
             old_fgcolor = tcod.console_get_foreground_color(None)
-            tcod.console_set_foreground_color(None, attr)
+            tcod.console_set_foreground_color(self.console, attr)
             self.box()
-            tcod.console_set_foreground_color(None, old_fgcolor)            
+            tcod.console_set_foreground_color(self.console, old_fgcolor)
         if self.title:
             attr = 0
             color = self.style.get('title-color')
             if color == 'yellow':
                 attr = tcod.yellow
-            old_fgcolor = tcod.console_get_foreground_color(None)
-            tcod.console_set_foreground_color(None, attr)
+            old_fgcolor = tcod.console_get_foreground_color(self.console)
+            tcod.console_set_foreground_color(self.console, attr)
             self.addstr(1, 0, self.title)
-            tcod.console_set_foreground_color(None, old_fgcolor)            
+            tcod.console_set_foreground_color(self.console, old_fgcolor)
+        tcod.console_blit(self.console, 0, 0, self.width, self.height,
+                          None, self.x, self.y)

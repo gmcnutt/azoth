@@ -154,15 +154,13 @@ class MapViewer(gui.Window):
         start_ms = tcod.sys_elapsed_milli()
         for y in range(self.height):
             my = self.mapy + y
-            scry = self.y + y
             for x in range(self.width):
                 mx = self.mapx + x
-                scrx = self.x + x
                 if not tcod.map_is_in_fov(self.fov_map, x, y):
                     if self.place.get_explored(mx, my):
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                        tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
+                        tcod.console_put_char_ex(self.console, x, y, glyph[0], 
                                                  glyph[2], None)
                 else:
                     self.place.set_explored(mx, my, True)
@@ -172,7 +170,7 @@ class MapViewer(gui.Window):
                     else:
                         terrain = self.place.get_terrain(mx, my)
                         glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
-                    tcod.console_put_char_ex(None, scrx, scry, glyph[0], 
+                    tcod.console_put_char_ex(self.console, x, y, glyph[0], 
                                              glyph[1], None)
         self.render_time = tcod.sys_elapsed_milli() - start_ms
 
