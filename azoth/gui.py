@@ -1,5 +1,6 @@
 import libtcodpy as tcod
 import logging
+import textwrap
 
 class Window(object):
     """ Base class for terminal windows. """
@@ -102,15 +103,25 @@ class Window(object):
         tcod.console_set_foreground_color(self.console, bg)
         tcod.console_set_background_color(self.console, fg)
 
-    def _print(self, row, fmt):
+    def _print(self, row, fmt, color=None, align='left'):
         """ Convenience wrapper for most common print call. """
-        tcod.console_print_left(self.console, self.left_margin, 
-                                self.top_margin + row, tcod.BKGND_NONE, fmt)
+        if color:
+            tcod.console_set_foreground_color(self.console, color)
+        if align == 'left':
+            tcod.console_print_left(self.console, self.left_margin, 
+                                    self.top_margin + row, tcod.BKGND_NONE, fmt)
+        elif align == 'center':
+            tcod.console_print_center(self.console, self.width / 2,
+                                      self.top_margin + row, tcod.BKGND_NONE, 
+                                      fmt)
+
 
 class Menu(Window):
 
-    def __init__(self, options=None, **kwargs):
-        super(Menu, self).__init__(**kwargs)
+    def __init__(self, options=(), max_width=0, max_height=0, **kwargs):
+        width=min(max_width, max([len(option) for option in options]) + 2)
+        height=min(max_height, len(options) + 2)
+        super(Menu, self).__init__(width=width, height=height, **kwargs)
         self.options = options
         self.current_option = 0
         self.top_visible_option = 0
@@ -138,9 +149,29 @@ class Menu(Window):
 
     def on_paint(self):
         for row, option in enumerate(range(self.top_visible_option, 
-                                           self.top_visible_option + self.num_visible_rows)):
+                                           self.top_visible_option + \
+                                               self.num_visible_rows)):
             if option == self.current_option:
                 tcod.console_set_foreground_color(self.console, tcod.yellow)
             else:
                 tcod.console_set_foreground_color(self.console, tcod.gray)
             self._print(row, self.options[option])
+
+
+class PromptDialog(Window):
+
+    def __init__(self, message='', max_width=0, max_height=0, **kwargs):
+        self.lines = textwrap.wrap(message, max_width - 2)
+        if self.lines:
+            width = max([len(line) for line in self.lines]) + 2
+        else:
+            width = max_width
+        height = min(len(self.lines) + 4, max_height)
+        super(PromptDialog, self). __init__(width=width, height=height, 
+                                            **kwargs)
+        print(self.height)
+
+    def on_paint(self):
+        for row, line in enumerate(self.lines):
+            self._print(row, line)
+        self._print(self.height - 3, '(Ok)', color=tcod.cyan, align='center')

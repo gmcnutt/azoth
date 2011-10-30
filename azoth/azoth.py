@@ -11,6 +11,8 @@ import logging
 import os
 import sys
 
+SCREEN_COLUMNS = 80
+SCREEN_ROWS = 40
 MAX_FPS = 40
 DEFAULT_GLYPH = ('?', tcod.black, tcod.white)
 
@@ -321,15 +323,16 @@ class Applet(object):
 
 
 class FileSelector(Applet):
-    def __init__(self, path=None, width=40, height=20):
+    def __init__(self, path=None):
         super(FileSelector, self).__init__()
+        self.selection = None
         files = ['.'] + sorted(os.listdir(path))
-        self.menu = gui.Menu(width=width, height=height,
-                             options=files)
+        self.menu = gui.Menu(options=files, max_width=SCREEN_COLUMNS, 
+                             max_height=SCREEN_ROWS)
 
     def handle_enter(self):
-        option = self.menu.options[self.menu.current_option]
-        print('Selected', option)
+        self.selection = self.menu.options[self.menu.current_option]
+        self.done = True
 
     def on_render(self):
         self.menu.paint()
@@ -349,16 +352,36 @@ class FileSelector(Applet):
             if handler:
                 handler()
 
+    def run(self):
+        super(FileSelector, self).run()
+        return self.selection
+
+
+class Alert(Applet):
+    def __init__(self, message):
+        super(Alert, self).__init__()
+        self.window = gui.PromptDialog(message, max_width=SCREEN_COLUMNS/2,
+                                       max_height=SCREEN_ROWS)
+
+    def on_render(self):
+        self.window.paint()
+
+    def on_keypress(self, key):
+        if key.c == ord('\r'):
+            self.done = True
+
+            
 class MainMenu(Applet):
-    def __init__(self, width=0, height=5):
+    def __init__(self):
         self.options = {
             'Create new world' : self.handle_create,
             'Load saved game': self.handle_load,
             'Quit' : self.quit
             }
         super(MainMenu, self).__init__()
-        self.menu = gui.Menu(width=width, height=height,
-                             options=sorted(self.options.keys()))
+        self.menu = gui.Menu(options=sorted(self.options.keys()), 
+                             max_width=SCREEN_COLUMNS/2, 
+                             max_height=SCREEN_ROWS)
 
     def handle_create(self):
         print('create')
@@ -368,7 +391,15 @@ class MainMenu(Applet):
         self.options[option]()
 
     def handle_load(self):
-        FileSelector(path='.').run()
+        filename = FileSelector(path='.').run()
+        if filename:
+            game = Game()
+            try:
+                game.load(filename)
+            except Exception as e:
+                Alert('%s'%e).run()
+            else:
+                game.run()
 
     def on_render(self):
         self.menu.paint()
@@ -391,19 +422,14 @@ class MainMenu(Applet):
                 handler()
         
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.exit('Usage: %s <file>'%sys.argv[0])
 
     os.unlink('azoth.log')
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
     tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
                                  tcod.FONT_TYPE_GREYSCALE | 
                                  tcod.FONT_LAYOUT_TCOD)
-    tcod.console_init_root(80, 40, "Haxima", False)
+    tcod.console_init_root(SCREEN_COLUMNS, SCREEN_ROWS, "Haxima", False)
     tcod.sys_set_fps(MAX_FPS)
     
-    MainMenu(width=40).run()
+    MainMenu().run()
 
-#    game = Game()
-#    game.load(sys.argv[1])
-#    game.run()
