@@ -4,20 +4,15 @@ import logging
 class Window(object):
     """ Base class for terminal windows. """
 
-    def __init__(self, x=0, y=0, width=0, height=0, 
-                 boxed=False, title=None,
-                 style=None, hide=False):
+    def __init__(self, x=0, y=0, width=0, height=0, title=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
-        self.boxed = boxed
         self.title = title
-        self.top_margin = 0 if not boxed else 1
-        self.left_margin = 0 if not boxed else 1
-        self.style = style or {}
-        self.hide = hide
+        self.top_margin = 1
+        self.left_margin = 1
         self.console = tcod.console_new(width, height)
 
     @property
@@ -92,27 +87,11 @@ class Window(object):
 
     def paint(self):
         """ Paint the window. Subclasses should implement on_paint(). """
-        if self.hide:
-            return
+        tcod.console_set_foreground_color(self.console, tcod.white)
         tcod.console_clear(self.console)
         self.on_paint()
-        if self.boxed:
-            attr = 0
-            color = self.style.get('border-color')
-            if color == 'blue':
-                attr = tcod.blue
-            old_fgcolor = tcod.console_get_foreground_color(None)
-            tcod.console_set_foreground_color(self.console, attr)
-            self.box()
-            tcod.console_set_foreground_color(self.console, old_fgcolor)
-        if self.title:
-            attr = 0
-            color = self.style.get('title-color')
-            if color == 'yellow':
-                attr = tcod.yellow
-            old_fgcolor = tcod.console_get_foreground_color(self.console)
-            tcod.console_set_foreground_color(self.console, attr)
-            self.addstr(1, 0, self.title)
-            tcod.console_set_foreground_color(self.console, old_fgcolor)
+        tcod.console_set_foreground_color(self.console, tcod.light_blue)
+        tcod.console_print_frame(self.console, 0, 0, self.width, self.height,
+                                 False, 0, self.title)
         tcod.console_blit(self.console, 0, 0, self.width, self.height,
                           None, self.x, self.y)

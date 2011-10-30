@@ -36,7 +36,7 @@ class TileViewer(gui.Window):
     """ Describe contents of current tile  """
 
     def __init__(self, **kwargs):
-        super(TileViewer, self).__init__(boxed=True, title='Tile', **kwargs)
+        super(TileViewer, self).__init__(title='Tile', **kwargs)
         self.original_title = self.title
         self.place = None
         self.mapx = 0
@@ -82,7 +82,7 @@ class MessageConsole(gui.Window):
     def on_paint(self):
         """ Write the message. """
         for y, pair in enumerate(self.messages):
-            self.addstr(0, y, pair[0])
+            self.addstr(self.left_margin, self.top_margin + y, pair[0])
 
     def debug(self, message):
         self.messages.append((message, self.debug_color))
@@ -184,10 +184,7 @@ class Term(gui.Window):
         # on the top right next to it. Put the console on the bottom right
         # below that.
         #
-        self.mview = MapViewer(width=self.width / 2, height=self.height - 1, 
-                               boxed=False)
-        tv_width = self.width / 4
-        tv_height = self.height / 2
+        self.mview = MapViewer(width=self.width / 2, height=self.height)
         self.tview = TileViewer(x=self.mview.right,
                                 y=self.top, 
                                 width=self.width - self.mview.width,
@@ -195,8 +192,7 @@ class Term(gui.Window):
         self.console = MessageConsole(x=self.mview.right,
                                       y=self.tview.bottom,
                                       width=self.width - self.mview.width,
-                                      height=self.height - self.tview.height,
-                                      boxed=False)
+                                      height=self.height - self.tview.height)
 
 
 
