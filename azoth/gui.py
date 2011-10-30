@@ -95,3 +95,59 @@ class Window(object):
                                  False, 0, self.title)
         tcod.console_blit(self.console, 0, 0, self.width, self.height,
                           None, self.x, self.y)
+
+    def invert_colors(self):
+        fg = tcod.console_get_foreground_color(self.console)
+        bg = tcod.console_get_background_color(self.console)
+        tcod.console_set_foreground_color(self.console, bg)
+        tcod.console_set_background_color(self.console, fg)
+
+    def _print(self, row, fmt):
+        """ Convenience wrapper for most common print call. """
+        tcod.console_print_left(self.console, self.left_margin, 
+                                self.top_margin + row, tcod.BKGND_NONE, fmt)
+
+class Menu(Window):
+
+    def __init__(self, options=None, **kwargs):
+        super(Menu, self).__init__(**kwargs)
+        self.options = options
+        self.current_option = 0
+        self.top_option = 0
+        self.bottom_option = min(self.height, len(options)) - 1
+        self.middle_option = self.bottom_option / 2
+        print(self.top_option, self.middle_option, self.current_option, self.bottom_option)
+
+    def scroll_up(self):
+        print(self.top_option, self.current_option, self.bottom_option)
+        if self.current_option == 0:
+            return
+        self.current_option -= 1
+        if self.current_option > self.middle_option:
+            return
+        if self.top_option == 0:
+            return
+        self.top_option -= 1
+        self.bottom_option -= 1
+        print(self.top_option, self.current_option, self.bottom_option)
+
+    def scroll_down(self):
+        print(self.top_option, self.current_option, self.bottom_option)
+        if self.current_option == len(self.options) - 1:
+            return
+        self.current_option += 1
+        if self.current_option < self.middle_option:
+            return
+        if self.bottom_option == (min(self.height, len(self.options)) - 1):
+            return
+        self.top_option += 1
+        self.bottom_option += 1
+        print(self.top_option, self.current_option, self.bottom_option)
+
+    def on_paint(self):
+        for row, option in enumerate(range(self.top_option, self.bottom_option + 1)):
+            if option == self.current_option:
+                tcod.console_set_foreground_color(self.console, tcod.yellow)
+            else:
+                tcod.console_set_foreground_color(self.console, tcod.gray)
+            self._print(row, self.options[option][0])

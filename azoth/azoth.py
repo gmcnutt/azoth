@@ -299,7 +299,65 @@ class Game(object):
             #key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
             key = tcod.console_wait_for_keypress(True)
 
+class Applet(object):
 
+    def __init__(self):
+        self.done = False
+
+    def quit(self):
+        self.done = True
+
+    def render(self):
+        tcod.console_clear(None)
+        self.on_render()
+        tcod.console_flush()
+
+    def run(self):
+        self.render()
+        while not self.done:
+            key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
+            self.on_keypress(key)
+            self.render()
+
+class MainMenu(Applet):
+    def __init__(self, width=0, height=5):
+        super(MainMenu, self).__init__()
+        self.menu = gui.Menu(width=width, height=height,
+                             options=(('Create new world', None),
+                                      ('Load saved game', None),
+                                      ('Quit', None)))
+
+    def handle_create(self):
+        print('create')
+
+    def handle_enter(self):
+        option = self.menu.options[self.menu.current]
+        print(option)
+
+    def handle_load(self):
+        print('load')
+
+    def on_render(self):
+        self.menu.paint()
+
+    def on_keypress(self, key):
+        handler = {
+            tcod.KEY_DOWN: self.menu.scroll_down,
+            tcod.KEY_UP: self.menu.scroll_up
+            }.get(key.vk)
+        if handler:
+            handler()
+        elif key.c:
+            print(chr(key.c))
+            handler = {
+                'q': self.quit,
+                'c': self.handle_create,
+                'l': self.handle_load,
+                '\n': self.handle_enter
+                }.get(chr(key.c))
+            if handler:
+                handler()
+        
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit('Usage: %s <file>'%sys.argv[0])
@@ -311,6 +369,9 @@ if __name__ == "__main__":
                                  tcod.FONT_LAYOUT_TCOD)
     tcod.console_init_root(80, 40, "Haxima", False)
     tcod.sys_set_fps(MAX_FPS)
-    game = Game()
-    game.load(sys.argv[1])
-    game.run()
+    
+    MainMenu(width=40).run()
+
+#    game = Game()
+#    game.load(sys.argv[1])
+#    game.run()
