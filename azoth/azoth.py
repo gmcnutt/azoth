@@ -319,23 +319,17 @@ class Applet(object):
             self.on_keypress(key)
             self.render()
 
-class MainMenu(Applet):
-    def __init__(self, width=0, height=5):
-        super(MainMenu, self).__init__()
-        self.menu = gui.Menu(width=width, height=height,
-                             options=(('Create new world', None),
-                                      ('Load saved game', None),
-                                      ('Quit', None)))
 
-    def handle_create(self):
-        print('create')
+class FileSelector(Applet):
+    def __init__(self, path=None, width=40, height=20):
+        super(FileSelector, self).__init__()
+        files = ['.'] + sorted(os.listdir(path))
+        self.menu = gui.Menu(width=width, height=height,
+                             options=files)
 
     def handle_enter(self):
-        option = self.menu.options[self.menu.current]
-        print(option)
-
-    def handle_load(self):
-        print('load')
+        option = self.menu.options[self.menu.current_option]
+        print('Selected', option)
 
     def on_render(self):
         self.menu.paint()
@@ -348,12 +342,50 @@ class MainMenu(Applet):
         if handler:
             handler()
         elif key.c:
-            print(chr(key.c))
+            handler = {
+                'q': self.quit,
+                '\r': self.handle_enter
+                }.get(chr(key.c))
+            if handler:
+                handler()
+
+class MainMenu(Applet):
+    def __init__(self, width=0, height=5):
+        self.options = {
+            'Create new world' : self.handle_create,
+            'Load saved game': self.handle_load,
+            'Quit' : self.quit
+            }
+        super(MainMenu, self).__init__()
+        self.menu = gui.Menu(width=width, height=height,
+                             options=sorted(self.options.keys()))
+
+    def handle_create(self):
+        print('create')
+
+    def handle_enter(self):
+        option = self.menu.options[self.menu.current_option]
+        self.options[option]()
+
+    def handle_load(self):
+        FileSelector(path='.').run()
+
+    def on_render(self):
+        self.menu.paint()
+
+    def on_keypress(self, key):
+        handler = {
+            tcod.KEY_DOWN: self.menu.scroll_down,
+            tcod.KEY_UP: self.menu.scroll_up
+            }.get(key.vk)
+        if handler:
+            handler()
+        elif key.c:
             handler = {
                 'q': self.quit,
                 'c': self.handle_create,
                 'l': self.handle_load,
-                '\n': self.handle_enter
+                '\r': self.handle_enter
                 }.get(chr(key.c))
             if handler:
                 handler()

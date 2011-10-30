@@ -113,41 +113,34 @@ class Menu(Window):
         super(Menu, self).__init__(**kwargs)
         self.options = options
         self.current_option = 0
-        self.top_option = 0
-        self.bottom_option = min(self.height, len(options)) - 1
-        self.middle_option = self.bottom_option / 2
-        print(self.top_option, self.middle_option, self.current_option, self.bottom_option)
+        self.top_visible_option = 0
+        self.num_visible_rows = min(self.height - 2, len(options))
+        self.last_option = len(options) - 1
+        self.current_option = 0
+        self.top_trigger = self.num_visible_rows / 2
+        self.bottom_trigger = self.last_option - self.top_trigger
 
     def scroll_up(self):
-        print(self.top_option, self.current_option, self.bottom_option)
         if self.current_option == 0:
             return
         self.current_option -= 1
-        if self.current_option > self.middle_option:
-            return
-        if self.top_option == 0:
-            return
-        self.top_option -= 1
-        self.bottom_option -= 1
-        print(self.top_option, self.current_option, self.bottom_option)
+        if self.current_option < self.bottom_trigger:
+            if self.top_visible_option > 0:
+                self.top_visible_option -= 1
 
     def scroll_down(self):
-        print(self.top_option, self.current_option, self.bottom_option)
-        if self.current_option == len(self.options) - 1:
+        if self.current_option == self.last_option:
             return
         self.current_option += 1
-        if self.current_option < self.middle_option:
-            return
-        if self.bottom_option == (min(self.height, len(self.options)) - 1):
-            return
-        self.top_option += 1
-        self.bottom_option += 1
-        print(self.top_option, self.current_option, self.bottom_option)
+        if self.current_option <= self.bottom_trigger and \
+                self.current_option > self.top_trigger:
+            self.top_visible_option += 1
 
     def on_paint(self):
-        for row, option in enumerate(range(self.top_option, self.bottom_option + 1)):
+        for row, option in enumerate(range(self.top_visible_option, 
+                                           self.top_visible_option + self.num_visible_rows)):
             if option == self.current_option:
                 tcod.console_set_foreground_color(self.console, tcod.yellow)
             else:
                 tcod.console_set_foreground_color(self.console, tcod.gray)
-            self._print(row, self.options[option][0])
+            self._print(row, self.options[option])
