@@ -106,6 +106,7 @@ class Window(object):
     def _print(self, row, fmt, color=None, align='left'):
         """ Convenience wrapper for most common print call. """
         if color:
+            saved_color = tcod.console_get_foreground_color(self.console)
             tcod.console_set_foreground_color(self.console, color)
         if align == 'left':
             tcod.console_print_left(self.console, self.left_margin, 
@@ -114,7 +115,9 @@ class Window(object):
             tcod.console_print_center(self.console, self.width / 2,
                                       self.top_margin + row, tcod.BKGND_NONE, 
                                       fmt)
-
+        if color:
+            tcod.console_set_foreground_color(self.console, saved_color)
+            
 
 class Menu(Window):
 
@@ -160,18 +163,24 @@ class Menu(Window):
 
 class PromptDialog(Window):
 
-    def __init__(self, message='', max_width=0, max_height=0, **kwargs):
+    prompt = '(Ok)'
+
+    def __init__(self, message=None, max_width=6, max_height=4, **kwargs):
+        if not message:
+            message = ''
+            #raise ValueError('message cannot be None')
         self.lines = textwrap.wrap(message, max_width - 2)
         if self.lines:
-            width = max([len(line) for line in self.lines]) + 2
+            width = max([len(line) for line in self.lines])
+            width = max(width, len(self.prompt)) + 2
         else:
             width = max_width
         height = min(len(self.lines) + 4, max_height)
         super(PromptDialog, self). __init__(width=width, height=height, 
                                             **kwargs)
-        print(self.height)
 
     def on_paint(self):
         for row, line in enumerate(self.lines):
-            self._print(row, line)
-        self._print(self.height - 3, '(Ok)', color=tcod.cyan, align='center')
+            self._print(row, line, align='center')
+        self._print(self.height - 3, self.prompt, color=tcod.cyan, 
+                    align='center')
