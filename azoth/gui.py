@@ -1,19 +1,34 @@
+"""
+gui classes for azoth
+
+Public Domain.
+"""
+
 import libtcodpy as tcod
 import logging
 import textwrap
 
+DEFAULT_MAX_WIDTH = 40
+DEFAULT_MAX_HEIGHT = 20
+
+
 class Window(object):
     """ Base class for terminal windows. """
 
-    def __init__(self, x=0, y=0, width=0, height=0, title=None):
+    def __init__(self, x=0, y=0, width=0, height=0, title=None, boxed=True):
+        if width <= 0:
+            raise ValueError('width must be >= 1')
+        if height <= 0:
+            raise ValueError('height must be >= 1')
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
         self.title = title
-        self.top_margin = 1
-        self.left_margin = 1
+        self.boxed = boxed
+        self.top_margin = 1 if boxed else 0
+        self.left_margin = 1 if boxed else 0
         self.console = tcod.console_new(width, height)
 
     @property
@@ -29,7 +44,6 @@ class Window(object):
     @property
     def right(self):
         """ Screen x-coordinate of right edge. """
-        # XXX: need the -1?
         return self.left + self.width
 
     @property
@@ -62,19 +76,17 @@ class Window(object):
         is not in the window.  """
         tcod.console_print_left(self.console, col, row, tcod.BKGND_NONE, string)
 
-    def box(self):
-        pass
-
-    def resize(self, dw=0, dh=0):
+    def resize(self, delta_width=0, delta_height=0):
         """ Expand (or shrink) the window. """
-        nw = self.width + dw
-        nh = self.height + dh
-        if nw < 2 or nh < 2:
+        new_width = self.width + delta_width
+        new_height = self.height + delta_height
+        if new_width < 2 or new_height < 2:
             return
-        self.width = nw
-        self.height = nh
+        self.width = new_width
+        self.height = new_height
 
     def set_background_color(self, x, y, color):
+        """ Set the background color. """
         tcod.console_set_back(self.console, x, y, color, tcod.BKGND_SET)
 
     def move(self, dx=0, dy=0):
@@ -86,22 +98,24 @@ class Window(object):
         """ Hook for subclasses."""
         pass
 
-    def paint(self):
+    def paint(self, parent_console=None):
         """ Paint the window. Subclasses should implement on_paint(). """
         tcod.console_set_foreground_color(self.console, tcod.white)
         tcod.console_clear(self.console)
         self.on_paint()
         tcod.console_set_foreground_color(self.console, tcod.light_blue)
-        tcod.console_print_frame(self.console, 0, 0, self.width, self.height,
-                                 False, 0, self.title)
+        if self.boxed:
+            tcod.console_print_frame(self.console, 0, 0, self.width, 
+                                     self.height, False, 0, self.title)
         tcod.console_blit(self.console, 0, 0, self.width, self.height,
-                          None, self.x, self.y)
+                          parent_console, self.x, self.y)
 
     def invert_colors(self):
-        fg = tcod.console_get_foreground_color(self.console)
-        bg = tcod.console_get_background_color(self.console)
-        tcod.console_set_foreground_color(self.console, bg)
-        tcod.console_set_background_color(self.console, fg)
+        """ Swap the console background and foreground colors. """
+        fg_color = tcod.console_get_foreground_color(self.console)
+        bg_color = tcod.console_get_background_color(self.console)
+        tcod.console_set_foreground_color(self.console, bg_color)
+        tcod.console_set_background_color(self.console, fg_color)
 
     def _print(self, row, fmt, color=None, align='left'):
         """ Convenience wrapper for most common print call. """
@@ -120,10 +134,11 @@ class Window(object):
             
 
 class Menu(Window):
+    """ Simple menu. """
 
     def __init__(self, options=(), max_width=0, max_height=0, **kwargs):
-        width=min(max_width, max([len(option) for option in options]) + 2)
-        height=min(max_height, len(options) + 2)
+        width = min(max_width, max([len(option) for option in options]) + 2)
+        height = min(max_height, len(options) + 2)
         super(Menu, self).__init__(width=width, height=height, **kwargs)
         self.options = options
         self.current_option = 0
@@ -135,6 +150,7 @@ class Menu(Window):
         self.bottom_trigger = self.last_option - self.top_trigger
 
     def scroll_up(self):
+        """ Scroll selector up. """
         if self.current_option == 0:
             return
         self.current_option -= 1
@@ -143,6 +159,7 @@ class Menu(Window):
                 self.top_visible_option -= 1
 
     def scroll_down(self):
+        """ Scroll selector down. """
         if self.current_option == self.last_option:
             return
         self.current_option += 1
@@ -161,26 +178,52 @@ class Menu(Window):
             self._print(row, self.options[option])
 
 
+class TextArea(Window):
+    """ A box of read-only text. """
+
+    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH, 
+                 max_height=DEFAULT_MAX_HEIGHT, boxed=True, **kwargs):
+        margins = 2 if boxed else 0
+        if max_height < margins:
+            raise ValueError('max_height must be >= %d' % margins)
+        if message is None:
+            message = ''
+        self.lines = textwrap.wrap(message, max_width - margins)
+        if self.lines:
+            inner_width = max([len(line) for line in self.lines])
+            inner_height = min(len(self.lines), max_height - margins)
+            self.lines = self.lines[:inner_height]
+        else:
+            inner_width = 1
+            inner_height = 1
+        super(TextArea, self).__init__(width=inner_width + margins, 
+                                       height=inner_height + margins, 
+                                       boxed=boxed, **kwargs)
+
+    def on_paint(self):
+        """ Paint the text. """
+        for row, line in enumerate(self.lines):
+            self._print(row, line, align='center')
+
+
 class PromptDialog(Window):
+    """ Show a message and a prompt to continue. """
 
     prompt = '(Ok)'
 
-    def __init__(self, message=None, max_width=6, max_height=4, **kwargs):
-        if not message:
-            message = ''
-            #raise ValueError('message cannot be None')
-        self.lines = textwrap.wrap(message, max_width - 2)
-        if self.lines:
-            width = max([len(line) for line in self.lines])
-            width = max(width, len(self.prompt)) + 2
-        else:
-            width = max_width
-        height = min(len(self.lines) + 4, max_height)
-        super(PromptDialog, self). __init__(width=width, height=height, 
+    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH, 
+                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
+        self.text_area = TextArea(message=message, max_width=max_width - 2,
+                                  max_height=max_height-2-2,
+                                  x=1, y=1, boxed=False)
+        inner_width = max(self.text_area.width + 2, len(self.prompt))
+        inner_height = self.text_area.height + 2 + 2
+        super(PromptDialog, self). __init__(width=inner_width, 
+                                            height=inner_height, 
                                             **kwargs)
 
     def on_paint(self):
-        for row, line in enumerate(self.lines):
-            self._print(row, line, align='center')
+        """ Paint the text area then the prompt. """
+        self.text_area.paint(parent_console=self.console)
         self._print(self.height - 3, self.prompt, color=tcod.cyan, 
                     align='center')
