@@ -44,22 +44,27 @@ class Window(object):
     @property
     def right(self):
         """ Screen x-coordinate of right edge. """
-        return self.left + self.width
+        return self.x + self.width
 
     @property
     def bottom(self):
         """ Screen y-coordinate of bottom edge. """
-        return self.top + self.height
+        return self.y + self.height
 
-    @property
-    def rows(self):
-        """ Return iterator over rows. """
-        return range(self.height)
+    # @property
+    # def rows(self):
+    #     """ Return iterator over rows. """
+    #     return range(self.height)
 
-    @property
-    def cols(self):
-        """ Return iterator over columns. """
-        return range(self.width)
+    # @property
+    # def cols(self):
+    #     """ Return iterator over columns. """
+    #     return range(self.width)
+
+    def contains_point(self, x, y):
+        """ Check if window contains x, y (in root console coordinates). """
+        return (x >= self.x and y >= self.y and x < self.right and
+                y < self.bottom)
 
     def addglyph(self, col, row, glyph, fade=False):
         """ Like addch() but uses a tuple for (character, foreground color,
@@ -109,6 +114,23 @@ class Window(object):
                                      self.height, False, 0, self.title)
         tcod.console_blit(self.console, 0, 0, self.width, self.height,
                           parent_console, self.x, self.y)
+
+    def put_char(self, x, y, char, color=None, invert=False):
+        """ Wrapper to put the char at x, y on the console using the optional
+        color. If invert is True then the foreground and background colors are
+        swapped. """
+        if invert:
+            bg_color = tcod.console_get_background_color(self.console)
+            fg_color = color or tcod.console_get_foreground_color(self.console)
+            tcod.console_put_char_ex(self.console, self.left_margin + x, 
+                                     self.top_margin + y, char, bg_color, 
+                                     fg_color)
+        elif color is None:
+            tcod.console_put_char(self.console, self.left_margin + x, 
+                                  self.top_margin + y, char)
+        else:
+            tcod.console_put_char_ex(self.console, self.left_margin + x, 
+                                     self.top_margin + y, char, color, None)
 
     def invert_colors(self):
         """ Swap the console background and foreground colors. """

@@ -99,32 +99,64 @@ class MessageConsole(gui.Window):
     def warn(self, message):
         self.messages.append((message, self.warning_color))
 
-class SectorViewer(gui.Window):
-    def __init__(self, sector):
-        super(SectorViewer, self).__init__(width=sector.width + 4, 
-                                           height=sector.height + 4,
-                                           title='Sector Editor')
-        self.sector = sector
+class TerrainSelector(gui.Window):
 
-    def put_char(self, x, y, char, color=None, invert=False):
-        """ Put the char at x, y on the console. """
-        if invert:
-            bg_color = tcod.console_get_background_color(self.console)
-            fg_color = color or tcod.console_get_foreground_color(self.console)
-            tcod.console_put_char_ex(self.console, self.left_margin + x, 
-                                     self.top_margin + y, char, bg_color, 
-                                     fg_color)
-        elif color is None:
-            tcod.console_put_char(self.console, self.left_margin + x, 
-                                  self.top_margin + y, char)
-        else:
-            tcod.console_put_char_ex(self.console, self.left_margin + x, 
-                                     self.top_margin + y, char, color, None)
+    terrains = [
+        terrain.HeavyForest,
+        terrain.Forest,
+        terrain.Grass,
+        terrain.Trail,
+        terrain.RockWall,
+        terrain.CounterTop,
+        terrain.Water,
+        terrain.Boulder,
+        terrain.CobbleStone,
+        terrain.Bog,
+        terrain.FirePlace,
+        terrain.Window
+        ]
+
+    def __init__(self, **kwargs):
+        title = 'Terrains'
+        self.columns = len(title) + 2
+        self.rows = (len(self.terrains) + self.columns - 1) / self.columns
+        super(TerrainSelector, self).__init__(width=self.columns + 2,
+                                              height=self.rows + 2,
+                                              title=title, **kwargs)
+        self.selected_terrain = None
+
+    def on_mouse_left_click(self, x, y):
+        """ Mouse left-button click over (x, y) in window coordinates. """
+        palette_x = x - 1
+        palette_y = y - 1
+        palette_index = palette_y * self.columns + palette_x
+        if palette_index < len(self.terrains):
+            self.selected_terrain = self.terrains[palette_index]
 
     def on_paint(self):
         # Find mouse position.
         mouse = tcod.mouse_get_status()
-        mouse_x, mouse_y = mouse.cx - 3, mouse.cy - 3
+        mouse_x, mouse_y = mouse.cx - self.x - 1, mouse.cy - self.y - 1
+        for i, terrain in enumerate(self.terrains):
+            y = i / self.columns
+            x = i % self.columns
+            glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+            invert = ((mouse_x == x and mouse_y == y) or 
+                      terrain == self.selected_terrain)
+            self.put_char(x, y, glyph[0], glyph[1], invert=invert)
+
+
+class SectorViewer(gui.Window):
+    def __init__(self, sector, **kwargs):
+        super(SectorViewer, self).__init__(width=sector.width + 4, 
+                                           height=sector.height + 4,
+                                           title='Sector', **kwargs)
+        self.sector = sector
+
+    def on_paint(self):
+        # Find mouse position.
+        mouse = tcod.mouse_get_status()
+        mouse_x, mouse_y = mouse.cx - self.x - 3, mouse.cy - self.y - 3
         # Print numbers on top.
         for x in range(self.sector.width):
             tens = int(x / 10) + ord('0')
@@ -155,6 +187,9 @@ class SectorViewer(gui.Window):
                 self.put_char(x + 2, y + 2, glyph[0], color=glyph[1], 
                               invert=invert)
 
+    def xy_to_map_xy(self, x, y):
+        """ Convert x, y in window coordinates to sector coordinates. """
+        return x - 3, y - 3
 
 class MapViewer(gui.Window):
     """ Show the map. """
@@ -368,6 +403,10 @@ class Applet(object):
 
     def __init__(self):
         self.done = False
+        self.windows = []
+
+    def add_window(self, window):
+        self.windows.append(window)
 
     def quit(self):
         self.done = True
@@ -377,11 +416,24 @@ class Applet(object):
         self.on_render()
         tcod.console_flush()
 
+    def on_mouse_left_click(self, x, y):
+        for window in self.windows:
+            if window.contains_point(x, y):
+                window.on_mouse_left_click(x - window.x, y - window.y)
+                return
+
+    def on_render(self):
+        for window in self.windows:
+            window.paint()
+
     def run(self):
         self.render()
         while not self.done:
             key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
             self.on_keypress(key)
+            mouse = tcod.mouse_get_status()
+            if mouse.lbutton:
+                self.on_mouse_left_click(mouse.cx, mouse.cy)
             self.render()
 
 
@@ -441,13 +493,25 @@ class Editor(Applet):
         super(Editor, self).__init__()
         self.sector = place.Sector(default_terrain=terrain.Grass)
         self.sector_viewer = SectorViewer(sector=self.sector)
+        self.sector_viewer.on_mouse_left_click = self.catch_left_mouse_click
+        self.terrain_selector = TerrainSelector(x=self.sector_viewer.width)
+        self.add_window(self.sector_viewer)
+        self.add_window(self.terrain_selector)
 
-    def on_render(self):
-        self.sector_viewer.paint()
+    def catch_left_mouse_click(self, x, y):
+        """ Intercept the left mouse click intended for the sector viewer. """
+        terrain = self.terrain_selector.selected_terrain
+        if terrain is None:
+            return
+        map_x, map_y = self.sector_viewer.xy_to_map_xy(x, y)
+        if map_x < 0 or map_y < 0:
+            return
+        self.sector.set_terrain(map_x, map_y, terrain)
 
     def on_keypress(self, key):
         if key.c == ord('\r'):
             self.done = True
+
             
 class MainMenu(Applet):
     def __init__(self):
