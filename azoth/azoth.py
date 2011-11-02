@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
+import argparse
 import cPickle
 import colors
 import gui
 import hax2
-from hax2 import being, rules, session, terrain, weapon
+from hax2 import being, place, rules, session, terrain, weapon
 import hax2.plane
 import libtcodpy as tcod
 import logging
@@ -98,6 +99,63 @@ class MessageConsole(gui.Window):
     def warn(self, message):
         self.messages.append((message, self.warning_color))
 
+class SectorViewer(gui.Window):
+    def __init__(self, sector):
+        super(SectorViewer, self).__init__(width=sector.width + 4, 
+                                           height=sector.height + 4,
+                                           title='Sector Editor')
+        self.sector = sector
+
+    def put_char(self, x, y, char, color=None, invert=False):
+        """ Put the char at x, y on the console. """
+        if invert:
+            bg_color = tcod.console_get_background_color(self.console)
+            fg_color = color or tcod.console_get_foreground_color(self.console)
+            tcod.console_put_char_ex(self.console, self.left_margin + x, 
+                                     self.top_margin + y, char, bg_color, 
+                                     fg_color)
+        elif color is None:
+            tcod.console_put_char(self.console, self.left_margin + x, 
+                                  self.top_margin + y, char)
+        else:
+            tcod.console_put_char_ex(self.console, self.left_margin + x, 
+                                     self.top_margin + y, char, color, None)
+
+    def on_paint(self):
+        # Find mouse position.
+        mouse = tcod.mouse_get_status()
+        mouse_x, mouse_y = mouse.cx - 3, mouse.cy - 3
+        # Print numbers on top.
+        for x in range(self.sector.width):
+            tens = int(x / 10) + ord('0')
+            ones = (x % 10) + ord('0')
+            color = tcod.yellow if mouse_x == x else None
+            self.put_char(x + 2, 0, tens, color=color)
+            self.put_char(x + 2, 1, ones, color=color)
+        for y in range(self.sector.height):
+            # Print numbers on side.
+            tens = int(y / 10) + ord('0')
+            ones = (y % 10) + ord('0')
+            color = tcod.yellow if mouse_y == y else None
+            self.put_char(0, y + 2, tens, color=color)
+            self.put_char(1, y + 2, ones, color=color)
+            # Print tile.
+            for x in range(self.sector.width):
+                occ = self.sector.get_occupant(x, y)
+                if occ:
+                    glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
+                else:
+                    items = self.sector.get_items(x, y)
+                    if items:
+                        glyph = GLYPHS.get(items[0], DEFAULT_GLYPH)
+                    else:
+                        terrain = self.sector.get_terrain(x, y)
+                        glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                invert = (y == mouse_y and x == mouse_x)
+                self.put_char(x + 2, y + 2, glyph[0], color=glyph[1], 
+                              invert=invert)
+
+
 class MapViewer(gui.Window):
     """ Show the map. """
 
@@ -126,12 +184,12 @@ class MapViewer(gui.Window):
                              self.y + self.height / 2, RADIUS, LIGHT_WALLS, 
                              FOV_ALGO)
 
-    def focus(self, obj):
+    def focus(self, place, x, y):
         """ Center the viewer on an object.  """
         # XXX: just keep the obj and have paint recompute the rest every time?
-        self.place = obj.place
-        self.mapx = obj.x - self.width / 2
-        self.mapy = obj.y - self.height / 2
+        self.place = place
+        self.mapx = x - self.width / 2
+        self.mapy = y - self.height / 2
         self.title = self.place.name
         self.reset_fov_map()
 
@@ -166,12 +224,16 @@ class MapViewer(gui.Window):
                                                  glyph[2], None)
                 else:
                     self.place.set_explored(mx, my, True)
-                    occ = self.place.get(mx, my)
+                    occ = self.place.get_occupant(mx, my)
                     if occ:
                         glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
                     else:
-                        terrain = self.place.get_terrain(mx, my)
-                        glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                        items = self.place.get_items(mx, my)
+                        if items:
+                            glyph = GLYPHS.get(items[0], DEFAULT_GLYPH)
+                        else:
+                            terrain = self.place.get_terrain(mx, my)
+                            glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
                     tcod.console_put_char_ex(self.console, x, y, glyph[0], 
                                              glyph[1], None)
         self.render_time = tcod.sys_elapsed_milli() - start_ms
@@ -213,7 +275,7 @@ class Game(object):
         loadfile = open(fname)
         self.session = session.load(open(fname))
         loadfile.close()
-        self.term.mview.focus(self.session.player)
+        self.term.mview.focus(*self.session.player.loc)
         self.term.tview.focus(*self.session.player.loc)
         self.term.console.info('Welcome back!')
 
@@ -302,6 +364,7 @@ class Game(object):
             key = tcod.console_wait_for_keypress(True)
 
 class Applet(object):
+    """ A stand-alone UI and keyhandler.  """
 
     def __init__(self):
         self.done = False
@@ -323,7 +386,7 @@ class Applet(object):
 
 
 class FileSelector(Applet):
-    def __init__(self, path=None):
+    def __init__(self, path=None, re_filter=None):
         super(FileSelector, self).__init__()
         self.selection = None
         files = ['.'] + sorted(os.listdir(path))
@@ -358,6 +421,7 @@ class FileSelector(Applet):
 
 
 class Alert(Applet):
+
     def __init__(self, message):
         super(Alert, self).__init__()
         self.window = gui.PromptDialog(message, max_width=SCREEN_COLUMNS/2,
@@ -370,6 +434,20 @@ class Alert(Applet):
         if key.c == ord('\r'):
             self.done = True
 
+
+class Editor(Applet):
+    """ Game editor. """
+    def __init__(self):
+        super(Editor, self).__init__()
+        self.sector = place.Sector(default_terrain=terrain.Grass)
+        self.sector_viewer = SectorViewer(sector=self.sector)
+
+    def on_render(self):
+        self.sector_viewer.paint()
+
+    def on_keypress(self, key):
+        if key.c == ord('\r'):
+            self.done = True
             
 class MainMenu(Applet):
     def __init__(self):
@@ -384,13 +462,16 @@ class MainMenu(Applet):
                              max_height=SCREEN_ROWS)
 
     def handle_create(self):
-        print('create')
+        """ Launch the game editor. """
+        Editor().run()
 
     def handle_enter(self):
+        """ User pressed enter. Run the handler for the current option. """
         option = self.menu.options[self.menu.current_option]
         self.options[option]()
 
     def handle_load(self):
+        """ Load and run a saved game. """
         filename = FileSelector(path='.').run()
         if filename:
             game = Game()
@@ -423,6 +504,11 @@ class MainMenu(Applet):
         
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description='Play or edit hax2 games')
+    parser.add_argument('--start', dest='start', metavar='s', 
+                        help='Saved game to start')
+    args = parser.parse_args()
+
     os.unlink('azoth.log')
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
     tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
@@ -430,6 +516,10 @@ if __name__ == "__main__":
                                  tcod.FONT_LAYOUT_TCOD)
     tcod.console_init_root(SCREEN_COLUMNS, SCREEN_ROWS, "Haxima", False)
     tcod.sys_set_fps(MAX_FPS)
-    
+
+    if args.start:
+        game = Game()
+        game.load(args.start)
+        game.run()
     MainMenu().run()
 
