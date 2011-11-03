@@ -36,9 +36,9 @@ except ImportError:
 	numpy_available = False
 
 if sys.platform.find('linux') != -1:
-    _lib = ctypes.cdll['./libtcod.so']
+    _lib = ctypes.cdll['libtcod.so']
 else:
-    _lib = ctypes.cdll['./libtcod-mingw.dll']
+    _lib = ctypes.cdll['libtcod-mingw.dll']
 
 HEXVERSION = 0x010500
 STRVERSION = "1.5.0"

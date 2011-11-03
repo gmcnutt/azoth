@@ -501,9 +501,14 @@ if __name__ == "__main__":
 
     os.unlink('azoth.log')
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
+
+    # Note: if I don't set a custom font, libtcod will implicitly try to load a
+    # font from a file called terminal.png which it expects to find in the
+    # current directoy.
     tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
                                  tcod.FONT_TYPE_GREYSCALE | 
                                  tcod.FONT_LAYOUT_TCOD)
+
     tcod.console_init_root(SCREEN_COLUMNS, SCREEN_ROWS, "Haxima", False)
     tcod.sys_set_fps(MAX_FPS)
 

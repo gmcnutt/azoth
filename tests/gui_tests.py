@@ -9,6 +9,9 @@ SCREEN_ROWS = 40
 class GuiTest(unittest.TestCase):
 
     def setUp(self):
+        tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
+                                     tcod.FONT_TYPE_GREYSCALE | 
+                                     tcod.FONT_LAYOUT_TCOD)
         tcod.console_init_root(SCREEN_COLUMNS, SCREEN_ROWS, "Test", False)
         self.message = 'In spring of youth it was my lot to haunt of '\
             'the wide world a spot the which I could not love the less '\
