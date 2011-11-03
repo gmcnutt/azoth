@@ -6,6 +6,7 @@ Public Domain.
 
 import libtcodpy as tcod
 import logging
+import os
 import textwrap
 
 DEFAULT_MAX_WIDTH = 40
@@ -158,7 +159,8 @@ class Window(object):
 class Menu(Window):
     """ Simple menu. """
 
-    def __init__(self, options=(), max_width=0, max_height=0, **kwargs):
+    def __init__(self, options=(), max_width=DEFAULT_MAX_WIDTH, 
+                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
         width = min(max_width, max([len(option) for option in options]) + 2)
         height = min(max_height, len(options) + 2)
         super(Menu, self).__init__(width=width, height=height, **kwargs)
@@ -249,3 +251,92 @@ class PromptDialog(Window):
         self.text_area.paint(parent_console=self.console)
         self._print(self.height - 3, self.prompt, color=tcod.cyan, 
                     align='center')
+
+class Applet(object):
+    """ A stand-alone UI and keyhandler.  """
+
+    def __init__(self):
+        self.done = False
+        self.windows = []
+
+    def add_window(self, window):
+        self.windows.append(window)
+
+    def quit(self):
+        self.done = True
+
+    def render(self):
+        tcod.console_clear(None)
+        self.on_render()
+        tcod.console_flush()
+
+    def on_mouse_left_click(self, x, y):
+        for window in self.windows:
+            if window.contains_point(x, y):
+                window.on_mouse_left_click(x - window.x, y - window.y)
+                return
+
+    def on_render(self):
+        for window in self.windows:
+            window.paint()
+
+    def run(self):
+        self.render()
+        while not self.done:
+            key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
+            self.on_keypress(key)
+            mouse = tcod.mouse_get_status()
+            if mouse.lbutton:
+                self.on_mouse_left_click(mouse.cx, mouse.cy)
+            self.render()
+
+
+class FileSelector(Applet):
+
+    def __init__(self, path=None, re_filter=None):
+        super(FileSelector, self).__init__()
+        self.selection = None
+        files = ['.'] + sorted(os.listdir(path))
+        self.menu = Menu(options=files)
+
+    def handle_enter(self):
+        self.selection = self.menu.options[self.menu.current_option]
+        self.done = True
+
+    def on_render(self):
+        self.menu.paint()
+
+    def on_keypress(self, key):
+        handler = {
+            tcod.KEY_DOWN: self.menu.scroll_down,
+            tcod.KEY_UP: self.menu.scroll_up
+            }.get(key.vk)
+        if handler:
+            handler()
+        elif key.c:
+            handler = {
+                'q': self.quit,
+                '\r': self.handle_enter
+                }.get(chr(key.c))
+            if handler:
+                handler()
+
+    def run(self):
+        super(FileSelector, self).run()
+        return self.selection
+
+
+class Alert(Applet):
+
+    def __init__(self, message, **kwargs):
+        super(Alert, self).__init__()
+        self.window = PromptDialog(message, **kwargs)
+
+    def on_render(self):
+        self.window.paint()
+
+    def on_keypress(self, key):
+        if key.c == ord('\r'):
+            self.done = True
+
+

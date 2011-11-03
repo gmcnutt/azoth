@@ -259,16 +259,12 @@ class MapViewer(gui.Window):
                                                  glyph[2], None)
                 else:
                     self.place.set_explored(mx, my, True)
-                    occ = self.place.get_occupant(mx, my)
-                    if occ:
-                        glyph =  GLYPHS.get(type(occ[0]), DEFAULT_GLYPH)
+                    items = self.place.get(mx, my)
+                    if items:
+                        glyph = GLYPHS.get(type(items[0]), DEFAULT_GLYPH)
                     else:
-                        items = self.place.get_items(mx, my)
-                        if items:
-                            glyph = GLYPHS.get(items[0], DEFAULT_GLYPH)
-                        else:
-                            terrain = self.place.get_terrain(mx, my)
-                            glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
+                        terrain = self.place.get_terrain(mx, my)
+                        glyph = GLYPHS.get(terrain, DEFAULT_GLYPH)
                     tcod.console_put_char_ex(self.console, x, y, glyph[0], 
                                              glyph[1], None)
         self.render_time = tcod.sys_elapsed_milli() - start_ms
@@ -398,96 +394,9 @@ class Game(object):
             #key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
             key = tcod.console_wait_for_keypress(True)
 
-class Applet(object):
-    """ A stand-alone UI and keyhandler.  """
 
-    def __init__(self):
-        self.done = False
-        self.windows = []
+class Editor(gui.Applet):
 
-    def add_window(self, window):
-        self.windows.append(window)
-
-    def quit(self):
-        self.done = True
-
-    def render(self):
-        tcod.console_clear(None)
-        self.on_render()
-        tcod.console_flush()
-
-    def on_mouse_left_click(self, x, y):
-        for window in self.windows:
-            if window.contains_point(x, y):
-                window.on_mouse_left_click(x - window.x, y - window.y)
-                return
-
-    def on_render(self):
-        for window in self.windows:
-            window.paint()
-
-    def run(self):
-        self.render()
-        while not self.done:
-            key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
-            self.on_keypress(key)
-            mouse = tcod.mouse_get_status()
-            if mouse.lbutton:
-                self.on_mouse_left_click(mouse.cx, mouse.cy)
-            self.render()
-
-
-class FileSelector(Applet):
-    def __init__(self, path=None, re_filter=None):
-        super(FileSelector, self).__init__()
-        self.selection = None
-        files = ['.'] + sorted(os.listdir(path))
-        self.menu = gui.Menu(options=files, max_width=SCREEN_COLUMNS, 
-                             max_height=SCREEN_ROWS)
-
-    def handle_enter(self):
-        self.selection = self.menu.options[self.menu.current_option]
-        self.done = True
-
-    def on_render(self):
-        self.menu.paint()
-
-    def on_keypress(self, key):
-        handler = {
-            tcod.KEY_DOWN: self.menu.scroll_down,
-            tcod.KEY_UP: self.menu.scroll_up
-            }.get(key.vk)
-        if handler:
-            handler()
-        elif key.c:
-            handler = {
-                'q': self.quit,
-                '\r': self.handle_enter
-                }.get(chr(key.c))
-            if handler:
-                handler()
-
-    def run(self):
-        super(FileSelector, self).run()
-        return self.selection
-
-
-class Alert(Applet):
-
-    def __init__(self, message):
-        super(Alert, self).__init__()
-        self.window = gui.PromptDialog(message, max_width=SCREEN_COLUMNS/2,
-                                       max_height=SCREEN_ROWS)
-
-    def on_render(self):
-        self.window.paint()
-
-    def on_keypress(self, key):
-        if key.c == ord('\r'):
-            self.done = True
-
-
-class Editor(Applet):
     """ Game editor. """
     def __init__(self):
         super(Editor, self).__init__()
@@ -499,7 +408,8 @@ class Editor(Applet):
         self.add_window(self.terrain_selector)
 
     def catch_left_mouse_click(self, x, y):
-        """ Intercept the left mouse click intended for the sector viewer. """
+        """ Intercept the left mouse click intended for the sector viewer and
+        use it to paint selected terrain. """
         terrain = self.terrain_selector.selected_terrain
         if terrain is None:
             return
@@ -508,12 +418,28 @@ class Editor(Applet):
             return
         self.sector.set_terrain(map_x, map_y, terrain)
 
+    def handle_load(self):
+        filename = gui.FileSelector(path='.').run()
+        with open(filename, 'r') as loadfile:
+            self.sector = place.Sector.load(loadfile)
+        self.sector_viewer.sector = self.sector
+
+    def handle_save(self):
+        filename = gui.FileSelector(path='.').run()
+        with open(filename, 'w') as savefile:
+            self.sector.save(savefile)
+
     def on_keypress(self, key):
-        if key.c == ord('\r'):
-            self.done = True
+        handler = {
+            'q': self.quit,
+            's': self.handle_save,
+            'l': self.handle_load
+            }.get(chr(key.c))
+        if handler:
+            handler()
 
             
-class MainMenu(Applet):
+class MainMenu(gui.Applet):
     def __init__(self):
         self.options = {
             'Create new world' : self.handle_create,
@@ -536,7 +462,7 @@ class MainMenu(Applet):
 
     def handle_load(self):
         """ Load and run a saved game. """
-        filename = FileSelector(path='.').run()
+        filename = gui.FileSelector(path='.').run()
         if filename:
             game = Game()
             try:
