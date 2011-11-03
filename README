@@ -1,5 +1,11 @@
 Curses companion for hax2 (https://github.com/gmcnutt/hax2) project.
 
 # first install hax2 (https://github.com/gmcnutt/hax2)
+# install azoth
 $ cd azoth
-$ python azoth.py /var/games/hax2/start.p
+$ sudo cp tcod/lib/libtcod.so /usr/lib/
+$ cd azoth
+$ ./azoth.py
+
+Windows: untested, you probably need to use libtcod-mingw.dll from the tcod
+download instead of libtcod.so.
