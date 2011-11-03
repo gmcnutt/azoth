@@ -505,7 +505,7 @@ if __name__ == "__main__":
     # Note: if I don't set a custom font, libtcod will implicitly try to load a
     # font from a file called terminal.png which it expects to find in the
     # current directoy.
-    tcod.console_set_custom_font('../data/fonts/arial10x10.png', 
+    tcod.console_set_custom_font('../tcod/data/fonts/arial10x10.png', 
                                  tcod.FONT_TYPE_GREYSCALE | 
                                  tcod.FONT_LAYOUT_TCOD)
 
