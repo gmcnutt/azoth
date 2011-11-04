@@ -1,10 +1,10 @@
 try:
     from setuptools import setup
 except ImportError:
-    fomr distutils.core import setup
+    from distutils.core import setup
 
 config = {
-    'description': 'My Project',
+    'description': 'Curses-like hax2 client',
     'author': 'Gordon McNutt',
     'url' : 'URL to get it at',
     'download_url': 'Where to download it.',
@@ -13,7 +13,7 @@ config = {
     'install_requires': ['nose'],
     'packages': ['azoth'],
     'scripts': [],
-    'name': 'projectname'
+    'name': 'azoth'
 }
 
 setup(**config)

@@ -36,7 +36,7 @@ except ImportError:
 	numpy_available = False
 
 if sys.platform.find('linux') != -1:
-    _lib = ctypes.cdll['libtcod.so']
+    _lib = ctypes.cdll['../tcod/lib/libtcod.so']
 else:
     _lib = ctypes.cdll['libtcod-mingw.dll']
 
