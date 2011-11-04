@@ -1,4 +1,4 @@
-import libtcodpy as tcod
+from azoth import libtcodpy as tcod
 import unittest
 from tools import *
 from azoth import gui

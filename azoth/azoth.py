@@ -468,7 +468,7 @@ class MainMenu(gui.Applet):
             try:
                 game.load(filename)
             except Exception as e:
-                Alert('%s'%e).run()
+                gui.Alert('%s'%e).run()
             else:
                 game.run()
 
