@@ -1,5 +1,6 @@
-from nose.tools import *
-from azoth.hax2 import place, terrainmap
+#from nose.tools import *
+from tools import *
+from azoth.hax2 import place, terrain, terrainmap
 import unittest
 import warnings
 
@@ -63,7 +64,33 @@ class Place(unittest.TestCase):
         eq_([], self.place.get(0, 0))
 
     def test_put_offmap(self):
-        assert_raises(IndexError, self.place.put, -1,  0, 'a')
-        assert_raises(IndexError, self.place.put,  0, -1, 'a')
-        assert_raises(IndexError, self.place.put, 10,  0, 'a')
-        assert_raises(IndexError, self.place.put,  0, 10, 'a')
+        assert_raises(place.OffMapError, self.place.put, -1,  0, 'a')
+        assert_raises(place.OffMapError, self.place.put,  0, -1, 'a')
+        assert_raises(place.OffMapError, self.place.put, 10,  0, 'a')
+        assert_raises(place.OffMapError, self.place.put,  0, 10, 'a')
+
+class WorldTest(unittest.TestCase):
+
+    def test_init(self):
+        world = place.World(1, 1, default_terrain=terrain.Grass)
+        sector = world.get_sector(0, 0)
+        ok_(sector is not None)
+        ttt = sector.get_terrain(0, 0)
+        ok_(ttt is not None)
+
+    def test_offmap(self):
+        world = place.World(1, 1, default_terrain=terrain.Grass)
+        raises_(place.OffMapError, world.get_sector, 1, 0)
+        raises_(place.OffMapError, world.get_sector, 0, 1)
+        raises_(place.OffMapError, world.get_sector, -1, 0)
+        raises_(place.OffMapError, world.get_sector, 0, -1)
+
+    def test_set_sector(self):
+        world = place.World(2, 3, default_terrain=terrain.Grass)
+        s1 = place.Sector(default_terrain=terrain.Forest)
+        s2 = place.Sector(default_terrain=terrain.Boulder)
+        world.set_sector(0, 0, s1)
+        eq_(s1, world.get_sector(0, 0))
+        world.set_sector(1, 2, s2)
+        eq_(s2, world.get_sector(1, 2))
+        

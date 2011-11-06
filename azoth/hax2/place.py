@@ -33,13 +33,25 @@ class NotThereError(PlaceError):
         return '{} not in {} at ({}, {})'.format(self.item, self.place,
                                                  self.xloc, self.yloc)
 
+
+class OffMapError(PlaceError):
+    """ Index failed because coordinates not on map.  """
+    def __init__(self, x, y, place):
+        super(OffMapError, self).__init__(place)
+        self.x = x
+        self.y = y
+    def __str__(self):
+        return '({}, {}) not on {} {}'.format(self.x, self.y, type(self.place),
+                                              self.place.name)
+
+
 def check_index(func):
     """ Decorator to wrap a method with a coordinate check. """
-    def fwrap(instance, xloc, yloc, *args):
+    def fwrap(instance, x, y, *args):
         """ Wrapped function. """
-        if not instance.onmap(xloc, yloc):
-            raise IndexError(xloc, yloc)
-        return func(instance, xloc, yloc, *args)
+        if not instance.onmap(x, y):
+            raise OffMapError(x, y, instance)
+        return func(instance, x, y, *args)
     return fwrap
 
 
@@ -92,6 +104,7 @@ class Place(object):
         """ Remove all items from xloc, yloc. """
         del self.items[(xloc, yloc)]
 
+
 class Sector(object):
     """ Fixed-size chunk of map, meant to be stitched together with other
     sectors to form a whole map. """
@@ -111,27 +124,35 @@ class Sector(object):
             self.explored.append(array.array('b', '\0' * self.height))
 
     def get_terrain(self, x, y):
+        """ Return terrain at x, y. """
         return self.terrain_map[x][y]
 
     def set_terrain(self, x, y, terrain):
+        """ Set terrain at x, y. """
         self.terrain_map[x][y] = terrain
 
     def get_items(self, x, y):
+        """ Return a list of items at x, y. """
         return self.items[(x, y)]
 
     def add_item(self, x, y, item):
+        """ Add an item at x, y. """
         self.items[(x, y)].append(item)
 
     def remove_item(self, x, y, item):
+        """ Remove an item at x, y. """
         self.items[(x, y)].remove(item)
 
     def get_occupant(self, x, y):
+        """ Get the occupant at x,y, or None. """
         return self.occupants.get((x, y))
 
     def set_occupant(self, x, y, occupant):
+        """ Set the occupant at x, y. """
         self.occupants[(x, y)] = occupant
 
     def remove_occupant(self, x, y):
+        """ Remove the occupant at x, y. """
         del self.occupants[(x, y)]
 
     def get_explored(self, x, y):
@@ -150,3 +171,38 @@ class Sector(object):
     def load(loadfile):
         """ Load from an open file. """
         return cPickle.load(loadfile)
+
+
+class World(object):
+    """ 
+    A plane of sectors.
+
+    Lazily creates sectors when none specified.
+    """
+    def __init__(self, width, height, name=None, default_terrain=None):
+        self.width = width
+        self.height = height
+        self.name = name
+        self.default_terrain = default_terrain
+        self.sectors = []
+        for x in range(width):
+            self.sectors.append([None,] * height)
+
+    def onmap(self, x, y):
+        """ Return True iff x, y is on the map. """
+        return x >= 0 and y >= 0 and x < self.width and y < self.height
+        
+    @check_index
+    def get_sector(self, x, y):
+        """ Return the sector at x, y. If there is no sector create one.""" 
+        sector = self.sectors[x][y]
+        if sector is None:
+            sector = Sector(name='auto-%d-%d'%(x, y), 
+                            default_terrain=self.default_terrain)
+            self.set_sector(x, y, sector)
+        return sector
+
+    @check_index
+    def set_sector(self, x, y, sector):
+        """ Set the sector at x, y  """
+        self.sectors[x][y] = sector
