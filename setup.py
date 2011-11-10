@@ -10,7 +10,7 @@ config = {
     'download_url': 'Where to download it.',
     'author_email': 'gmcnutt@cableone.net',
     'version': '0.1',
-    'install_requires': ['nose'],
+    'install_requires': ['nose', 'pygame', 'pgu'],
     'packages': ['azoth'],
     'scripts': [],
     'name': 'azoth'

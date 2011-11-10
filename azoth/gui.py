@@ -4,19 +4,27 @@ gui classes for azoth
 Public Domain.
 """
 
-import libtcodpy as tcod
+import colors
 import logging
 import os
+import pygame
 import textwrap
+from pgu import html
 
-DEFAULT_MAX_WIDTH = 40
-DEFAULT_MAX_HEIGHT = 20
+DEFAULT_MAX_WIDTH = 320
+DEFAULT_MAX_HEIGHT = 240
+DEFAULT_FONT_SIZE = 16 # XXX: move to config.py
 
+# XXX: move to config.py
+#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(), 
+#                                DEFAULT_FONT_SIZE)
 
 class Window(object):
     """ Base class for terminal windows. """
+    background_color = colors.black
 
-    def __init__(self, x=0, y=0, width=0, height=0, title=None, boxed=True):
+    # XXX: use pygame.rect for dims
+    def __init__(self, x=0, y=0, width=0, height=0, title=None):
         if width <= 0:
             raise ValueError('width must be >= 1')
         if height <= 0:
@@ -27,10 +35,13 @@ class Window(object):
         self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
         self.title = title
-        self.boxed = boxed
-        self.top_margin = 1 if boxed else 0
-        self.left_margin = 1 if boxed else 0
-        self.console = tcod.console_new(width, height)
+        self.top_margin = 0
+        self.left_margin = 0
+        self.surface = pygame.Surface((width, height)).convert_alpha()
+        self.font = pygame.font.Font(pygame.font.get_default_font(), 
+                                     16) # XXX: config.py
+        # XXX: assumes monospace
+        self.font_width, self.font_height = self.font.size('x')
 
     @property
     def left(self):
@@ -67,20 +78,9 @@ class Window(object):
         return (x >= self.x and y >= self.y and x < self.right and
                 y < self.bottom)
 
-    def addglyph(self, col, row, glyph, fade=False):
-        """ Like addch() but uses a tuple for (character, foreground color,
-        background color). """
-        if fade:
-            tcod.console_put_char_ex(self.console, col, row, 
-                                     glyph[0], glyph[2], None)
-        else:
-            tcod.console_put_char_ex(self.console, col, row, 
-                                     glyph[0], glyph[1], None)
-
-    def addstr(self, col, row, string):
-        """ Safe version of curses.addstr that will catch the exception if row
-        is not in the window.  """
-        tcod.console_print_left(self.console, col, row, tcod.BKGND_NONE, string)
+    def draw_frame(self):
+        """ XXX: Placeholder """
+        pass
 
     def resize(self, delta_width=0, delta_height=0):
         """ Expand (or shrink) the window. """
@@ -91,10 +91,6 @@ class Window(object):
         self.width = new_width
         self.height = new_height
 
-    def set_background_color(self, x, y, color):
-        """ Set the background color. """
-        tcod.console_set_back(self.console, x, y, color, tcod.BKGND_SET)
-
     def move(self, dx=0, dy=0):
         """ Move the window around within the screen. """
         self.x += dx
@@ -104,56 +100,26 @@ class Window(object):
         """ Hook for subclasses."""
         pass
 
-    def paint(self, parent_console=None):
-        """ Paint the window. Subclasses should implement on_paint(). """
-        tcod.console_set_foreground_color(self.console, tcod.white)
-        tcod.console_clear(self.console)
+    def paint(self, to_surface=None):
+        """ Paint the window to the destination surface or the currently set
+        display surface if none is given. Subclasses should implement
+        on_paint()."""
         self.on_paint()
-        tcod.console_set_foreground_color(self.console, tcod.light_blue)
-        if self.boxed:
-            tcod.console_print_frame(self.console, 0, 0, self.width, 
-                                     self.height, False, 0, self.title)
-        tcod.console_blit(self.console, 0, 0, self.width, self.height,
-                          parent_console, self.x, self.y)
+        if to_surface is None:
+            to_surface = pygame.display.get_surface()
+        self.log.debug('paint:{}@({},{})'.format(to_surface, self.x, self.y))
+        to_surface.blit(self.surface, (self.x, self.y))
 
-    def put_char(self, x, y, char, color=None, invert=False):
-        """ Wrapper to put the char at x, y on the console using the optional
-        color. If invert is True then the foreground and background colors are
-        swapped. """
-        if invert:
-            bg_color = tcod.console_get_background_color(self.console)
-            fg_color = color or tcod.console_get_foreground_color(self.console)
-            tcod.console_put_char_ex(self.console, self.left_margin + x, 
-                                     self.top_margin + y, char, bg_color, 
-                                     fg_color)
-        elif color is None:
-            tcod.console_put_char(self.console, self.left_margin + x, 
-                                  self.top_margin + y, char)
-        else:
-            tcod.console_put_char_ex(self.console, self.left_margin + x, 
-                                     self.top_margin + y, char, color, None)
-
-    def invert_colors(self):
-        """ Swap the console background and foreground colors. """
-        fg_color = tcod.console_get_foreground_color(self.console)
-        bg_color = tcod.console_get_background_color(self.console)
-        tcod.console_set_foreground_color(self.console, bg_color)
-        tcod.console_set_background_color(self.console, fg_color)
-
-    def _print(self, row, fmt, color=None, align='left'):
+    def _print(self, row, fmt, color=colors.white, align='left'):
         """ Convenience wrapper for most common print call. """
-        if color:
-            saved_color = tcod.console_get_foreground_color(self.console)
-            tcod.console_set_foreground_color(self.console, color)
+        # NOTE: if I need performance check out the docs on Font.render
+        rendered_text = self.font.render(fmt, True, color)
         if align == 'left':
-            tcod.console_print_left(self.console, self.left_margin, 
-                                    self.top_margin + row, tcod.BKGND_NONE, fmt)
+            x = 0
         elif align == 'center':
-            tcod.console_print_center(self.console, self.width / 2,
-                                      self.top_margin + row, tcod.BKGND_NONE, 
-                                      fmt)
-        if color:
-            tcod.console_set_foreground_color(self.console, saved_color)
+            x = (self.surface.get_width() - rendered_text.get_width()) / 2
+        y = row * self.font.get_linesize()
+        self.surface.blit(rendered_text, (x, y))
             
 
 class Menu(Window):
@@ -196,38 +162,36 @@ class Menu(Window):
                                            self.top_visible_option + \
                                                self.num_visible_rows)):
             if option == self.current_option:
-                tcod.console_set_foreground_color(self.console, tcod.yellow)
+                color = colors.yellow
             else:
-                tcod.console_set_foreground_color(self.console, tcod.gray)
-            self._print(row, self.options[option])
+                color = colors.gray
+            self._print(row, self.options[option], color=color)
 
 
-class TextArea(Window):
-    """ A box of read-only text. """
+class TextLabel(Window):
+    """ A box of read-only text. The text will be wrapped to fill the width. If
+    it exceeds the height it will be truncated. """
 
     def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH, 
-                 max_height=DEFAULT_MAX_HEIGHT, boxed=True, **kwargs):
-        margins = 2 if boxed else 0
-        if max_height < margins:
-            raise ValueError('max_height must be >= %d' % margins)
-        if message is None:
-            message = ''
-        self.lines = textwrap.wrap(message, max_width - margins)
-        if self.lines:
-            inner_width = max([len(line) for line in self.lines])
-            inner_height = min(len(self.lines), max_height - margins)
-            self.lines = self.lines[:inner_height]
-        else:
-            inner_width = 1
-            inner_height = 1
-        super(TextArea, self).__init__(width=inner_width + margins, 
-                                       height=inner_height + margins, 
-                                       boxed=boxed, **kwargs)
+                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
+        super(TextLabel, self).__init__(width=max_width, height=max_height,
+                                       **kwargs)
+        self.width = 0
+        self.height = 0
+        if message is not None:
+            max_columns = max_width / self.font_width
+            if max_columns == 0:
+                return
+            self.lines = textwrap.wrap(message, max_columns)
+            for row, line in enumerate(self.lines):
+                self._print(row, line)
+                line_width, line_height = self.font.size(line)
+                self.width = max(self.width, line_width)
+                self.height += line_height
 
     def on_paint(self):
         """ Paint the text. """
-        for row, line in enumerate(self.lines):
-            self._print(row, line, align='center')
+        pass
 
 
 class PromptDialog(Window):
@@ -235,29 +199,36 @@ class PromptDialog(Window):
 
     prompt = '(Ok)'
 
-    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH, 
+    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH,
                  max_height=DEFAULT_MAX_HEIGHT, **kwargs):
-        self.text_area = TextArea(message=message, max_width=max_width - 2,
-                                  max_height=max_height-2-2,
-                                  x=1, y=1, boxed=False)
-        inner_width = max(self.text_area.width + 2, len(self.prompt))
-        inner_height = self.text_area.height + 2 + 2
-        super(PromptDialog, self). __init__(width=inner_width, 
-                                            height=inner_height, 
+        super(PromptDialog, self). __init__(width=max_width, height=max_height,
                                             **kwargs)
+        self.message_area = TextLabel(message=message, max_width=self.width,
+                                      max_height=self.height, **kwargs)
+        self.prompt_area = TextLabel(message=self.prompt, 
+                                     y=(self.message_area.height + 
+                                        self.font_height),
+                                     max_width=self.width,
+                                     max_height=self.height, **kwargs)
+
 
     def on_paint(self):
         """ Paint the text area then the prompt. """
-        self.text_area.paint(parent_console=self.console)
-        self._print(self.height - 3, self.prompt, color=tcod.cyan, 
-                    align='center')
+        self.message_area.paint(to_surface=self.surface)
+        self.prompt_area.paint(to_surface=self.surface)
+#        self._print(self.height - 3, self.prompt, color=colors.cyan, 
+#                    align='center')
 
 class Applet(object):
     """ A stand-alone UI and keyhandler.  """
 
+    background_color = colors.black
+    fps = 10 # XXX: move to config.py
+
     def __init__(self):
         self.done = False
         self.windows = []
+        self.clock = pygame.time.Clock()
 
     def add_window(self, window):
         self.windows.append(window)
@@ -266,9 +237,9 @@ class Applet(object):
         self.done = True
 
     def render(self):
-        tcod.console_clear(None)
+        pygame.display.get_surface().fill(self.background_color)
         self.on_render()
-        tcod.console_flush()
+        pygame.display.flip()
 
     def on_mouse_left_click(self, x, y):
         for window in self.windows:
@@ -283,12 +254,17 @@ class Applet(object):
     def run(self):
         self.render()
         while not self.done:
-            key = tcod.console_check_for_keypress(tcod.KEY_PRESSED)
-            self.on_keypress(key)
-            mouse = tcod.mouse_get_status()
-            if mouse.lbutton:
-                self.on_mouse_left_click(mouse.cx, mouse.cy)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    print(event)
+                    if event.key == pygame.K_q:
+                        return
+                    else:
+                        self.on_keypress(event)
             self.render()
+            self.clock.tick(self.fps)
 
 
 class FileSelector(Applet):
@@ -306,20 +282,15 @@ class FileSelector(Applet):
     def on_render(self):
         self.menu.paint()
 
-    def on_keypress(self, key):
+    def on_keypress(self, event):
         handler = {
-            tcod.KEY_DOWN: self.menu.scroll_down,
-            tcod.KEY_UP: self.menu.scroll_up
-            }.get(key.vk)
+            pygame.K_DOWN: self.menu.scroll_down,
+            pygame.K_UP: self.menu.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_RETURN: self.handle_enter
+            }.get(event.key)
         if handler:
             handler()
-        elif key.c:
-            handler = {
-                'q': self.quit,
-                '\r': self.handle_enter
-                }.get(chr(key.c))
-            if handler:
-                handler()
 
     def run(self):
         super(FileSelector, self).run()
