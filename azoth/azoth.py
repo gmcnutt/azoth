@@ -56,7 +56,15 @@ if __name__ == "__main__":
     sprite_table = json.loads(open('../data/sprites/sprites.json').read())
     for k, v in sprite_table.items():
         sheet = sheets[v[0]]
-        all_sprites[k] = sprites.Sprite(sheet, *v[1:])
+        frames = v[1]
+        start = v[2]
+        wave = v[3]
+        facings = v[4]
+        if not wave:
+            sprite = sprites.AnimatedSprite(sheet, frames, start, facings=facings)
+        else:
+            sprite = sprites.WaveSprite(sheet, start)
+        all_sprites[k] = sprite
 
     gui.SpriteListViewer(sorted(all_sprites.items())).run()
 

@@ -363,7 +363,7 @@ class SpriteListWindow(Window):
             sprite = self.list[index][1]
             rect.height = sprite.height
             self.surface.blit(self.font.render(name, True, colors.white), rect.topleft)
-            self.surface.blit(sprite.frames[self.frame % len(sprite.frames)], rect.midtop)
+            self.surface.blit(sprite.get_image(self.frame), rect.midtop)
             rect.top += rect.height
             index += 1
         self.frame += 1
