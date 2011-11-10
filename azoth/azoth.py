@@ -6,11 +6,15 @@ import colors
 import gui
 from hax2 import being, place, rules, session, terrain, weapon
 import hax2.plane
+import json
 import logging
 import pygame
 import os
+import sprites
 import sys
+
 from pgu import html
+
 
 if __name__ == "__main__":
 
@@ -24,7 +28,8 @@ if __name__ == "__main__":
 
     pygame.init()
     pygame.display.set_caption('Azoth')
-    screen = pygame.display.set_mode((320, 240), 0)
+    screen = pygame.display.set_mode((640, 480), 0)
+    pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
     # image = pygame.image.load('data/images/u4/shapes.png').convert_alpha()
     # screen.blit(image, (0, 0))
@@ -42,4 +47,24 @@ if __name__ == "__main__":
     # while event.type != pygame.QUIT:
     #     event = pygame.event.wait()
 
-    gui.Alert('Hi!').run()
+    sheets = {}
+    sheet_table = json.loads(open('../data/sprites/sheets.json').read())
+    for k, v in sheet_table.items():
+        sheets[k] = sprites.Sheet(*v)
+
+    all_sprites = {}
+    sprite_table = json.loads(open('../data/sprites/sprites.json').read())
+    for k, v in sprite_table.items():
+        sheet = sheets[v[0]]
+        all_sprites[k] = sprites.Sprite(sheet, *v[1:])
+
+    gui.SpriteListViewer(sorted(all_sprites.items())).run()
+
+    # for k, v in sheets.items():
+    #     print(k)
+    #     screen.fill((0, 0, 0))
+    #     screen.blit(v.surface, (0, 0))
+    #     pygame.display.flip()
+    #     event = pygame.event.wait()
+    #     while event.type != pygame.KEYDOWN:
+    #         event = pygame.event.wait()
