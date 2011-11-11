@@ -3,17 +3,15 @@
 import argparse
 import cPickle
 import colors
+import config
 import gui
-from hax2 import being, place, rules, session, terrain, weapon
-import hax2.plane
 import json
 import logging
 import pygame
 import os
 import sprites
 import sys
-
-from pgu import html
+import terrain
 
 
 if __name__ == "__main__":
@@ -48,12 +46,12 @@ if __name__ == "__main__":
     #     event = pygame.event.wait()
 
     sheets = {}
-    sheet_table = json.loads(open('../data/sprites/sheets.json').read())
+    sheet_table = json.loads(open(config.SHEET_DATA_FILE).read())
     for k, v in sheet_table.items():
         sheets[k] = sprites.Sheet(*v)
 
     all_sprites = {}
-    sprite_table = json.loads(open('../data/sprites/sprites.json').read())
+    sprite_table = json.loads(open(config.SPRITE_DATA_FILE).read())
     for k, v in sprite_table.items():
         sheet = sheets[v[0]]
         frames = v[1]
@@ -61,12 +59,26 @@ if __name__ == "__main__":
         wave = v[3]
         facings = v[4]
         if not wave:
-            sprite = sprites.AnimatedSprite(sheet, frames, start, facings=facings)
+            sprite = sprites.AnimatedSprite(sheet, frames, start, 
+                                            facings=facings)
         else:
             sprite = sprites.WaveSprite(sheet, start)
         all_sprites[k] = sprite
 
-    gui.SpriteListViewer(sorted(all_sprites.items())).run()
+    #gui.SpriteListViewer(sorted(all_sprites.items())).run()
+
+    all_terrains = {}
+    terrain_table = json.loads(open(config.TERRAIN_DATA_FILE).read())
+    for k, v in terrain_table.items():
+        args = v[0:4]
+        if type(args[2]) == list:
+            args[2] = [all_sprites[x] for x in args[2]]
+        else:
+            args[2] = all_sprites[args[2]] # lookup sprite
+        kwargs = v[4] if len(v) > 4 else {}
+        all_terrains[k] = terrain.Terrain(*args, **kwargs)
+
+    gui.TerrainGridViewer(sorted(all_terrains.items())).run()
 
     # for k, v in sheets.items():
     #     print(k)

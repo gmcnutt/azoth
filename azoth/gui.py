@@ -309,6 +309,7 @@ class Alert(Applet):
         if key.c == ord('\r'):
             self.done = True
 
+
 class SpriteListWindow(Window):
 
     def __init__(self, sprite_list, **kwargs):
@@ -368,12 +369,108 @@ class SpriteListWindow(Window):
             index += 1
         self.frame += 1
 
+
 class SpriteListViewer(Applet):
 
     def __init__(self, sprite_list):
         super(SpriteListViewer, self).__init__()
         width, height = pygame.display.get_surface().get_size()
         self.lister = SpriteListWindow(sprite_list, width=width, height=height)
+        self.windows.append(self.lister)
+
+    def on_keypress(self, event):
+        handler = {
+            pygame.K_DOWN: self.lister.scroll_down,
+            pygame.K_UP: self.lister.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_HOME: self.lister.home,
+            pygame.K_END: self.lister.end,
+            pygame.K_PAGEUP: self.lister.pageup,
+            pygame.K_PAGEDOWN: self.lister.pagedown
+            }.get(event.key)
+        if handler:
+            handler()
+
+class TerrainGridWindow(Window):
+
+    def __init__(self, terrain_list, **kwargs):
+        super(TerrainGridWindow, self).__init__(**kwargs)
+        sprite = terrain_list[0][1].sprite
+        self.cell_width = sprite.width
+        self.cell_height = sprite.height
+        self.columns = self.width / self.cell_width
+        print(self.columns)
+        self.rows = (len(terrain_list) + self.columns - 1) / self.columns
+        self.grid = []
+        start_index = 0
+        last_index = start_index + self.columns
+        for row in range(self.rows):
+            self.grid.append(terrain_list[start_index:last_index])
+            start_index = last_index
+            last_index += self.columns
+        self.frame = 0 # sprite frame
+        self.top_index = 0
+        # find max_index by walking backward from end of list
+        self.max_index = self.rows - 1
+        top = self.height
+        while self.max_index > 0 and top > 0:
+            top -= self.cell_height
+            self.max_index -= 1
+        
+        
+    def scroll_up(self):
+        if self.top_index > 0:
+            self.top_index -= 1
+
+    def scroll_down(self):
+        if self.top_index < self.max_index:
+            self.top_index += 1
+
+    def home(self):
+        self.top_index = 0
+
+    def end(self):
+        self.top_index = self.max_index
+
+    def pagedown(self):
+        height = self.height - self.cell_height
+        while height > 0 and self.top_index < self.max_index:
+            height -= self.cell_height
+            self.top_index += 1
+        if height < 0:
+            self.top_index -= 1
+
+    def pageup(self):
+        height = self.height - self.cell_height
+        while height > 0 and self.top_index > 0:
+            height -= self.cell_height
+            self.top_index -= 1
+        if height < 0:
+            self.top_index += 1
+
+    def on_paint(self):
+        self.surface.fill(self.background_color)
+        rect = pygame.Rect(0, 0, self.cell_width, self.cell_height)
+        row = self.top_index
+        while rect.bottom < self.height and row < self.rows:
+            column = 0
+            rect.x = 0
+            while rect.right <= self.width and column < len(self.grid[row]):
+                name, terrain = self.grid[row][column]
+                sprite = terrain.sprite
+                self.surface.blit(sprite.get_image(self.frame), rect.topleft)
+                rect.left += rect.width
+                column += 1
+            rect.bottom += rect.height
+            row += 1
+        self.frame += 1
+
+class TerrainGridViewer(Applet):
+
+    def __init__(self, terrain_list):
+        super(TerrainGridViewer, self).__init__()
+        width, height = pygame.display.get_surface().get_size()
+        self.lister = TerrainGridWindow(terrain_list, width=width, height=height)
         self.windows.append(self.lister)
 
     def on_keypress(self, event):
