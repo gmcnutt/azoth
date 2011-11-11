@@ -72,12 +72,13 @@ if __name__ == "__main__":
     for k, v in terrain_table.items():
         args = v[0:4]
         if type(args[2]) == list:
-            args[2] = [all_sprites[x] for x in args[2]]
+            args[2] = sprites.CompositeSprite([all_sprites[x] for x in args[2]])
         else:
             args[2] = all_sprites[args[2]] # lookup sprite
         kwargs = v[4] if len(v) > 4 else {}
         all_terrains[k] = terrain.Terrain(*args, **kwargs)
 
+    print('{} terrains loaded'.format(len(all_terrains.keys())))
     gui.TerrainGridViewer(sorted(all_terrains.items())).run()
 
     # for k, v in sheets.items():

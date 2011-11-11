@@ -41,6 +41,25 @@ class Sprite(object):
         """ The width in pixels. """
         return self.sheet.width
 
+class CompositeSprite(Sprite):
+    """ A sprite that is composed of multiples sprites layered on top of each
+    other. The first sprite goes on the bottom, the next above that, and so
+    on. The sprites should all be the same size (the first sprite sets the
+    size; they will all be anchored to the top left corner)."""
+
+    def __init__(self, sprites):
+        super(CompositeSprite, self).__init__(sprites[0].sheet)
+        self.sprites = sprites
+        self.surface = pygame.Surface((self.width, self.height))
+        self.surface.convert_alpha()
+
+    def get_image(self, frame):
+        """ Return the layered image for the given animation frame number. """
+        self.surface.fill((0, 0, 0, 0))
+        for sprite in self.sprites:
+            self.surface.blit(sprite.get_image(frame), (0, 0))
+        return self.surface
+        
 
 class AnimatedSprite(Sprite):
     """ The animation for an object. Each sprite refers to a sheet, a starting
@@ -84,3 +103,5 @@ class WaveSprite(Sprite):
         rect = pygame.Rect(0, 0, self.width, self.height)
         rect.y = self.height - (frame % self.height)
         return self.double.subsurface(rect)
+
+        

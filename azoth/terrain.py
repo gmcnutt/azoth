@@ -9,11 +9,7 @@ class Terrain(object):
     def __init__(self, name, pclass, sprite, transparent, light=0, effect=None, flags=()):
         self.name = name
         self.pclass = pclass
-        if type(sprite) == list:
-            # XXX: handle sprite lists (composite sprites)
-            self.sprite = sprite[0]
-        else:
-            self.sprite = sprite
+        self.sprite = sprite
         self.transparent = transparent
         self.light = light
         self.effect = effect
