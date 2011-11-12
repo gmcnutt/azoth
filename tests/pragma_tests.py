@@ -1,5 +1,5 @@
 from nose.tools import *
-from azoth.hax2 import transactor
+from azoth import executor
 from azoth.hax2 import pragma
 import unittest
 

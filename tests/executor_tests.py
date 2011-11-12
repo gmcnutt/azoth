@@ -1,5 +1,6 @@
 from tools import *
-from azoth.hax2 import item, plane, pragma, terrain, terrainmap, transactor, weapon
+from azoth import executor
+from azoth.hax2 import item, plane, pragma, terrain, terrainmap, weapon
 import unittest
 
 class TestException(Exception):
@@ -23,7 +24,7 @@ def assert_not_at(obj, pla, x, y):
 def test_impassable_exc():
     pla = plane.Plane()
     print(pla)
-    exc = transactor.Impassable(pragma.Pragma(), terrain.RockWall, 
+    exc = executor.Impassable(pragma.Pragma(), terrain.RockWall, 
                            'place', 'x', 'y')
     print(exc)
 
@@ -32,21 +33,21 @@ class Passability(unittest.TestCase):
     def setUp(self):
         self.obj = pragma.Pragma()
         self.plane = plane.Plane(terrain=terrain.Grass)
-        self.rules = transactor.Ruleset()
-        self.hax2 = transactor.Transactor(self.rules)
+        self.rules = executor.Ruleset()
+        self.hax2 = executor.Transactor(self.rules)
 
     def test_impassability(self):
         wall = terrain.RockWall
         self.obj.mmode = 'walk'
-        self.rules.set_passability('walk', 'wall', transactor.PASS_NONE)
+        self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
         self.plane.set_terrain(6, 5, wall)
-        assert_raises(transactor.Impassable, self.rules.assert_passable, self.obj, 
+        assert_raises(executor.Impassable, self.rules.assert_passable, self.obj, 
                       self.plane, 6, 5)
 
 class Default(unittest.TestCase):
     def setUp(self):
-        self.rules = transactor.Ruleset()
-        self.hax2 = transactor.Transactor(self.rules)
+        self.rules = executor.Ruleset()
+        self.hax2 = executor.Transactor(self.rules)
         self.tmap = terrainmap.load_from_nazghul_scm('gregors-hut.scm')
         self.obj = pragma.Pragma()
         self.plane = plane.Plane(terrain=terrain.Grass)
@@ -63,7 +64,7 @@ class PutOnMap(Default):
         o2 = pragma.Pragma()
         o2.occupant = True
         self.hax2.put_on_map(o1, self.plane, 0, 0)
-        assert_raises(transactor.Occupied, self.hax2.put_on_map, o2, self.plane, 0, 0)
+        assert_raises(executor.Occupied, self.hax2.put_on_map, o2, self.plane, 0, 0)
         assert_at(o1, self.plane, 0, 0)
         eq_(o2.loc, (None, None, None))
 
@@ -118,10 +119,10 @@ class MoveOnMap(Default):
     def test_impassable_terrain(self):
         wall = terrain.RockWall
         self.obj.mmode = 'walk'
-        self.rules.set_passability('walk', 'wall', transactor.PASS_NONE)
+        self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
         self.plane.set_terrain(6, 5, wall)
         self.hax2.put_on_map(self.obj, self.plane, 5, 5)
-        assert_raises(transactor.Impassable, self.hax2.move_on_map, self.obj, 'east')
+        assert_raises(executor.Impassable, self.hax2.move_on_map, self.obj, 'east')
         assert_at(self.obj, self.plane, 5, 5)
 
     def test_occupant(self):
@@ -131,7 +132,7 @@ class MoveOnMap(Default):
         o2.occupant = True
         self.hax2.put_on_map(o1, self.plane, 0, 0)
         self.hax2.put_on_map(o2, self.plane, 1, 0)
-        assert_raises(transactor.Occupied, self.hax2.move_on_map, o1, 'east')
+        assert_raises(executor.Occupied, self.hax2.move_on_map, o1, 'east')
         assert_at(o1, self.plane, 0, 0)
         assert_at(o2, self.plane, 1, 0)
 
@@ -144,7 +145,7 @@ class MoveOnMap(Default):
         self.hax2.put_on_map(o2, self.plane, 1, 0)
         try:
             self.hax2.move_on_map(o1, 'east')
-        except transactor.Occupied as e:
+        except executor.Occupied as e:
             self.hax2.rotate_on_map(o1, e.obj)
         assert_at(o1, self.plane, 1, 0)
         assert_at(o2, self.plane, 0, 0)
@@ -167,7 +168,7 @@ class MoveFromMapToBag(Default):
         obj2 = pragma.Pragma()
         self.hax2.put_on_map(obj2, self.plane, 0, 0)
         self.hax2.move_from_map_to_bag(self.obj, self.bag)
-        raises_(transactor.WontFitError, self.hax2.move_from_map_to_bag, obj2,
+        raises_(executor.WontFitError, self.hax2.move_from_map_to_bag, obj2,
                 self.bag)
         assert_at(obj2, self.plane, 0, 0)
         ok_(obj2 not in self.bag)
