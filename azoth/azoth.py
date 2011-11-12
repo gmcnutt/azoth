@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import classes
 import cPickle
 import colors
 import config
@@ -79,7 +80,14 @@ if __name__ == "__main__":
         all_terrains[k] = terrain.Terrain(*args, **kwargs)
 
     print('{} terrains loaded'.format(len(all_terrains.keys())))
-    gui.TerrainGridViewer(sorted(all_terrains.items())).run()
+    #gui.TerrainGridViewer(sorted(all_terrains.items())).run()
+
+    all_reagents = {}
+    reagent_table = json.loads(open(config.REAGENT_DATA_FILE).read())
+    for k, v in reagent_table.items():
+        all_reagents[k] = classes.Reagent(v[0], all_sprites[v[1]])
+
+    gui.ObjectListViewer(sorted(all_reagents.items())).run()
 
     # for k, v in sheets.items():
     #     print(k)

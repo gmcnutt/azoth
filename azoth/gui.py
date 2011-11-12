@@ -63,16 +63,6 @@ class Window(object):
         """ Screen y-coordinate of bottom edge. """
         return self.y + self.height
 
-    # @property
-    # def rows(self):
-    #     """ Return iterator over rows. """
-    #     return range(self.height)
-
-    # @property
-    # def cols(self):
-    #     """ Return iterator over columns. """
-    #     return range(self.width)
-
     def contains_point(self, x, y):
         """ Check if window contains x, y (in root console coordinates). """
         return (x >= self.x and y >= self.y and x < self.right and
@@ -363,7 +353,8 @@ class SpriteListWindow(Window):
             name = self.list[index][0]
             sprite = self.list[index][1]
             rect.height = sprite.height
-            self.surface.blit(self.font.render(name, True, colors.white), rect.topleft)
+            self.surface.blit(self.font.render(name, True, colors.white), 
+                              rect.topleft)
             self.surface.blit(sprite.get_image(self.frame), rect.midtop)
             rect.top += rect.height
             index += 1
@@ -376,6 +367,88 @@ class SpriteListViewer(Applet):
         super(SpriteListViewer, self).__init__()
         width, height = pygame.display.get_surface().get_size()
         self.lister = SpriteListWindow(sprite_list, width=width, height=height)
+        self.windows.append(self.lister)
+
+    def on_keypress(self, event):
+        handler = {
+            pygame.K_DOWN: self.lister.scroll_down,
+            pygame.K_UP: self.lister.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_HOME: self.lister.home,
+            pygame.K_END: self.lister.end,
+            pygame.K_PAGEUP: self.lister.pageup,
+            pygame.K_PAGEDOWN: self.lister.pagedown
+            }.get(event.key)
+        if handler:
+            handler()
+
+class ObjectListWindow(Window):
+
+    def __init__(self, _list, **kwargs):
+        super(ObjectListWindow, self).__init__(**kwargs)
+        self.list = _list
+        self.frame = 0
+        self.top_index = 0
+        # find max_index by walking backward from end of list
+        self.max_index = len(self.list) - 1
+        top = self.height
+        while self.max_index > 0 and top > 0:
+            top -= self.list[self.max_index][1].sprite.height
+            self.max_index -= 1
+        
+        
+    def scroll_up(self):
+        if self.top_index > 0:
+            self.top_index -= 1
+
+    def scroll_down(self):
+        if self.top_index < self.max_index:
+            self.top_index += 1
+
+    def home(self):
+        self.top_index = 0
+
+    def end(self):
+        self.top_index = self.max_index
+
+    def pagedown(self):
+        height = self.height - self.list[self.top_index][1].height
+        while height > 0 and self.top_index < self.max_index:
+            height -= self.list[self.top_index][1].height
+            self.top_index += 1
+        if height < 0:
+            self.top_index -= 1
+
+    def pageup(self):
+        height = self.height - self.list[self.top_index][1].height
+        while height > 0 and self.top_index > 0:
+            height -= self.list[self.top_index][1].height
+            self.top_index -= 1
+        if height < 0:
+            self.top_index += 1
+
+    def on_paint(self):
+        self.surface.fill(self.background_color)
+        rect = pygame.Rect(0, 0, self.width, 0)
+        index = self.top_index
+        while rect.bottom < self.height and index < len(self.list):
+            name = self.list[index][0]
+            sprite = self.list[index][1].sprite
+            rect.height = sprite.height
+            self.surface.blit(self.font.render(name, True, colors.white), 
+                              rect.topleft)
+            self.surface.blit(sprite.get_image(self.frame), rect.midtop)
+            rect.top += rect.height
+            index += 1
+        self.frame += 1
+
+
+class ObjectListViewer(Applet):
+
+    def __init__(self, _list):
+        super(ObjectListViewer, self).__init__()
+        width, height = pygame.display.get_surface().get_size()
+        self.lister = ObjectListWindow(_list, width=width, height=height)
         self.windows.append(self.lister)
 
     def on_keypress(self, event):
@@ -470,7 +543,8 @@ class TerrainGridViewer(Applet):
     def __init__(self, terrain_list):
         super(TerrainGridViewer, self).__init__()
         width, height = pygame.display.get_surface().get_size()
-        self.lister = TerrainGridWindow(terrain_list, width=width, height=height)
+        self.lister = TerrainGridWindow(terrain_list, width=width, 
+                                        height=height)
         self.windows.append(self.lister)
 
     def on_keypress(self, event):

@@ -66,8 +66,7 @@ class AnimatedSpriteTest(BaseTest):
 
 class WaveSpriteTest(BaseTest):
     
-    prompt_all = True
-
     def test_water(self):
         sprite = sprites.WaveSprite(self.sheet, 0)
-        self.animate(sprite, rows=3, columns=3)
+        if self.prompt_all:
+            self.animate(sprite, rows=3, columns=3)
