@@ -56,63 +56,11 @@ def check_index(func):
 
 
 class Place(object):
-    """ A place has a map of the terrain in every cell and keeps track of
-    object xloc, ylocations. """
+    """ A place is a fixed-size grid that holds terrain, items and beings. """
 
-    def __init__(self, name=None, terrain=None, items=None):
-        self.name = name
-        self.terrain = terrain
-        self.items = items or collections.defaultdict(list)
-
-    @property
-    def width(self):
-        """ Width of the place in tiles. """
-        return self.terrain.width
-
-    @property
-    def height(self):
-        """ Height of the place in tiles. """
-        return self.terrain.height
-
-    def onmap(self, xloc, yloc):
-        """ Return True iff the xloc, ylocation is on the map. """
-        return xloc >= 0 and yloc >= 0 and xloc < self.width and \
-            yloc < self.height
-
-    @check_index
-    def put(self, xloc, yloc, item):
-        """ Put an item on the place at xloc, yloc. """
-        if item in self.items[(xloc, yloc)]:
-            raise AlreadyThereError(self, xloc, yloc, item)
-        self.items[(xloc, yloc)].append(item)
-
-    @check_index
-    def get(self, xloc, yloc):
-        """ Return the list of items at xloc, yloc. """
-        return list(self.items[(xloc, yloc)])
-
-    @check_index
-    def remove(self, xloc, yloc, item):
-        """ Remove an item from xloc, yloc. """
-        try:
-            self.items[(xloc, yloc)].remove(item)
-        except ValueError:
-            raise NotThereError(self, xloc, yloc, item)
-
-    @check_index
-    def remove_all(self, xloc, yloc):
-        """ Remove all items from xloc, yloc. """
-        del self.items[(xloc, yloc)]
-
-
-class Sector(object):
-    """ Fixed-size chunk of map, meant to be stitched together with other
-    sectors to form a whole map. """
-
-    width = 31
-    height = 31
-
-    def __init__(self, name=None, default_terrain=None):
+    def __init__(self, width, height, name=None, default_terrain=None):
+        self.width = width
+        self.height = height
         self.name = name
         self.terrain_map = []
         for column in range(self.width):
@@ -123,6 +71,13 @@ class Sector(object):
         for x in range(self.width):
             self.explored.append(array.array('b', '\0' * self.height))
 
+    def onmap(self, xloc, yloc):
+        """ Return True iff the x, y is on the map. This is used by the
+        check_index decorator. """
+        return xloc >= 0 and yloc >= 0 and xloc < self.width and \
+            yloc < self.height
+
+    @check_index
     def blit_terrain_map(self, offx, offy, tmap):
         """ Copy a TerrainMap over the sector at top left offset x, y.  """
         dest_y = offy
@@ -137,22 +92,29 @@ class Sector(object):
             dest_y += 1
             src_y += 1
 
+    @check_index
     def get_terrain(self, x, y):
         """ Return terrain at x, y. """
         return self.terrain_map[x][y]
 
+    @check_index
     def set_terrain(self, x, y, terrain):
         """ Set terrain at x, y. """
         self.terrain_map[x][y] = terrain
 
+    @check_index
     def get_items(self, x, y):
         """ Return a list of items at x, y. """
         return self.items[(x, y)]
 
+    @check_index
     def add_item(self, x, y, item):
         """ Add an item at x, y. """
+        if item in self.items[(x, y)]:
+            raise AlreadyThereError(self, x, y, item)
         self.items[(x, y)].append(item)
 
+    @check_index
     def remove_item(self, x, y, item):
         """ Remove an item at x, y. """
         try:
@@ -160,22 +122,37 @@ class Sector(object):
         except ValueError:
             raise NotThereError(self, x, y, item)
 
+    @check_index
     def get_occupant(self, x, y):
         """ Get the occupant at x,y, or None. """
         return self.occupants.get((x, y))
 
+    @check_index
     def set_occupant(self, x, y, occupant):
         """ Set the occupant at x, y. """
         self.occupants[(x, y)] = occupant
 
+    @check_index
     def remove_occupant(self, x, y):
         """ Remove the occupant at x, y. """
-        del self.occupants[(x, y)]
+        try:
+            del self.occupants[(x, y)]
+        except KeyError:
+            raise NotThereError(self, x, y, None)
 
+    @check_index
+    def remove_all(self, x, y):
+        if (x, y) in self.items:
+            del self.items[(x, y)]
+        if (x, y) in self.occupants:
+            del self.occupants[(x, y)]
+
+    @check_index
     def get_explored(self, x, y):
         """ Return if the tile has been seen (for FOW). """
         return self.explored[x][y]
 
+    @check_index
     def set_explored(self, x, y, val):
         """ Set the tile as explored (for FOW). """
         self.explored[x][y] = val
@@ -188,6 +165,16 @@ class Sector(object):
     def load(loadfile):
         """ Load from an open file. """
         return cPickle.load(loadfile)
+
+
+class Sector(Place):
+    """ Fixed-size chunk of map, meant to be stitched together with other
+    sectors to form a whole map. """
+
+    def __init__(self, **kwargs):
+        # XXX: move 31 to config.py
+        super(Sector, self).__init__(width=31, height=31, **kwargs)
+
 
 
 class World(object):
@@ -211,7 +198,8 @@ class World(object):
         
     @check_index
     def get_sector(self, x, y):
-        """ Return the sector at x, y. If there is no sector create one.""" 
+        """ Return the sector at x, y (in sector, not cell, coordinates). If
+        there is no sector create one.""" 
         sector = self.sectors[x][y]
         if sector is None:
             sector = Sector(name='auto-%d-%d'%(x, y), 
@@ -221,5 +209,5 @@ class World(object):
 
     @check_index
     def set_sector(self, x, y, sector):
-        """ Set the sector at x, y  """
+        """ Set the sector at x, y (in sector coordinates). """
         self.sectors[x][y] = sector

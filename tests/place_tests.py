@@ -16,58 +16,60 @@ def test_already_there_error():
 class Place(unittest.TestCase):
 
     def setUp(self):
-        self.place = place.Place(terrain=terrainmap.TerrainMap([['.']]))
+        self.place = place.Place(1, 1)
 
     def test_place(self):
         assert_is_not_none(self.place)
 
     def test_put(self):
-        self.place.put(0, 0, 'a')
-        eq_(['a'], self.place.get(0, 0))
+        self.place.add_item(0, 0, 'a')
+        eq_(['a'], self.place.get_items(0, 0))
 
     def test_get_nothing(self):
-        eq_([], self.place.get(0, 0))
+        eq_([], self.place.get_items(0, 0))
 
     def test_put_2(self):
-        self.place.put(0, 0, 'i1')
-        self.place.put(0, 0, 'i2')
-        eq_(set(['i1', 'i2']), set(self.place.get(0, 0)))
+        self.place.add_item(0, 0, 'i1')
+        self.place.add_item(0, 0, 'i2')
+        eq_(set(['i1', 'i2']), set(self.place.get_items(0, 0)))
 
     def test_double_put_same(self):
         item = 'i1'
-        self.place.put(0, 0, item)
-        assert_raises(place.AlreadyThereError, self.place.put, 0, 0, item)
-        eq_([item], self.place.get(0, 0))
+        self.place.add_item(0, 0, item)
+        assert_raises(place.AlreadyThereError, self.place.add_item, 0, 0, item)
+        eq_([item], self.place.get_items(0, 0))
 
     def test_remove(self):
         self.test_put()
-        self.place.remove(0, 0, 'a')
-        eq_([], self.place.get(0, 0))
+        self.place.remove_item(0, 0, 'a')
+        eq_([], self.place.get_items(0, 0))
 
     def test_remove_not_there(self):
-        assert_raises(place.NotThereError, self.place.remove, 0, 0, 'a')
+        assert_raises(place.NotThereError, self.place.remove_item, 0, 0, 'a')
+        assert_raises(place.NotThereError, self.place.remove_occupant, 0, 0)
 
     def test_remove_2(self):
         self.test_put_2()
-        self.place.remove(0, 0, 'i1')
-        eq_(['i2'], self.place.get(0, 0))
-        self.place.remove(0, 0, 'i2')
-        eq_([], self.place.get(0, 0))
+        self.place.remove_item(0, 0, 'i1')
+        eq_(['i2'], self.place.get_items(0, 0))
+        self.place.remove_item(0, 0, 'i2')
+        eq_([], self.place.get_items(0, 0))
 
     def test_remove_all_of_nothing(self):
-        assert_raises(KeyError, self.place.remove_all, 0, 0)
-        eq_([], self.place.get(0, 0))
+        self.place.remove_all(0, 0)
+        eq_([], self.place.get_items(0, 0))
+        eq_(None, self.place.get_occupant(0, 0))
 
     def test_remove_all_of_2(self):
         self.test_put_2()
         self.place.remove_all(0, 0)
-        eq_([], self.place.get(0, 0))
+        eq_([], self.place.get_items(0, 0))
 
     def test_put_offmap(self):
-        assert_raises(place.OffMapError, self.place.put, -1,  0, 'a')
-        assert_raises(place.OffMapError, self.place.put,  0, -1, 'a')
-        assert_raises(place.OffMapError, self.place.put, 10,  0, 'a')
-        assert_raises(place.OffMapError, self.place.put,  0, 10, 'a')
+        assert_raises(place.OffMapError, self.place.add_item, -1,  0, 'a')
+        assert_raises(place.OffMapError, self.place.add_item,  0, -1, 'a')
+        assert_raises(place.OffMapError, self.place.add_item, 10,  0, 'a')
+        assert_raises(place.OffMapError, self.place.add_item,  0, 10, 'a')
 
 class WorldTest(unittest.TestCase):
 
