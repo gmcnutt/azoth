@@ -1,13 +1,13 @@
 import cPickle
-import transactor
+import executor
 
 class Session(object):
     def __init__(self):
-        self.rules = transactor.Ruleset()
-        self.hax2 = transactor.Transactor(self.rules)
+        self.rules = executor.Ruleset()
+        self.hax2 = executor.Executor(self.rules)
         self.player = None
         self.world = None
-        self.rules.set_passability('walk', 'wall', transactor.PASS_NONE)
+        self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
 
     def dump(self, _file):
         cPickle.dump(self, _file)

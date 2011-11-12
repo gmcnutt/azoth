@@ -123,6 +123,20 @@ class Sector(object):
         for x in range(self.width):
             self.explored.append(array.array('b', '\0' * self.height))
 
+    def blit_terrain_map(self, offx, offy, tmap):
+        """ Copy a TerrainMap over the sector at top left offset x, y.  """
+        dest_y = offy
+        src_y = 0
+        while dest_y < self.height and src_y < tmap.height:
+            dest_x = offx
+            src_x = 0
+            while dest_x < self.width and src_x < tmap.width:
+                self.set_terrain(dest_x, dest_y, tmap.get(src_x, src_y))
+                dest_x += 1
+                src_x += 1
+            dest_y += 1
+            src_y += 1
+
     def get_terrain(self, x, y):
         """ Return terrain at x, y. """
         return self.terrain_map[x][y]

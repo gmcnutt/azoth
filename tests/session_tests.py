@@ -1,5 +1,6 @@
-from nose.tools import *
-from azoth.hax2 import plane, pragma, session, terrain, terrainmap
+from tools import *
+from azoth import session
+from azoth.hax2 import place, pragma, terrain, terrainmap
 import unittest
 
 class SessionTest(unittest.TestCase):
@@ -28,11 +29,12 @@ class SessionTest(unittest.TestCase):
         self.session.player = pragma.Pragma()
         self.session.player.glyph = '@'
         self.session.player.name = 'player'
-        self.session.world = plane.Plane(name='gh', terrain=terrain.Grass)
-        self.session.world.push_terrain_map(0, 0, tmap)
+        self.session.world = place.Sector(name='gh', 
+                                          default_terrain=terrain.Grass)
+        self.session.world.blit_terrain_map(0, 0, tmap)
         self.session.player.mmode = 'walk'
-        self.session.hax2.put_on_map(self.session.player, self.session.world, 
-                                     10, 10)
+        self.session.hax2.put_being_on_map(self.session.player, 
+                                           self.session.world, 10, 10)
         eq_(self.session.player.place, self.session.world)
         self.save()
         self.load()
