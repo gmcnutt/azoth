@@ -70,57 +70,59 @@ class Ruleset(object):
     @staticmethod
     def assert_unoccupied(pla, x, y):
         """ Raises Occupied if the location has an occupant.  """
-        occs = [x for x in pla.get(x, y) if getattr(x, 'occupant', False)]
-        if occs:
-            raise Occupied(occs[0], pla, x, y)
-
-    def assert_put_ok(self, obj, pla, x, y):
-        """ Check passability and occupancy. """
-        if getattr(obj, 'occupant', False):
-            Ruleset.assert_unoccupied(pla, x, y)
-        self.assert_passable(obj, pla, x, y)
+        occupant = pla.get_occupant(x, y)
+        if occupant is not None:
+            raise Occupied(occupant, pla, x, y)
 
     def assert_put_in_bag_ok(self, item, bag):
         if not bag.will_fit(item):
             raise WontFitError(item, bag)
-
-    def assert_rotate_ok(self, obj, pla, x, y):
-        """ Like assert_put_ok but ignore possibility on the assumption that
-        occupants will be rotated around. """
-        self.assert_passable(obj, pla, x, y)
 
     def assert_remove_ok(self, obj):
         """ Checks that removal is not forbidden.  """
         pass
 
 
-class Transactor(object):
+class Executor(object):
     """ Runs transactions, invoking hooks. """
 
     def __init__(self, rules):
         self.rules = rules
 
-    def move_from_map_to_bag(self, item, bag):
+    def move_item_from_map_to_bag(self, item, bag):
         """ Remove item from map, put it in the bag. """
         self.rules.assert_put_in_bag_ok(item, bag)
-        self.remove_from_map(item)
+        self.remove_item_from_map(item)
         bag.put(item)
             
-
-    def put_on_map(self, obj, pla, x, y):
+    def put_item_on_map(self, obj, pla, x, y):
         """ Put object in place at (xloc, yloc). """
-        self.rules.assert_put_ok(obj, pla, x, y)
+        self.rules.assert_passable(obj, pla, x, y)
         loc = (pla, x, y)
-        pla.put(x, y, obj)
+        pla.add_item(x, y, obj)
         obj.loc = loc
 
-    def remove_from_map(self, obj):
+    def put_being_on_map(self, obj, pla, x, y):
+        """ Put object in place at (xloc, yloc). """
+        self.rules.assert_unoccupied(pla, x, y)
+        self.rules.assert_passable(obj, pla, x, y)
+        loc = (pla, x, y)
+        pla.set_occupant(x, y, obj)
+        obj.loc = loc
+
+    def remove_being_from_map(self, obj):
         """ Remove the object from its current place.  """
         self.rules.assert_remove_ok(obj)
-        obj.place.remove(obj.x, obj.y, obj)
+        obj.place.remove_occupant(obj.x, obj.y)
         obj.loc = (None, None, None)
 
-    def move_on_map(self, obj, direction=None):
+    def remove_item_from_map(self, obj):
+        """ Remove the object from its current place.  """
+        self.rules.assert_remove_ok(obj)
+        obj.place.remove_item(obj.x, obj.y, obj)
+        obj.loc = (None, None, None)
+
+    def move_being_on_map(self, obj, direction=None):
         """ Move the object in its current place one space in the given
         direction. If it raises an exception nothing will be changed. """
         dx, dy = {'north'    :( 0, -1),
@@ -135,26 +137,27 @@ class Transactor(object):
         newy = obj.y + dy
         # pre-move checks
         self.rules.assert_remove_ok(obj)
-        self.rules.assert_put_ok(obj, obj.place, newx, newy)
+        self.rules.assert_unoccupied(obj.place, newx, newy)
+        self.rules.assert_passable(obj, obj.place, newx, newy)
         # commit transaction
-        obj.place.remove(obj.x, obj.y, obj)
-        obj.place.put(newx, newy, obj)
+        obj.place.remove_occupant(obj.x, obj.y)
+        obj.place.set_occupant(newx, newy, obj)
         obj.loc = (obj.place, newx, newy)
 
 
-    def rotate_on_map(self, *objs):
+    def rotate_beings_on_map(self, *objs):
         """ Rotate locations. """
         # pre-checks
         for i, cur in enumerate(objs):
             prev = objs[i - 1]
             self.rules.assert_remove_ok(cur)
-            self.rules.assert_rotate_ok(prev, *cur.loc)
+            self.rules.assert_passable(prev, *cur.loc)
         # commit
         lastloc = objs[-1].loc
         for i, cur in enumerate(objs):
             prev = objs[i - 1]
-            cur.place.remove(cur.x, cur.y, cur)
-            cur.place.put(cur.x, cur.y, prev)
+            cur.place.remove_occupant(cur.x, cur.y)
+            cur.place.set_occupant(cur.x, cur.y, prev)
             tmploc = cur.loc
             cur.loc = lastloc
             lastloc = tmploc

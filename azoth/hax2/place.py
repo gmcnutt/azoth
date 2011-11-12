@@ -141,7 +141,10 @@ class Sector(object):
 
     def remove_item(self, x, y, item):
         """ Remove an item at x, y. """
-        self.items[(x, y)].remove(item)
+        try:
+            self.items[(x, y)].remove(item)
+        except ValueError:
+            raise NotThereError(self, x, y, item)
 
     def get_occupant(self, x, y):
         """ Get the occupant at x,y, or None. """
