@@ -12,11 +12,24 @@ def test_already_there_error():
     exc = place.AlreadyThereError('Yonder', 4, 5, 'Sumethin')
     assert_equal('Sumethin already in Yonder at (4, 5)', '%s' % exc)
 
+def test_offmap_error():
+    exc = place.OffMapError(place.Sector(name='Yonder'), 4, 5)
+    assert_equal('(4, 5) not in Sector Yonder', '%s' % exc)
 
 class Place(unittest.TestCase):
 
     def setUp(self):
         self.place = place.Place(1, 1)
+
+    def save(self):
+        sfile = open('place_tests.p', 'w')
+        self.place.save(sfile)
+        sfile.close()
+
+    def load(self):
+        lfile = open('place_tests.p')
+        self.place = place.Place.load(lfile)
+        lfile.close()
 
     def test_place(self):
         assert_is_not_none(self.place)
@@ -70,6 +83,36 @@ class Place(unittest.TestCase):
         assert_raises(place.OffMapError, self.place.add_item,  0, -1, 'a')
         assert_raises(place.OffMapError, self.place.add_item, 10,  0, 'a')
         assert_raises(place.OffMapError, self.place.add_item,  0, 10, 'a')
+
+    def test_blit_terrain_map(self):
+        tmap = terrainmap.load_from_nazghul_scm('../haxima/scm/gregors-hut.scm')
+        self.place.blit_terrain_map(0, 0, tmap)
+
+    def test_set_occupant(self):
+        self.place.set_occupant(0, 0, 'a')
+        eq_('a', self.place.get_occupant(0, 0))
+
+    def test_remove_all_with_occupant(self):
+        self.place.set_occupant(0, 0, 'a')
+        self.place.remove_all(0, 0)
+        eq_(None, self.place.get_occupant(0, 0))
+
+    def test_explored(self):
+        eq_(False, self.place.get_explored(0, 0))
+        self.place.set_explored(0, 0, True)
+        ok_(self.place.get_explored(0, 0))
+        self.place.set_explored(0, 0, False)
+        eq_(False, self.place.get_explored(0, 0))
+
+    def test_save_load(self):
+        self.place.add_item(0, 0, 'a')
+        self.place.set_occupant(0, 0, 'b')
+        self.place.set_explored(0, 0, True)
+        self.save()
+        self.load()
+        eq_(['a'], self.place.get_items(0, 0))
+        eq_('b', self.place.get_occupant(0, 0))
+        ok_(self.place.get_explored(0, 0))
 
 class WorldTest(unittest.TestCase):
 

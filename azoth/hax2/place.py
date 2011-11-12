@@ -36,12 +36,13 @@ class NotThereError(PlaceError):
 
 class OffMapError(PlaceError):
     """ Index failed because coordinates not on map.  """
-    def __init__(self, x, y, place):
+    def __init__(self, place, x, y):
         super(OffMapError, self).__init__(place)
         self.x = x
         self.y = y
     def __str__(self):
-        return '({}, {}) not on {} {}'.format(self.x, self.y, type(self.place),
+        return '({}, {}) not in {} {}'.format(self.x, self.y,
+                                              self.place.__class__.__name__,
                                               self.place.name)
 
 
@@ -50,7 +51,7 @@ def check_index(func):
     def fwrap(instance, x, y, *args):
         """ Wrapped function. """
         if not instance.onmap(x, y):
-            raise OffMapError(x, y, instance)
+            raise OffMapError(instance, x, y)
         return func(instance, x, y, *args)
     return fwrap
 
@@ -142,6 +143,7 @@ class Place(object):
 
     @check_index
     def remove_all(self, x, y):
+        """ Remove all items and any occupant at x, y. """
         if (x, y) in self.items:
             del self.items[(x, y)]
         if (x, y) in self.occupants:
