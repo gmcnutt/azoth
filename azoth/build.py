@@ -2,12 +2,13 @@
 
 import cPickle
 import session
+import place
 import sys
 
 sys.path.append('../')
 
 import hax2
-from hax2 import being, place, pragma, rules, terrain, terrainmap, \
+from hax2 import being, pragma, rules, terrain, terrainmap, \
     weapon
 
 sesh = session.Session()

@@ -1,6 +1,6 @@
 from tools import *
-from azoth import executor
-from azoth.hax2 import item, place, pragma, terrain, terrainmap, weapon
+from azoth import executor, place
+from azoth.hax2 import item, pragma, terrain, terrainmap, weapon
 import unittest
 
 class TestException(Exception):

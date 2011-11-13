@@ -1,6 +1,7 @@
 #from nose.tools import *
 from tools import *
-from azoth.hax2 import place, terrain, terrainmap
+from azoth import place
+from azoth.hax2 import terrain, terrainmap
 import unittest
 import warnings
 
