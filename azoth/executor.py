@@ -122,17 +122,9 @@ class Executor(object):
         obj.place.remove_item(obj.x, obj.y, obj)
         obj.loc = (None, None, None)
 
-    def move_being_on_map(self, obj, direction=None):
+    def move_being_on_map(self, obj, dx, dy):
         """ Move the object in its current place one space in the given
         direction. If it raises an exception nothing will be changed. """
-        dx, dy = {'north'    :( 0, -1),
-                  'northeast':( 1, -1),
-                  'east'     :( 1,  0),
-                  'southeast':( 1,  1),
-                  'south'    :( 0,  1),
-                  'southwest':(-1,  1),
-                  'west'     :(-1,  0),
-                  'northwest':(-1, -1)}[direction]
         newx = obj.x + dx
         newy = obj.y + dy
         # pre-move checks

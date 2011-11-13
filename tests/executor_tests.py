@@ -33,6 +33,17 @@ def test_impassable_exc():
                            'place', 'x', 'y')
     print(exc)
 
+DIRMAP = {'north'    :( 0, -1),
+          'northeast':( 1, -1),
+          'east'     :( 1,  0),
+          'southeast':( 1,  1),
+          'south'    :( 0,  1),
+          'southwest':(-1,  1),
+          'west'     :(-1,  0),
+          'northwest':(-1, -1)}
+    
+
+
 class Passability(unittest.TestCase):
 
     def setUp(self):
@@ -100,7 +111,7 @@ class MoveOnMap(Default):
 
     def check_move(self, direction, dx, dy, newx, newy):
         loc = self.obj.loc
-        self.hax2.move_being_on_map(self.obj, direction=direction)
+        self.hax2.move_being_on_map(self.obj, *DIRMAP[direction])
         assert_being_at(self.obj, self.place, newx, newy)
         assert_not_at(self.obj, self.place, loc[1], loc[2])
 
@@ -115,12 +126,6 @@ class MoveOnMap(Default):
         self.check_move('southwest',-1, 1, 1, 1)
         self.check_move('northwest',-1,-1, 0, 0)
         
-    def test_move_invalid_direction(self):
-        self.hax2.put_being_on_map(self.obj, self.place, 0, 0)
-        loc = self.obj.loc
-        assert_raises(KeyError, self.hax2.move_being_on_map, self.obj, 'yonder')
-        assert_being_at(self.obj, *loc)
-
     def test_impassable_terrain(self):
         wall = terrain.RockWall
         self.obj.mmode = 'walk'
@@ -128,7 +133,7 @@ class MoveOnMap(Default):
         self.place.set_terrain(6, 5, wall)
         self.hax2.put_being_on_map(self.obj, self.place, 5, 5)
         assert_raises(executor.Impassable, self.hax2.move_being_on_map, 
-                      self.obj, 'east')
+                      self.obj, *DIRMAP['east'])
         assert_being_at(self.obj, self.place, 5, 5)
 
     def test_occupant(self):
@@ -137,7 +142,7 @@ class MoveOnMap(Default):
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         assert_raises(executor.Occupied, self.hax2.move_being_on_map, o1,
-                      'east')
+                      *DIRMAP['east'])
         assert_being_at(o1, self.place, 0, 0)
         assert_being_at(o2, self.place, 1, 0)
 
@@ -147,7 +152,7 @@ class MoveOnMap(Default):
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         try:
-            self.hax2.move_being_on_map(o1, 'east')
+            self.hax2.move_being_on_map(o1, *DIRMAP['east'])
         except executor.Occupied as e:
             self.hax2.rotate_beings_on_map(o1, e.obj)
         assert_being_at(o1, self.place, 1, 0)
