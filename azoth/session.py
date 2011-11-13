@@ -12,6 +12,5 @@ class Session(object):
     def dump(self, _file):
         cPickle.dump(self, _file)
 
-
 def load(_file):
     return cPickle.load(_file)

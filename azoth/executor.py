@@ -82,6 +82,14 @@ class Ruleset(object):
         """ Checks that removal is not forbidden.  """
         pass
 
+    def on_put_occupant(self, obj):
+        """ Apply any effects that are triggered by putting an occupant on the
+        map. For example, terrain effects are applied here.  """        
+        terrain = obj.place.get_terrain(obj.x, obj.y)
+        # XXX: get rid of hasattr
+        if hasattr(terrain, 'effect') and terrain.effect is not None:
+            terrain.effect(obj)
+
 
 class Executor(object):
     """ Runs transactions, invoking hooks. """
@@ -104,11 +112,15 @@ class Executor(object):
 
     def put_being_on_map(self, obj, pla, x, y):
         """ Put object in place at (xloc, yloc). """
+        # checks
         self.rules.assert_unoccupied(pla, x, y)
         self.rules.assert_passable(obj, pla, x, y)
+        # commit
         loc = (pla, x, y)
         pla.set_occupant(x, y, obj)
         obj.loc = loc
+        # hooks
+        self.rules.on_put_occupant(obj)
 
     def remove_being_from_map(self, obj):
         """ Remove the object from its current place.  """
@@ -127,19 +139,20 @@ class Executor(object):
         direction. If it raises an exception nothing will be changed. """
         newx = obj.x + dx
         newy = obj.y + dy
-        # pre-move checks
+        # checks
         self.rules.assert_remove_ok(obj)
         self.rules.assert_unoccupied(obj.place, newx, newy)
         self.rules.assert_passable(obj, obj.place, newx, newy)
-        # commit transaction
+        # commit
         obj.place.remove_occupant(obj.x, obj.y)
         obj.place.set_occupant(newx, newy, obj)
         obj.loc = (obj.place, newx, newy)
-
-
+        # hooks
+        self.rules.on_put_occupant(obj)
+        
     def rotate_beings_on_map(self, *objs):
         """ Rotate locations. """
-        # pre-checks
+        # checks
         for i, cur in enumerate(objs):
             prev = objs[i - 1]
             self.rules.assert_remove_ok(cur)
@@ -153,4 +166,6 @@ class Executor(object):
             tmploc = cur.loc
             cur.loc = lastloc
             lastloc = tmploc
-
+        # hooks
+        for obj in objs:
+            self.rules.on_put_occupant(obj)

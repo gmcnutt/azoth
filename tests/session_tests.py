@@ -38,3 +38,4 @@ class SessionTest(unittest.TestCase):
         eq_(self.session.player.place, self.session.world)
         self.save()
         self.load()
+
