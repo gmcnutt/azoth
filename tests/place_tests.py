@@ -115,6 +115,7 @@ class Place(unittest.TestCase):
         eq_('b', self.place.get_occupant(0, 0))
         ok_(self.place.get_explored(0, 0))
 
+
 class WorldTest(unittest.TestCase):
 
     def test_init(self):

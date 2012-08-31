@@ -1,7 +1,5 @@
 """
 gui classes for azoth
-
-Public Domain.
 """
 
 import colors
@@ -15,8 +13,7 @@ DEFAULT_MAX_HEIGHT = 240
 DEFAULT_FONT_SIZE = 16 # XXX: move to config.py
 
 # XXX: move to config.py
-#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(), 
-#                                DEFAULT_FONT_SIZE)
+#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(), DEFAULT_FONT_SIZE)
 
 class Window(object):
     """ Base class for terminal windows. """
@@ -208,7 +205,7 @@ class PromptDialog(Window):
 #        self._print(self.height - 3, self.prompt, color=colors.cyan, 
 #                    align='center')
 
-class Applet(object):
+class Viewer(object):
     """ A stand-alone UI and keyhandler.  """
 
     background_color = colors.black
@@ -255,7 +252,7 @@ class Applet(object):
             self.clock.tick(self.fps)
 
 
-class FileSelector(Applet):
+class FileSelector(Viewer):
 
     def __init__(self, path=None, re_filter=None):
         super(FileSelector, self).__init__()
@@ -285,7 +282,7 @@ class FileSelector(Applet):
         return self.selection
 
 
-class Alert(Applet):
+class Alert(Viewer):
 
     def __init__(self, message, **kwargs):
         super(Alert, self).__init__()
@@ -360,7 +357,7 @@ class SpriteListWindow(Window):
         self.frame += 1
 
 
-class SpriteListViewer(Applet):
+class SpriteListViewer(Viewer):
 
     def __init__(self, sprite_list):
         super(SpriteListViewer, self).__init__()
@@ -442,7 +439,7 @@ class ObjectListWindow(Window):
         self.frame += 1
 
 
-class ObjectListViewer(Applet):
+class ObjectListViewer(Viewer):
 
     def __init__(self, _list):
         super(ObjectListViewer, self).__init__()
@@ -464,6 +461,7 @@ class ObjectListViewer(Applet):
             handler()
 
 class TerrainGridWindow(Window):
+    """ Displays a list of terrains as a grid. """
 
     def __init__(self, terrain_list, **kwargs):
         super(TerrainGridWindow, self).__init__(**kwargs)
@@ -471,7 +469,6 @@ class TerrainGridWindow(Window):
         self.cell_width = sprite.width
         self.cell_height = sprite.height
         self.columns = self.width / self.cell_width
-        print(self.columns)
         self.rows = (len(terrain_list) + self.columns - 1) / self.columns
         self.grid = []
         start_index = 0
@@ -488,7 +485,6 @@ class TerrainGridWindow(Window):
         while self.max_index > 0 and top > 0:
             top -= self.cell_height
             self.max_index -= 1
-        
         
     def scroll_up(self):
         if self.top_index > 0:
@@ -537,7 +533,9 @@ class TerrainGridWindow(Window):
             row += 1
         self.frame += 1
 
-class TerrainGridViewer(Applet):
+
+class TerrainGridViewer(Viewer):
+    """ Scrolling viewer for a list of terrains. """
 
     def __init__(self, terrain_list):
         super(TerrainGridViewer, self).__init__()
@@ -558,3 +556,39 @@ class TerrainGridViewer(Applet):
             }.get(event.key)
         if handler:
             handler()
+
+class PlaceWindow(Window):
+    
+    def __init__(self, place, **kwargs):
+        super(PlaceWindow, self).__init__(**kwargs)
+        self.place = place
+        self.animation_frame = 0
+        sprite = self.place.get_terrain(0, 0).sprite
+        self.cell_width = sprite.width
+        self.cell_height = sprite.height
+        self.columns = int(self.width / self.cell_width)
+        self.rows = int(self.height / self.cell_height)
+        self.view = pygame.Rect(0, 0, self.columns, self.rows)
+
+    def on_paint(self):
+        self.surface.fill(self.background_color)
+        tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
+        for map_x in xrange(self.view.left, self.view.right):
+            tile.left = 0
+            for map_y in xrange(self.view.top, self.view.bottom):
+                terrain = self.place.get_terrain(map_x, map_y)
+                sprite = terrain.sprite
+                self.surface.blit(sprite.get_image(self.animation_frame), tile.topleft)
+                tile.left += tile.width
+            tile.top += tile.height
+        self.animation_frame += 1
+        
+
+class PlaceViewer(Viewer):
+
+    def __init__(self, place):
+        super(PlaceViewer, self).__init__()
+        self.place = place
+        width, height = pygame.display.get_surface().get_size()
+        self.view = PlaceWindow(place, width=width, height=height)
+        self.windows.append(self.view)

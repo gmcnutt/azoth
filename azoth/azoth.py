@@ -6,10 +6,12 @@ import cPickle
 import colors
 import config
 import gui
+import hax2.terrain
 import json
 import logging
 import pygame
 import os
+import session
 import sprites
 import sys
 import terrain
@@ -17,10 +19,9 @@ import terrain
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Play or edit hax2 games')
-    parser.add_argument('--start', dest='start', metavar='s', 
-                        help='Saved game to start')
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Play Azoth')
+    parser.add_argument('--start', dest='start', metavar='s', help='Saved game')
+    cmdargs = parser.parse_args()
 
     try:
         os.unlink('azoth.log')
@@ -32,22 +33,6 @@ if __name__ == "__main__":
     pygame.display.set_caption('Azoth')
     screen = pygame.display.set_mode((640, 480), 0)
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
-
-    # image = pygame.image.load('data/images/u4/shapes.png').convert_alpha()
-    # screen.blit(image, (0, 0))
-    # pygame.display.flip()
-
-    # font = pygame.font.Font(pygame.font.get_default_font(), 16)
-
-    # rect = pygame.Rect(0, 0, 320, 240)
-    # #html.write(screen, font, rect, 'hi', color=colors.white)
-    # textsurf = html.rendertrim(font, rect, 'hi', 0, color=colors.white)
-    # screen.blit(textsurf, (0, 0))
-    # pygame.display.flip()
-
-    # event = pygame.event.wait()
-    # while event.type != pygame.QUIT:
-    #     event = pygame.event.wait()
 
     sheets = {}
     sheet_table = json.loads(open(config.SHEET_DATA_FILE).read())
@@ -63,8 +48,7 @@ if __name__ == "__main__":
         wave = v[3]
         facings = v[4]
         if not wave:
-            sprite = sprites.AnimatedSprite(sheet, frames, start, 
-                                            facings=facings)
+            sprite = sprites.AnimatedSprite(sheet, frames, start, facings=facings)
         else:
             sprite = sprites.WaveSprite(sheet, start)
         all_sprites[k] = sprite
@@ -90,13 +74,19 @@ if __name__ == "__main__":
     for k, v in reagent_table.items():
         all_reagents[k] = classes.Reagent(v[0], all_sprites[v[1]])
 
-    gui.ObjectListViewer(sorted(all_reagents.items())).run()
+    #gui.ObjectListViewer(sorted(all_reagents.items())).run()
 
-    # for k, v in sheets.items():
-    #     print(k)
-    #     screen.fill((0, 0, 0))
-    #     screen.blit(v.surface, (0, 0))
-    #     pygame.display.flip()
-    #     event = pygame.event.wait()
-    #     while event.type != pygame.KEYDOWN:
-    #         event = pygame.event.wait()
+    hax2.terrain.HeavyForest.sprite = all_sprites['forest']
+    hax2.terrain.Forest.sprite = all_sprites['trees']
+    hax2.terrain.Grass.sprite = all_sprites['grass']
+    hax2.terrain.Trail.sprite = all_sprites['trail_0']
+    hax2.terrain.RockWall.sprite = all_sprites['wall_stone']
+    hax2.terrain.CobbleStone.sprite = all_sprites['cobblestone']
+    hax2.terrain.Window.sprite = all_sprites['window_in_stone']
+    hax2.terrain.CounterTop.sprite = all_sprites['counter_1x1']
+
+    session = session.load(open(cmdargs.start))
+    sector = session.world
+    place_view = gui.PlaceViewer(sector)
+    place_view.run()
+
