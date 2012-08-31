@@ -9,7 +9,6 @@ import logging
 import os
 import pygame
 import textwrap
-from pgu import html
 
 DEFAULT_MAX_WIDTH = 320
 DEFAULT_MAX_HEIGHT = 240

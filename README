@@ -1,8 +1,5 @@
-Curses companion for hax2 (https://github.com/gmcnutt/hax2) project.
 
-# first install hax2 (https://github.com/gmcnutt/hax2)
-# install azoth
+sudo apt-get install python-pygame
+
 $ cd azoth/azoth
 $ ./azoth.py
-
-Windows: untested

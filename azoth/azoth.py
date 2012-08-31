@@ -22,7 +22,10 @@ if __name__ == "__main__":
                         help='Saved game to start')
     args = parser.parse_args()
 
-    os.unlink('azoth.log')
+    try:
+        os.unlink('azoth.log')
+    except OSError:
+        pass
     logging.basicConfig(filename='azoth.log',level=logging.DEBUG)
 
     pygame.init()
