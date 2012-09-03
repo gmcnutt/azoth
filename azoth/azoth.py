@@ -10,6 +10,7 @@ import inspect
 import json
 import logging
 import pygame
+import reagents
 import os
 import session
 import sprites
@@ -76,14 +77,16 @@ if __name__ == "__main__":
         if inspect.isclass(obj):
             if hasattr(obj, 'sprite'):
                 all_terrains[obj.name] = obj
-    gui.TerrainGridViewer(sorted(all_terrains.items())).run()
+    #gui.TerrainGridViewer(sorted(all_terrains.items())).run()
 
+    # Initialize reagents.
     all_reagents = {}
-    reagent_table = json.loads(open(config.REAGENT_DATA_FILE).read())
-    for k, v in reagent_table.items():
-        all_reagents[k] = classes.Reagent(v[0], all_sprites[v[1]])
-
-#    gui.ObjectListViewer(sorted(all_reagents.items())).run()
+    for name, obj in inspect.getmembers(reagents):
+        if (inspect.isclass(obj) and issubclass(obj, reagents.AzothObject) 
+            and (obj != reagents.AzothObject)):
+            obj.sprite = all_sprites[obj.__name__]
+            all_reagents[obj.name] = obj
+    gui.ObjectListViewer(sorted(all_reagents.items())).run()
 
     # Load the session.
     session = session.load(open(cmdargs.start))
