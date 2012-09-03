@@ -579,10 +579,17 @@ class PlaceWindow(Window):
         for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
             for map_x in xrange(self.view.left, self.view.right):
+                # terrain
                 terrain = self.place.get_terrain(map_x, map_y)
                 sprite = terrain.sprite
                 self.surface.blit(sprite.get_image(self.animation_frame),
                                   tile.topleft)
+                # occupants
+                occupant = self.place.get_occupant(map_x, map_y)
+                if occupant:
+                    sprite = occupant.sprite
+                    self.surface.blit(sprite.get_image(self.animation_frame),
+                                      tile.topleft)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1

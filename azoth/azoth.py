@@ -6,6 +6,7 @@ import cPickle
 import colors
 import config
 import gui
+import human
 import inspect
 import json
 import logging
@@ -72,21 +73,7 @@ if __name__ == "__main__":
     terrain.Bog.sprite = all_sprites['bog']
     terrain.Water.sprite = all_sprites['shoals']
 
-    # Show them in a window for dev.
-    for name, obj in inspect.getmembers(terrain):
-        if inspect.isclass(obj):
-            if hasattr(obj, 'sprite'):
-                all_terrains[obj.name] = obj
-    #gui.TerrainGridViewer(sorted(all_terrains.items())).run()
-
-    # Initialize reagents.
-    all_reagents = {}
-    for name, obj in inspect.getmembers(reagents):
-        if (inspect.isclass(obj) and issubclass(obj, reagents.AzothObject) 
-            and (obj != reagents.AzothObject)):
-            obj.sprite = all_sprites[obj.__name__]
-            all_reagents[obj.name] = obj
-    gui.ObjectListViewer(sorted(all_reagents.items())).run()
+    human.Human.sprite = all_sprites['townsman']
 
     # Load the session.
     session = session.load(open(cmdargs.start))
