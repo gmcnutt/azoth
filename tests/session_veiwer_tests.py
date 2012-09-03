@@ -1,6 +1,7 @@
 import unittest
 from tools import *
-from azoth import executor, gui, human, place, session, sprites, terrain, terrainmap
+from azoth import executor, gui, human, place, session, sprite, terrain, \
+    terrainmap
 import pygame
 
 scm_path = "../haxima/scm/"
@@ -11,11 +12,11 @@ class SessionViewerTest(unittest.TestCase):
     def setUp(self):
         pygame.init()
         pygame.display.set_mode((320, 240), 0)
-        sheet = sprites.Sheet(32, 32, 16, 16, 'shapes.png')
-        human.Human.sprite = sprites.AnimatedSprite(sheet, 4, 192)
-        terrain.Grass.sprite = sprites.AnimatedSprite(sheet, 1, 4)
-        terrain.CobbleStone.sprite = sprites.AnimatedSprite(sheet, 1, 22)
-        terrain.Ankh.sprite = sprites.AnimatedSprite(sheet, 1, 61)
+        sheet = sprite.Sheet(32, 32, 16, 16, 'shapes.png')
+        human.Human.sprite = sprite.AnimatedSprite(sheet, 4, 192)
+        terrain.Grass.sprite = sprite.AnimatedSprite(sheet, 1, 4)
+        terrain.CobbleStone.sprite = sprite.AnimatedSprite(sheet, 1, 22)
+        terrain.Ankh.sprite = sprite.AnimatedSprite(sheet, 1, 61)
         self.session = session.Session()
         self.session.player = human.Human()
         self.session.world = place.Sector(name='gh', 

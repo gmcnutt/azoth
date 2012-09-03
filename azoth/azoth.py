@@ -15,7 +15,7 @@ import pygame
 import reagents
 import os
 import session
-import sprites
+import sprite
 import sys
 import terrain
 
@@ -39,11 +39,11 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((640, 480), 0)
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
-    # Load the sprites.
+    # Load the sprite.
     sheets = {}
     sheet_table = json.loads(open(config.SHEET_DATA_FILE).read())
     for k, v in sheet_table.items():
-        sheets[k] = sprites.Sheet(*v)
+        sheets[k] = sprite.Sheet(*v)
 
     all_sprites = {}
     sprite_table = json.loads(open(config.SPRITE_DATA_FILE).read())
@@ -54,10 +54,10 @@ if __name__ == "__main__":
         wave = v[3]
         facings = v[4]
         if not wave:
-            sprite = sprites.AnimatedSprite(sheet, frames, start, facings=facings)
+            spr = sprite.AnimatedSprite(sheet, frames, start, facings=facings)
         else:
-            sprite = sprites.WaveSprite(sheet, start)
-        all_sprites[k] = sprite
+            spr = sprite.WaveSprite(sheet, start)
+        all_sprites[k] = spr
 
     # Assign sprites
     all_terrains = {}
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     human.Human.sprite = all_sprites['townsman']
 
     # Load the session.
-    session = session.load(open(cmdargs.start))
+    session = session.load(cmdargs.start)
 
     # Update the session passability rules
     session.rules.set_passability('walk', 'wall', executor.PASS_NONE)

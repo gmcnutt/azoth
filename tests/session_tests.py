@@ -9,14 +9,10 @@ class SessionTest(unittest.TestCase):
         self.session = session.Session()
 
     def save(self):
-        sfile = open('session_tests.p', 'w')
-        self.session.dump(sfile)
-        sfile.close()
+        self.session.save('session_tests.p')
 
     def load(self):
-        lfile = open('session_tests.p')
-        self.session = session.load(lfile)
-        lfile.close()
+        self.session = session.load('session_tests.p')
 
     def test_basic(self):
         self.session.player = 'player'

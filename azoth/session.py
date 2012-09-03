@@ -15,5 +15,5 @@ class Session(object):
 
 
 
-def load(_file):
-    return cPickle.load(_file)
+def load(filename):
+    return cPickle.load(open(filename, 'r'))
