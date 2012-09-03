@@ -17,6 +17,17 @@ class Pragma(object):
         """ Assign place, x, y from a tuple. """
         self.place, self.x, self.y = val
 
+    @property
+    def xy(self):
+        """ Return (x, y) as a tuple. """
+        return self.x, self.y
+
+    @xy.setter
+    def xy(self, val):
+        """ Assign x, y from a tuple. """
+        self.x, self.y = val
+    
+
     def __str__(self):
         if hasattr(self, 'name'):
             return self.name
@@ -184,7 +195,8 @@ class Tray(Pragma):
 
 
 class Human(Pragma):
-    mmode = 'walk'
-    def __init__(self, name=None):
+
+    def __init__(self, name='human'):
         super(Human, self).__init__()
+        self.mmode = 'walk'
         self.name = name

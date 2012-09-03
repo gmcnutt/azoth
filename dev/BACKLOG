@@ -1,6 +1,17 @@
-Make a guy move around.
 Fix hard-coded log location.
 Fix config.py to not use relative paths.
 Rename config.py to settings.py.
 Figure out setup.py.
-Replace all sprite images with own or clearly licensed material.
+Replace all sprite images with own or clearly licensed material
+Mouse following.
+Get/drop.
+Passability.
+LOS.
+FOW.
+Stitch multiple sectors.
+Terrain blending.
+Basic working sprite set for first level.
+Basic sounds (owned property).
+Smooth-scrolling step animations.
+8-direction facings.
+Research minecraft sales and licensing model.

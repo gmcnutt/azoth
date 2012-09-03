@@ -8,6 +8,7 @@ class Session(object):
         self.player = None
         self.world = None
         self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
+        self.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
 
     def dump(self, _file):
         cPickle.dump(self, _file)

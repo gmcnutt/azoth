@@ -4,6 +4,7 @@ gui classes for azoth
 
 import colors
 import config
+import executor
 import logging
 import os
 import place
@@ -637,6 +638,8 @@ class SessionViewer(Viewer):
         try:
             self.session.hax2.move_being_on_map(self.subject, dx, dy)
         except place.PlaceError:
+            return
+        except executor.RuleError:
             return
         self.map.center = self.subject.x, self.subject.y
 

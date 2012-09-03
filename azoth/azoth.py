@@ -22,7 +22,7 @@ import terrain
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Play Azoth')
-    parser.add_argument('--start', dest='start', metavar='s', help='Saved game')
+    parser.add_argument('start', metavar='file', help='Saved game')
     cmdargs = parser.parse_args()
 
     # Initialize the log file.
