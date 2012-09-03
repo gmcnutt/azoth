@@ -78,7 +78,6 @@ if __name__ == "__main__":
     # Load the session.
     session = session.load(open(cmdargs.start))
     sector = session.world
-    place_view = gui.PlaceViewer(sector)
-    place_view.run()
-
+    session_viewer = gui.SessionViewer(session)
+    session_viewer.run()
 

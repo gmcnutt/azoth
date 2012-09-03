@@ -6,6 +6,7 @@ import colors
 import config
 import logging
 import os
+import place
 import pygame
 import textwrap
 
@@ -572,6 +573,7 @@ class PlaceWindow(Window):
         self.columns = int(self.width / self.cell_width)
         self.rows = int(self.height / self.cell_height)
         self.view = pygame.Rect(0, 0, self.columns, self.rows)
+        self.place_rect = pygame.Rect(0, 0, self.place.width, self.place.height)
 
     def on_paint(self):
         self.surface.fill(self.background_color)
@@ -610,22 +612,40 @@ class PlaceWindow(Window):
         if self.view.right < self.place.width:
             self.view.right += 1
 
+    @property
+    def center(self):
+        return self.view.center
 
-class PlaceViewer(Viewer):
+    @center.setter
+    def center(self, xypair):
+        self.view.center = xypair
+        self.view = self.view.clamp(self.place_rect)
 
-    def __init__(self, place):
-        super(PlaceViewer, self).__init__()
-        self.place = place
+
+class SessionViewer(Viewer):
+    
+    def __init__(self, session):
+        super(SessionViewer, self).__init__()
+        self.session = session
         width, height = pygame.display.get_surface().get_size()
-        self.view = PlaceWindow(place, width=width, height=height)
-        self.windows.append(self.view)
+        self.map = PlaceWindow(self.session.world, width=width, height=height)
+        self.windows.append(self.map)
+        self.subject = self.session.player
+        self.map.center = self.subject.x, self.subject.y
+
+    def move(self, dx, dy):
+        try:
+            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+        except place.PlaceError:
+            return
+        self.map.center = self.subject.x, self.subject.y
 
     def on_keypress(self, event):
         handler = {
-            pygame.K_DOWN: self.view.scroll_down,
-            pygame.K_UP: self.view.scroll_up,
-            pygame.K_LEFT: self.view.scroll_left,
-            pygame.K_RIGHT: self.view.scroll_right,
+            pygame.K_DOWN: lambda: self.move(0, 1),
+            pygame.K_UP: lambda: self.move(0, -1),
+            pygame.K_LEFT: lambda: self.move(-1, 0),
+            pygame.K_RIGHT: lambda: self.move(1, 0),
             pygame.K_q: self.quit,
             }.get(event.key)
         if handler:

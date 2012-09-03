@@ -5,6 +5,10 @@ class Terrain(object):
     def __str__(self):
         return self.name
 
+class Ankh(Terrain):
+    name = 'ankh'
+    pclass = 'wall'
+
 class HeavyForest(Terrain):
     name = 'heavy forest'
     pclass = 'forest'
