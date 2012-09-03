@@ -4,12 +4,13 @@ import cPickle
 import session
 import place
 import sys
+import terrain
+import terrainmap
 
 sys.path.append('../')
 
 import hax2
-from hax2 import being, pragma, rules, terrain, terrainmap, \
-    weapon
+from hax2 import being, pragma, rules, weapon
 
 sesh = session.Session()
 

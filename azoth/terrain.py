@@ -1,19 +1,60 @@
-"""
-Terrains.
-"""
-
 class Terrain(object):
-    """ A terrain can impede movement, block vision, emit light or apply
-    effects to objects that rest on it.  """
+    name = None
+    pclass = None
+    blocks_sight = False
+    def __str__(self):
+        return self.name
 
-    def __init__(self, name, pclass, sprite, transparent, light=0, effect=None,
-                 flags=()):
-        self.name = name
-        self.pclass = pclass
-        self.sprite = sprite
-        self.transparent = transparent
-        self.light = light
-        self.effect = effect
-        self.bad = "bad" in flags
-        self.inflammable = "inflammable" in flags
-        self.deck = "deck" in flags
+class HeavyForest(Terrain):
+    name = 'heavy forest'
+    pclass = 'forest'
+    blocks_sight = True
+
+class Forest(Terrain):
+    name ='forest'
+    pclass = 'trees'
+
+class Grass(Terrain):
+    name ='grass'
+    pclass = 'grass'
+
+class Trail(Terrain):
+    name ='trail'
+    pclass = 'road'
+
+class RockWall(Terrain):
+    name ='rock wall'
+    pclass = 'wall'
+    blocks_sight = True
+
+class CounterTop(Terrain):
+    name ='countertop'
+    pclass = 'wall'
+
+class Water(Terrain):
+    name ='water'
+    pclass = 'water'
+
+class Boulder(Terrain):
+    name ='boulder'
+    pclass = 'boulder'
+
+class CobbleStone(Terrain):
+    name ='floor'
+    pclass = 'road'
+
+class Bog(Terrain):
+    name ='bog'
+    pclass = 'sludge'
+
+class FirePlace(Terrain):
+    name ='fireplace'
+    pclass = 'road'
+
+class Window(Terrain):
+    name ='window'
+    pclass = 'wall'
+
+class Unmapped(Terrain):
+    name ='?'
+    pclass = '?'
