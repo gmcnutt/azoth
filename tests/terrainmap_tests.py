@@ -1,5 +1,5 @@
 from nose.tools import *
-from azoth.hax2 import terrainmap
+from azoth import terrainmap
 import unittest
 
 scm_path = "../haxima/scm/"

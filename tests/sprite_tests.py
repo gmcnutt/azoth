@@ -110,7 +110,8 @@ class SaveLoadTest(BaseTest):
         self.prompt()
 
     def test_referent_save_load(self):
-        ter = terrain.Terrain('test', 'rock', self.sprites['ship'], True)
+        ter = terrain.Boulder()
+        terrain.Boulder.sprite = self.sprites['ship']
         self.save(ter)
         ter = self.load()
         self.screen.blit(ter.sprite.get_image(0), (0, 0))
