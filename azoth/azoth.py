@@ -18,6 +18,10 @@ import sys
 import terrain
 
 
+class AzothObject(object):
+    name = "azoth object"  # placeholder
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Play Azoth')

@@ -2,59 +2,73 @@ class Terrain(object):
     name = None
     pclass = None
     blocks_sight = False
+
     def __str__(self):
         return self.name
+
 
 class HeavyForest(Terrain):
     name = 'heavy forest'
     pclass = 'forest'
     blocks_sight = True
 
+
 class Forest(Terrain):
-    name ='forest'
+    name = 'forest'
     pclass = 'trees'
 
+
 class Grass(Terrain):
-    name ='grass'
+    name = 'grass'
     pclass = 'grass'
 
+
 class Trail(Terrain):
-    name ='trail'
+    name = 'trail'
     pclass = 'road'
 
+
 class RockWall(Terrain):
-    name ='rock wall'
+    name = 'rock wall'
     pclass = 'wall'
     blocks_sight = True
 
+
 class CounterTop(Terrain):
-    name ='countertop'
+    name = 'countertop'
     pclass = 'wall'
+
 
 class Water(Terrain):
-    name ='water'
+    name = 'water'
     pclass = 'water'
 
+
 class Boulder(Terrain):
-    name ='boulder'
+    name = 'boulder'
     pclass = 'boulder'
 
+
 class CobbleStone(Terrain):
-    name ='floor'
+    name = 'floor'
     pclass = 'road'
+
 
 class Bog(Terrain):
-    name ='bog'
+    name = 'bog'
     pclass = 'sludge'
 
+
 class FirePlace(Terrain):
-    name ='fireplace'
+    name = 'fireplace'
     pclass = 'road'
 
+
 class Window(Terrain):
-    name ='window'
+    name = 'window'
     pclass = 'wall'
 
+
 class Unmapped(Terrain):
-    name ='?'
+    name = '?'
     pclass = '?'

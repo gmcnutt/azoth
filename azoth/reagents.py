@@ -1,5 +1,4 @@
-class AzothObject(object):
-    name = "azoth object"  # placeholder
+from azoth import AzothObject
 
 
 class Reagent(object):
