@@ -1,6 +1,6 @@
 from tools import *
 from azoth import executor, place, terrain, terrainmap
-from azoth.hax2 import item, pragma, weapon
+import azoth.human as pragma
 import unittest
 
 class TestException(Exception):
@@ -83,15 +83,6 @@ class PutOnMap(Default):
         assert_being_at(o1, self.place, 0, 0)
         eq_(o2.loc, (None, None, None))
 
-    def test_item(self):
-        itm = item.Item()
-        self.hax2.put_item_on_map(itm, self.place, 0, 0)
-        assert_item_at(itm, self.place, 0, 0)
-
-    def test_sword(self):
-        sword = weapon.Sword()
-        self.hax2.put_item_on_map(sword, self.place, 0, 0)
-        assert_item_at(sword, self.place, 0, 0)
 
 class RemoveFromMap(Default):
 

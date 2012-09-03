@@ -1,6 +1,6 @@
 from nose.tools import *
 from azoth import executor
-from azoth.hax2 import pragma
+import azoth.human as pragma
 import unittest
 
 def test_bag():
