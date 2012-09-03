@@ -70,6 +70,8 @@ def load_from_nazghul_scm(fname):
         line = [translate_nazghul_glyph(g) for g in line]
         tmap.append(line)
 
+    # Note that tmap is in row, column order. The TerrainMap class reverses
+    # this in the accessors.
     return TerrainMap(terrain=tmap)
 
 #tmap = load_from_nazghul_scm('../tests/gregors-hut.scm')

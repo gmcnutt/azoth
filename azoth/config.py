@@ -22,3 +22,6 @@ TERRAIN_DATA_FILE = TERRAIN_DIRECTORY + 'terrain.json'
 
 # The file containing all the reagent descriptors
 REAGENT_DATA_FILE = OBJECT_DIRECTORY + 'reagents.json'
+
+# The max frames per second
+FRAMES_PER_SECOND = 60

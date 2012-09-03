@@ -3,6 +3,7 @@ gui classes for azoth
 """
 
 import colors
+import config
 import logging
 import os
 import pygame
@@ -10,10 +11,13 @@ import textwrap
 
 DEFAULT_MAX_WIDTH = 320
 DEFAULT_MAX_HEIGHT = 240
-DEFAULT_FONT_SIZE = 16 # XXX: move to config.py
+DEFAULT_FONT_SIZE = 16  # XXX: move to config.py
+
 
 # XXX: move to config.py
-#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(), DEFAULT_FONT_SIZE)
+#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(),
+#                                DEFAULT_FONT_SIZE)
+
 
 class Window(object):
     """ Base class for terminal windows. """
@@ -34,8 +38,8 @@ class Window(object):
         self.top_margin = 0
         self.left_margin = 0
         self.surface = pygame.Surface((width, height)).convert_alpha()
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 
-                                     16) # XXX: config.py
+        self.font = pygame.font.Font(pygame.font.get_default_font(),
+                                     16)  # XXX: config.py
         # XXX: assumes monospace
         self.font_width, self.font_height = self.font.size('x')
 
@@ -106,12 +110,12 @@ class Window(object):
             x = (self.surface.get_width() - rendered_text.get_width()) / 2
         y = row * self.font.get_linesize()
         self.surface.blit(rendered_text, (x, y))
-            
+
 
 class Menu(Window):
     """ Simple menu. """
 
-    def __init__(self, options=(), max_width=DEFAULT_MAX_WIDTH, 
+    def __init__(self, options=(), max_width=DEFAULT_MAX_WIDTH,
                  max_height=DEFAULT_MAX_HEIGHT, **kwargs):
         width = min(max_width, max([len(option) for option in options]) + 2)
         height = min(max_height, len(options) + 2)
@@ -144,7 +148,7 @@ class Menu(Window):
             self.top_visible_option += 1
 
     def on_paint(self):
-        for row, option in enumerate(range(self.top_visible_option, 
+        for row, option in enumerate(range(self.top_visible_option,
                                            self.top_visible_option + \
                                                self.num_visible_rows)):
             if option == self.current_option:
@@ -158,7 +162,7 @@ class TextLabel(Window):
     """ A box of read-only text. The text will be wrapped to fill the width. If
     it exceeds the height it will be truncated. """
 
-    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH, 
+    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH,
                  max_height=DEFAULT_MAX_HEIGHT, **kwargs):
         super(TextLabel, self).__init__(width=max_width, height=max_height,
                                        **kwargs)
@@ -191,25 +195,23 @@ class PromptDialog(Window):
                                             **kwargs)
         self.message_area = TextLabel(message=message, max_width=self.width,
                                       max_height=self.height, **kwargs)
-        self.prompt_area = TextLabel(message=self.prompt, 
-                                     y=(self.message_area.height + 
+        self.prompt_area = TextLabel(message=self.prompt,
+                                     y=(self.message_area.height +
                                         self.font_height),
                                      max_width=self.width,
                                      max_height=self.height, **kwargs)
-
 
     def on_paint(self):
         """ Paint the text area then the prompt. """
         self.message_area.paint(to_surface=self.surface)
         self.prompt_area.paint(to_surface=self.surface)
-#        self._print(self.height - 3, self.prompt, color=colors.cyan, 
-#                    align='center')
+
 
 class Viewer(object):
     """ A stand-alone UI and keyhandler.  """
 
     background_color = colors.black
-    fps = 10 # XXX: move to config.py
+    fps = config.FRAMES_PER_SECOND
 
     def __init__(self):
         self.done = False
@@ -309,8 +311,7 @@ class SpriteListWindow(Window):
         while self.max_index > 0 and top > 0:
             top -= self.list[self.max_index][1].height
             self.max_index -= 1
-        
-        
+
     def scroll_up(self):
         if self.top_index > 0:
             self.top_index -= 1
@@ -349,7 +350,7 @@ class SpriteListWindow(Window):
             name = self.list[index][0]
             sprite = self.list[index][1]
             rect.height = sprite.height
-            self.surface.blit(self.font.render(name, True, colors.white), 
+            self.surface.blit(self.font.render(name, True, colors.white),
                               rect.topleft)
             self.surface.blit(sprite.get_image(self.frame), rect.midtop)
             rect.top += rect.height
@@ -378,6 +379,7 @@ class SpriteListViewer(Viewer):
         if handler:
             handler()
 
+
 class ObjectListWindow(Window):
 
     def __init__(self, _list, **kwargs):
@@ -391,8 +393,7 @@ class ObjectListWindow(Window):
         while self.max_index > 0 and top > 0:
             top -= self.list[self.max_index][1].sprite.height
             self.max_index -= 1
-        
-        
+
     def scroll_up(self):
         if self.top_index > 0:
             self.top_index -= 1
@@ -431,7 +432,7 @@ class ObjectListWindow(Window):
             name = self.list[index][0]
             sprite = self.list[index][1].sprite
             rect.height = sprite.height
-            self.surface.blit(self.font.render(name, True, colors.white), 
+            self.surface.blit(self.font.render(name, True, colors.white),
                               rect.topleft)
             self.surface.blit(sprite.get_image(self.frame), rect.midtop)
             rect.top += rect.height
@@ -460,6 +461,7 @@ class ObjectListViewer(Viewer):
         if handler:
             handler()
 
+
 class TerrainGridWindow(Window):
     """ Displays a list of terrains as a grid. """
 
@@ -477,7 +479,7 @@ class TerrainGridWindow(Window):
             self.grid.append(terrain_list[start_index:last_index])
             start_index = last_index
             last_index += self.columns
-        self.frame = 0 # sprite frame
+        self.frame = 0  # sprite frame
         self.top_index = 0
         # find max_index by walking backward from end of list
         self.max_index = self.rows - 1
@@ -485,7 +487,7 @@ class TerrainGridWindow(Window):
         while self.max_index > 0 and top > 0:
             top -= self.cell_height
             self.max_index -= 1
-        
+
     def scroll_up(self):
         if self.top_index > 0:
             self.top_index -= 1
@@ -540,7 +542,7 @@ class TerrainGridViewer(Viewer):
     def __init__(self, terrain_list):
         super(TerrainGridViewer, self).__init__()
         width, height = pygame.display.get_surface().get_size()
-        self.lister = TerrainGridWindow(terrain_list, width=width, 
+        self.lister = TerrainGridWindow(terrain_list, width=width,
                                         height=height)
         self.windows.append(self.lister)
 
@@ -557,8 +559,9 @@ class TerrainGridViewer(Viewer):
         if handler:
             handler()
 
+
 class PlaceWindow(Window):
-    
+
     def __init__(self, place, **kwargs):
         super(PlaceWindow, self).__init__(**kwargs)
         self.place = place
@@ -573,16 +576,33 @@ class PlaceWindow(Window):
     def on_paint(self):
         self.surface.fill(self.background_color)
         tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
-        for map_x in xrange(self.view.left, self.view.right):
+        for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
-            for map_y in xrange(self.view.top, self.view.bottom):
+            for map_x in xrange(self.view.left, self.view.right):
                 terrain = self.place.get_terrain(map_x, map_y)
                 sprite = terrain.sprite
-                self.surface.blit(sprite.get_image(self.animation_frame), tile.topleft)
+                self.surface.blit(sprite.get_image(self.animation_frame),
+                                  tile.topleft)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1
-        
+
+    def scroll_up(self):
+        if self.view.top > 0:
+            self.view.top -= 1
+
+    def scroll_down(self):
+        if self.view.bottom < self.place.height:
+            self.view.bottom += 1
+
+    def scroll_left(self):
+        if self.view.left > 0:
+            self.view.left -= 1
+
+    def scroll_right(self):
+        if self.view.right < self.place.width:
+            self.view.right += 1
+
 
 class PlaceViewer(Viewer):
 
@@ -592,3 +612,14 @@ class PlaceViewer(Viewer):
         width, height = pygame.display.get_surface().get_size()
         self.view = PlaceWindow(place, width=width, height=height)
         self.windows.append(self.view)
+
+    def on_keypress(self, event):
+        handler = {
+            pygame.K_DOWN: self.view.scroll_down,
+            pygame.K_UP: self.view.scroll_up,
+            pygame.K_LEFT: self.view.scroll_left,
+            pygame.K_RIGHT: self.view.scroll_right,
+            pygame.K_q: self.quit,
+            }.get(event.key)
+        if handler:
+            handler()

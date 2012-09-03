@@ -79,11 +79,15 @@ if __name__ == "__main__":
     hax2.terrain.HeavyForest.sprite = all_sprites['forest']
     hax2.terrain.Forest.sprite = all_sprites['trees']
     hax2.terrain.Grass.sprite = all_sprites['grass']
-    hax2.terrain.Trail.sprite = all_sprites['trail_0']
+    hax2.terrain.Trail.sprite = all_sprites['trail_f']
     hax2.terrain.RockWall.sprite = all_sprites['wall_stone']
     hax2.terrain.CobbleStone.sprite = all_sprites['cobblestone']
     hax2.terrain.Window.sprite = all_sprites['window_in_stone']
     hax2.terrain.CounterTop.sprite = all_sprites['counter_1x1']
+    hax2.terrain.FirePlace.sprite = all_sprites['fireplace']
+    hax2.terrain.Boulder.sprite = all_sprites['boulder']
+    hax2.terrain.Bog.sprite = all_sprites['bog']
+    hax2.terrain.Water.sprite = all_sprites['shoals']
 
     session = session.load(open(cmdargs.start))
     sector = session.world
