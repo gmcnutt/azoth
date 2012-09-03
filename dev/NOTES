@@ -1,4 +1,11 @@
 ----------------------------------------------------------------------------
+03 September 2012 16:13
+
+When I change passability rules I have to reload the session. Not good. The
+saved session should pick up this rule change automatically. Passability is a
+game or at least a scenario-level rule.
+
+----------------------------------------------------------------------------
 02 September 2012 19:00
 
 If the saved maps refer to terrains as objects then the objects must be saved

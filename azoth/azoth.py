@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import executor
 import classes
 import cPickle
 import colors
@@ -58,7 +59,7 @@ if __name__ == "__main__":
             sprite = sprites.WaveSprite(sheet, start)
         all_sprites[k] = sprite
 
-    # Initialize terrains
+    # Assign sprites
     all_terrains = {}
     terrain.HeavyForest.sprite = all_sprites['forest']
     terrain.Forest.sprite = all_sprites['trees']
@@ -77,7 +78,12 @@ if __name__ == "__main__":
 
     # Load the session.
     session = session.load(open(cmdargs.start))
-    sector = session.world
+
+    # Update the session passability rules
+    session.rules.set_passability('walk', 'wall', executor.PASS_NONE)
+    session.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
+    session.rules.set_passability('walk', 'water', executor.PASS_NONE)
+
     session_viewer = gui.SessionViewer(session)
     session_viewer.run()
 

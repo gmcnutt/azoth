@@ -643,6 +643,9 @@ class SessionViewer(Viewer):
             return
         self.map.center = self.subject.x, self.subject.y
 
+    def save(self):
+        self.session.save('save.p')
+
     def on_keypress(self, event):
         handler = {
             pygame.K_DOWN: lambda: self.move(0, 1),
@@ -650,6 +653,7 @@ class SessionViewer(Viewer):
             pygame.K_LEFT: lambda: self.move(-1, 0),
             pygame.K_RIGHT: lambda: self.move(1, 0),
             pygame.K_q: self.quit,
+            pygame.K_s: self.save,
             }.get(event.key)
         if handler:
             handler()
