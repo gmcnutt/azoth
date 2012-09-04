@@ -1,6 +1,6 @@
 from tools import *
 from azoth import place, session, terrain, terrainmap
-import azoth.obj as pragma
+import azoth.obj as obj
 import unittest
 
 class SessionTest(unittest.TestCase):
@@ -22,7 +22,7 @@ class SessionTest(unittest.TestCase):
 
     def test_player_loc(self):
         tmap = terrainmap.load_from_nazghul_scm('gregors-hut.scm')
-        self.session.player = pragma.Pragma()
+        self.session.player = obj.Obj()
         self.session.player.glyph = '@'
         self.session.player.name = 'player'
         self.session.world = place.Sector(name='gh', 

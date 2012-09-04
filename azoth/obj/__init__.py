@@ -1,4 +1,4 @@
-class Pragma(object):
+class Obj(object):
     """ A pragma is a physical thing with dimensions and a location. """
 
     def __init__(self):
@@ -34,12 +34,12 @@ class Pragma(object):
         else:
             return 'pragma'
 
-class PragmaError(Exception):
-    """ Base class for all Pragma errors. """
+class ObjError(Exception):
+    """ Base class for all Obj errors. """
     pass
 
 
-class Occupied(PragmaError):
+class Occupied(ObjError):
     """ Location is occupied. """
     def __init__(self, prag, cont, x, y):
         super(Occupied, self).__init__()
@@ -53,7 +53,7 @@ class Occupied(PragmaError):
             format(self.prag, self.cont, self.x, self.y)
 
 
-class Bag(Pragma):
+class Bag(Obj):
     """ A simple container for other pragmas. """
 
     def __init__(self, limit=None):
@@ -100,7 +100,7 @@ def assert_xy_gte_0(func):
         return func(instance, x, y, *args)
     return wrapf
 
-class Tray(Pragma):
+class Tray(Obj):
     """ A grid of holes, each of which can hold one pragma."""
 
     def __init__(self, width=1, height=1):
@@ -193,8 +193,7 @@ class Tray(Pragma):
         return len(self) == self.width * self.height
 
 
-
-class Human(Pragma):
+class Human(Obj):
 
     def __init__(self, name='obj'):
         super(Human, self).__init__()
