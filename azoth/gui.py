@@ -5,16 +5,19 @@ gui classes for azoth
 import colors
 import config
 import executor
+import libtcodpy as libtcod
 import logging
 import os
 import place
 import pygame
+import sprite
 import textwrap
 
 DEFAULT_MAX_WIDTH = 320
 DEFAULT_MAX_HEIGHT = 240
 DEFAULT_FONT_SIZE = 16  # XXX: move to config.py
-
+FOV_LIGHT_WALLS = True
+FOV_ALGO = 0  # default
 
 # XXX: move to config.py
 #DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(),
@@ -564,17 +567,26 @@ class TerrainGridViewer(Viewer):
 
 class PlaceWindow(Window):
 
-    def __init__(self, place, **kwargs):
+    def __init__(self, place, radius=10, **kwargs):
         super(PlaceWindow, self).__init__(**kwargs)
         self.place = place
+        self.radius = radius
         self.animation_frame = 0
-        sprite = self.place.get_terrain(0, 0).sprite
-        self.cell_width = sprite.width
-        self.cell_height = sprite.height
+        spr = self.place.get_terrain(0, 0).sprite
+        self.cell_width = spr.width
+        self.cell_height = spr.height
         self.columns = int(self.width / self.cell_width)
         self.rows = int(self.height / self.cell_height)
         self.view = pygame.Rect(0, 0, self.columns, self.rows)
         self.place_rect = pygame.Rect(0, 0, self.place.width, self.place.height)
+        # experiment with a fov (aka los) map
+        self.fade = sprite.Fade(spr.width, spr.height).surf
+        self.fov_map = libtcod.map_new(self.place.width, self.place.height)
+        for y in range(self.place.height):
+            for x in range(self.place.width):
+                ter = self.place.get_terrain(x, y)
+                libtcod.map_set_properties(self.fov_map, x, y, not ter.blocks_sight,
+                                           False)
 
     def on_paint(self):
         self.surface.fill(self.background_color)
@@ -582,20 +594,31 @@ class PlaceWindow(Window):
         for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
             for map_x in xrange(self.view.left, self.view.right):
-                # terrain
-                terrain = self.place.get_terrain(map_x, map_y)
-                sprite = terrain.sprite
-                self.surface.blit(sprite.get_image(self.animation_frame),
-                                  tile.topleft)
-                # occupants
-                occupant = self.place.get_occupant(map_x, map_y)
-                if occupant:
-                    sprite = occupant.sprite
-                    self.surface.blit(sprite.get_image(self.animation_frame),
+                visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
+                explored = self.place.get_explored(map_x, map_y)
+                if visible or explored:
+                    # terrain
+                    terrain = self.place.get_terrain(map_x, map_y)
+                    spr = terrain.sprite
+                    self.surface.blit(spr.get_image(self.animation_frame),
                                       tile.topleft)
+                    # occupants
+                    occupant = self.place.get_occupant(map_x, map_y)
+                    if occupant and visible:
+                        spr = occupant.sprite
+                        image = spr.get_image(self.animation_frame)
+                        self.surface.blit(image, tile.topleft)
+                    self.place.set_explored(map_x, map_y, True)
+                    # fow haze
+                    if not visible:
+                        self.surface.blit(self.fade, tile.topleft)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1
+
+    def compute_fov(self, x, y, radius):
+        libtcod.map_compute_fov(self.fov_map, x, y, radius, 
+                                FOV_LIGHT_WALLS, FOV_ALGO)
 
     def scroll_up(self):
         if self.view.top > 0:
@@ -633,6 +656,7 @@ class SessionViewer(Viewer):
         self.windows.append(self.map)
         self.subject = self.session.player
         self.map.center = self.subject.x, self.subject.y
+        self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
     def move(self, dx, dy):
         try:
@@ -642,6 +666,7 @@ class SessionViewer(Viewer):
         except executor.RuleError:
             return
         self.map.center = self.subject.x, self.subject.y
+        self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
     def save(self):
         self.session.save('save.p')

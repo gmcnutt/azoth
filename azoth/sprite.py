@@ -105,3 +105,9 @@ class WaveSprite(Sprite):
         return self.double.subsurface(rect)
 
         
+class Fade(object):
+    """ A shaded semi-transparent surface.  """
+    def __init__(self, width, height):
+        self.surf = pygame.Surface((width, height), flags=pygame.SRCALPHA)
+        self.surf.convert_alpha()
+        self.surf.fill(pygame.Color(0, 0, 0, 128))

@@ -54,6 +54,7 @@ class Bog(Terrain):
 class FirePlace(Terrain):
     name ='fireplace'
     pclass = 'road'
+    blocks_sight = True
 
 class Window(Terrain):
     name ='window'
