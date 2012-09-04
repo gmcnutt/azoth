@@ -1,7 +1,10 @@
-Get/drop.
-NPC.
-Pathfinding.
-Console
+F:Drop.
+F:NPC.
+F:Pathfinding.
+F:Console
+RF: role executor methods up into session
+F:Inventory/body viewer
+Fix animations to be independent of fps
 Basic working sprite set for first level.
 Basic sounds (owned property).
 Research minecraft sales and licensing model.
@@ -19,3 +22,4 @@ Terrain blending.
 Smooth-scrolling step animations.
 8-direction facings.
 Convert libtcod into standard python C module.
+Items should be obscured under brush (paint trees and shrubs as their own layer).

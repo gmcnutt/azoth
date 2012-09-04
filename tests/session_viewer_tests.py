@@ -2,7 +2,7 @@ import unittest
 from tools import *
 from azoth import executor, gui, obj, place, session, sprite, terrain, \
     terrainmap
-from azoth.obj import being
+from azoth.obj import being, weapon
 import pygame
 
 scm_path = "../haxima/scm/"
@@ -74,3 +74,10 @@ class SessionViewerTest(unittest.TestCase):
                                                    key=pygame.K_RIGHT))
         eq_(self.session.player.xy, (0, 0))
         
+    def test_get(self):
+        sword = weapon.Sword()
+        self.session.hax2.put_item_on_map(sword, self.session.world, 0, 0)
+        eq_(sword.loc, (self.session.world, 0, 0))
+        self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
+                                                   key=pygame.K_g))
+        eq_(sword.loc, (None, None, None))
