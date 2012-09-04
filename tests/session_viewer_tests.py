@@ -37,6 +37,10 @@ class SessionViewerTest(unittest.TestCase):
         if self.prompt_all or prompt:
             self.prompt()
 
+    def sendkey(self, key):
+        """ Curried wrapper to send a key event to the session viewer. """
+        self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, key=key))
+
     def test_scroll(self):
         self.session.world.set_terrain(1, 0, terrain.CobbleStone)
         self.session.world.set_terrain(0, 1, terrain.CobbleStone)
@@ -47,37 +51,39 @@ class SessionViewerTest(unittest.TestCase):
         self.session.world.set_terrain(0, 29, terrain.CobbleStone)
         self.session.world.set_terrain(1, 30, terrain.CobbleStone)
         for x in xrange(self.session.world.width + 1):
-            self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                       key=pygame.K_RIGHT))
+            self.sendkey(pygame.K_RIGHT)
             self.viewer.render()
         eq_(self.session.player.xy, (self.session.world.width - 1, 0))
         self.show()
         for y in xrange(self.session.world.height + 1):
-            self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                       key=pygame.K_DOWN))
+            self.sendkey(pygame.K_DOWN)
             self.viewer.render()
         self.show()
         for x in xrange(self.session.world.width + 1):
-            self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                       key=pygame.K_LEFT))
+            self.sendkey(pygame.K_LEFT)
             self.viewer.render()
         self.show()
         for y in xrange(self.session.world.height + 1):
-            self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                       key=pygame.K_UP))
+            self.sendkey(pygame.K_UP)
             self.viewer.render()
         self.show()
 
     def test_impassability(self):
         self.session.world.set_terrain(1, 0, terrain.Ankh)
-        self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                   key=pygame.K_RIGHT))
+        self.sendkey(pygame.K_RIGHT)
         eq_(self.session.player.xy, (0, 0))
         
     def test_get(self):
         sword = weapon.Sword()
         self.session.hax2.put_item_on_map(sword, self.session.world, 0, 0)
         eq_(sword.loc, (self.session.world, 0, 0))
-        self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, 
-                                                   key=pygame.K_g))
+        self.sendkey(pygame.K_g)
         eq_(sword.loc, (None, None, None))
+        ok_(self.session.player.body.has(sword))
+
+    def test_drop(self):
+        sword = weapon.Sword()
+        self.session.player.body.put(sword)
+        self.sendkey(pygame.K_d)
+        eq_(sword.loc, (self.session.world, 0, 0))
+        ok_(not self.session.player.body.has(sword))

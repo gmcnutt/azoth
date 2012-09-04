@@ -2,6 +2,7 @@ F:Drop.
 F:NPC.
 F:Pathfinding.
 F:Console
+RF: move body out of obj
 RF: role executor methods up into session
 F:Inventory/body viewer
 Fix animations to be independent of fps

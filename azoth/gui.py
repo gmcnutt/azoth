@@ -683,12 +683,21 @@ class SessionViewer(Viewer):
             being = self.session.player
             self.session.hax2.move_item_from_map_to_being(item, being)
 
+    def drop(self):
+        being = self.session.player
+        items = being.body.get()
+        if items is not None:
+            item = items[0]
+            self.session.hax2.move_item_from_being_to_map(item, being)
+            
+
     def on_keypress(self, event):
         handler = {
             pygame.K_DOWN: lambda: self.move(0, 1),
             pygame.K_UP: lambda: self.move(0, -1),
             pygame.K_LEFT: lambda: self.move(-1, 0),
             pygame.K_RIGHT: lambda: self.move(1, 0),
+            pygame.K_d: self.drop,
             pygame.K_g: self.get,
             pygame.K_q: self.quit,
             pygame.K_s: self.save,

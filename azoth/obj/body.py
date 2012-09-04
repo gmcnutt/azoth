@@ -55,7 +55,10 @@ class Hands(object):
             return False
 
     def get(self):
-        return iter(set([self.right.get(), self.left.get()]))
+        """ Get a list of the items held. """
+        # For 2h items return only one thing
+        items = set([self.right.get(), self.left.get()])
+        return [x for x in items if x is not None]
 
     def put(self, item):
         if item.slots == 1:
@@ -106,8 +109,10 @@ class Humanoid(object):
         return item.slots <= len(avail)
 
     def get(self):
-        """ Get all the items that are held. Returns an iteraror. """
-        return [s.get() for s in self.slots if s]
+        """ Get all the items that are held. Returns a flat list. """
+        items = [self.head.get()]
+        items += (self.hands.get())
+        return [x for x in items if x]
 
     def has(self, something):
         """ Syntactic sugar for 'something in body' """
@@ -124,5 +129,12 @@ class Humanoid(object):
         for s in self.slots:
             if item in s:
                 s.remove(item)
+
+    def canremove(self, item):
+        """ Remove an item. """
+        for s in self.slots:
+            if item in s:
+                return True
+        return False
 
         

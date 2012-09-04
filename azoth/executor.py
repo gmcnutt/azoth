@@ -53,7 +53,6 @@ class WontFitError(RuleError):
 
 
 class CantGetError(RuleError):
-
     """ Item can't be put into any body slots. """
     def __init__(self, subject, item):
         super(CantGetError, self).__init__()
@@ -62,6 +61,17 @@ class CantGetError(RuleError):
 
     def __str__(self):
         return "{} can't get {}".format(self.subject, self.item)
+
+
+class DoesNotHaveError(RuleError):
+    """ Item can't be removed from being because it does not have it. """
+    def __init__(self, subject, item):
+        super(DoesNotHaveError, self).__init__()
+        self.subject = subject
+        self.item = item
+
+    def __str__(self):
+        return "{} does not have {}".format(self.subject, self.item)
 
 
 class Ruleset(object):
@@ -97,6 +107,10 @@ class Ruleset(object):
         if not being.body.canput(item):
             raise CantGetError(being, item)
 
+    def assert_remove_from_being_ok(self, item, being):
+        if not being.body.has(item):
+            raise DoesNotHaveError(being, item)
+
     def assert_remove_ok(self, obj):
         """ Checks that removal is not forbidden.  """
         pass
@@ -127,6 +141,15 @@ class Executor(object):
         self.rules.assert_put_in_being_ok(item, being)
         self.remove_item_from_map(item)
         being.body.put(item)
+
+    def move_item_from_being_to_map(self, item, being):
+        """ Remove item from being, put it on the map. """
+        self.rules.assert_remove_from_being_ok(item, being)
+        pla, x, y = being.loc
+        self.rules.assert_passable(item, pla, x, y)
+        being.body.remove(item)
+        pla.add_item(x, y, item)
+        item.loc = (pla, x, y)
 
     def put_item_on_map(self, obj, pla, x, y):
         """ Put object in place at (xloc, yloc). """
