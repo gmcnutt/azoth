@@ -3,6 +3,7 @@ import item
 
 class Sword(item.HandItem):
     """ Your basic sword. """
+    slots = 1
     def __str__(self):
         return "a sword"
 

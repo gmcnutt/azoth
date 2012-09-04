@@ -1,3 +1,6 @@
+
+
+
 class Obj(object):
     """ A pragma is a physical thing with dimensions and a location. """
 
@@ -191,11 +194,3 @@ class Tray(Obj):
     def full(self):
         """ True iff nothing else will fit. """
         return len(self) == self.width * self.height
-
-
-class Human(Obj):
-
-    def __init__(self, name='obj'):
-        super(Human, self).__init__()
-        self.mmode = 'walk'
-        self.name = name

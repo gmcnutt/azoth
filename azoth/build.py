@@ -3,7 +3,7 @@
 import cPickle
 import executor
 import obj
-from obj import weapon
+from obj import being, weapon
 import place
 import session
 import sys
@@ -18,7 +18,7 @@ sys.path.append('../')
 sesh = session.Session()
 
 tmap = terrainmap.load_from_nazghul_scm('../haxima/scm/gregors-hut.scm')
-sesh.player = obj.Human('Scaramouche')
+sesh.player = being.Human('Scaramouche')
 sesh.world = place.Sector(name='gh', default_terrain=terrain.Grass)
 sesh.world.blit_terrain_map(0, 0, tmap)
 sesh.hax2.put_being_on_map(sesh.player, sesh.world, 1, 1)

@@ -11,7 +11,7 @@ import obj
 import inspect
 import json
 import logging
-from obj import Obj, weapon
+from obj import Obj, being, weapon
 import pygame
 import os
 import session
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     terrain.Bog.sprite = all_sprites['bog']
     terrain.Water.sprite = all_sprites['shoals']
 
-    obj.Human.sprite = all_sprites['townsman']
+    being.Human.sprite = all_sprites['townsman']
 
     # Assign sprites based on class name
     for module in (weapon,):
