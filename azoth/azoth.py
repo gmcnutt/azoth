@@ -7,7 +7,7 @@ import cPickle
 import colors
 import config
 import gui
-import human
+import obj
 import inspect
 import json
 import logging
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     terrain.Bog.sprite = all_sprites['bog']
     terrain.Water.sprite = all_sprites['shoals']
 
-    human.Human.sprite = all_sprites['townsman']
+    obj.Human.sprite = all_sprites['townsman']
 
     # Load the session.
     session = session.load(cmdargs.start)

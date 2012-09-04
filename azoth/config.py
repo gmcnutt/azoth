@@ -25,3 +25,6 @@ REAGENT_DATA_FILE = OBJECT_DIRECTORY + 'reagents.json'
 
 # The max frames per second
 FRAMES_PER_SECOND = 60
+
+# The base directory for DLL's, should I actually need to distribute them
+DLL_DIRECTORY = '../dll/'

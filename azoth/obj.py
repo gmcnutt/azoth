@@ -196,7 +196,7 @@ class Tray(Pragma):
 
 class Human(Pragma):
 
-    def __init__(self, name='human'):
+    def __init__(self, name='obj'):
         super(Human, self).__init__()
         self.mmode = 'walk'
         self.name = name

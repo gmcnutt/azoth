@@ -5,6 +5,11 @@ When I change passability rules I have to reload the session. Not good. The
 saved session should pick up this rule change automatically. Passability is a
 game or at least a scenario-level rule.
 
+Added libtcod for FOV. It comes in a tarball with a non-standard build system
+and compiled libraries. A copy of libtcod.so must be placed where libtcodpy.py
+can find it (typically the same dir as the executable). I don't like this and
+am tempted to duplicate the raytracing code into a python C module.
+
 ----------------------------------------------------------------------------
 02 September 2012 19:00
 

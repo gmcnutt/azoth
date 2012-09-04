@@ -1,6 +1,6 @@
 from tools import *
 from azoth import executor, place, terrain, terrainmap
-import azoth.human as pragma
+import azoth.obj as pragma
 import unittest
 
 class TestException(Exception):

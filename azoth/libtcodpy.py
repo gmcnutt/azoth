@@ -26,6 +26,7 @@
 #
 
 import sys
+import config
 import ctypes
 import struct
 from ctypes import *
@@ -44,7 +45,7 @@ MAC=False
 MINGW=False
 MSVC=False
 if sys.platform.find('linux') != -1:
-    _lib = ctypes.cdll['./libtcod.so']
+    _lib = ctypes.cdll[config.DLL_DIRECTORY + './libtcod.so']
     LINUX=True
 elif sys.platform.find('darwin') != -1:
     _lib = ctypes.cdll['./libtcod.dylib']

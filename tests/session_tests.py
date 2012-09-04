@@ -1,6 +1,6 @@
 from tools import *
 from azoth import place, session, terrain, terrainmap
-import azoth.human as pragma
+import azoth.obj as pragma
 import unittest
 
 class SessionTest(unittest.TestCase):
