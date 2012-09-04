@@ -602,16 +602,20 @@ class PlaceWindow(Window):
                     spr = terrain.sprite
                     self.surface.blit(spr.get_image(self.animation_frame),
                                       tile.topleft)
-                    # occupants
-                    occupant = self.place.get_occupant(map_x, map_y)
-                    if occupant and visible:
-                        spr = occupant.sprite
-                        image = spr.get_image(self.animation_frame)
-                        self.surface.blit(image, tile.topleft)
-                    self.place.set_explored(map_x, map_y, True)
-                    # fow haze
                     if not visible:
-                        self.surface.blit(self.fade, tile.topleft)
+                        self.surface.blit(self.fade, tile.topleft)  # haze
+                    else:
+                        self.place.set_explored(map_x, map_y, True)
+                        items = self.place.get_items(map_x, map_y)
+                        for item in items:
+                            spr = item.sprite
+                            image = spr.get_image(self.animation_frame)
+                            self.surface.blit(image, tile.topleft)
+                        occupant = self.place.get_occupant(map_x, map_y)
+                        if occupant and visible:
+                            spr = occupant.sprite
+                            image = spr.get_image(self.animation_frame)
+                            self.surface.blit(image, tile.topleft)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1

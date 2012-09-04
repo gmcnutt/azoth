@@ -11,8 +11,8 @@ import obj
 import inspect
 import json
 import logging
+from obj import Obj, weapon
 import pygame
-import reagents
 import os
 import session
 import sprite
@@ -75,6 +75,12 @@ if __name__ == "__main__":
     terrain.Water.sprite = all_sprites['shoals']
 
     obj.Human.sprite = all_sprites['townsman']
+
+    # Assign sprites based on class name
+    for module in (weapon,):
+        for name, o in inspect.getmembers(module):	  	
+            if inspect.isclass(o) and issubclass(o, Obj):
+                o.sprite = all_sprites[o.__name__]
 
     # Load the session.
     session = session.load(cmdargs.start)

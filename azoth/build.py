@@ -3,6 +3,7 @@
 import cPickle
 import executor
 import obj
+from obj import weapon
 import place
 import session
 import sys
@@ -22,8 +23,8 @@ sesh.world = place.Sector(name='gh', default_terrain=terrain.Grass)
 sesh.world.blit_terrain_map(0, 0, tmap)
 sesh.hax2.put_being_on_map(sesh.player, sesh.world, 1, 1)
 
-#sword = weapon.Sword()
-#sesh.hax2.put_item_on_map(sword, sesh.world, 11, 11)
+sword = weapon.Sword()
+sesh.hax2.put_item_on_map(sword, sesh.world, 3, 3)
 
 savefile = open('start.p', 'w')
 cPickle.dump(sesh, savefile)

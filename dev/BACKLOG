@@ -1,9 +1,12 @@
 Get/drop.
 NPC.
 Pathfinding.
+Console
 Basic working sprite set for first level.
 Basic sounds (owned property).
 Research minecraft sales and licensing model.
+Day/night
+Astronomy view
 Fix hard-coded log location.
 Fix config.py to not use relative paths.
 Rename config.py to settings.py.

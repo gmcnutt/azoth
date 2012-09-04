@@ -490,6 +490,8 @@
     "fireball" : [                  "arms", 1,  3,  false,   0 ],
     "deathball" : [                 "arms", 1,  4,  false,   0 ],
     "arrow" : [                     "arms", 1,  8,  false, 495 ],
+	"Sword": [                      "arms", 1, 34,  false,   0 ],
+	"Sword2H": [                    "arms", 1, 36,  false,   0 ],
     "bolt" : [                      "arms", 1, 80,  false, 495 ],
     "arrowobj" : [                  "arms", 1, 68,  false,   0 ],
     "arrowstack" : [                "arms", 1, 69,  false,   0 ],
