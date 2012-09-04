@@ -585,8 +585,8 @@ class PlaceWindow(Window):
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
-                libtcod.map_set_properties(self.fov_map, x, y, not ter.blocks_sight,
-                                           False)
+                libtcod.map_set_properties(self.fov_map, x, y, 
+                                           not ter.blocks_sight, False)
 
     def on_paint(self):
         self.surface.fill(self.background_color)
@@ -621,8 +621,8 @@ class PlaceWindow(Window):
         self.animation_frame += 1
 
     def compute_fov(self, x, y, radius):
-        libtcod.map_compute_fov(self.fov_map, x, y, radius, 
-                                FOV_LIGHT_WALLS, FOV_ALGO)
+        libtcod.map_compute_fov(self.fov_map, x, y, radius, FOV_LIGHT_WALLS,
+                                FOV_ALGO)
 
     def scroll_up(self):
         if self.view.top > 0:
@@ -651,7 +651,7 @@ class PlaceWindow(Window):
 
 
 class SessionViewer(Viewer):
-    
+
     def __init__(self, session):
         super(SessionViewer, self).__init__()
         self.session = session
@@ -689,7 +689,6 @@ class SessionViewer(Viewer):
         if items is not None:
             item = items[0]
             self.session.hax2.move_item_from_being_to_map(item, being)
-            
 
     def on_keypress(self, event):
         handler = {

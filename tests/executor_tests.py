@@ -1,5 +1,6 @@
 from tools import *
 from azoth import executor, place, terrain, terrainmap
+from azoth.container import Bag
 import azoth.obj as obj
 import unittest
 
@@ -154,7 +155,7 @@ class MoveFromMapToBag(Default):
 
     def setUp(self):
         super(MoveFromMapToBag, self).setUp()
-        self.bag = obj.Bag(limit=1)
+        self.bag = Bag(limit=1)
     
     def test_ok(self):
         self.hax2.put_item_on_map(self.obj, self.place, 0, 0)

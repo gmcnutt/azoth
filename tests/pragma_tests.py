@@ -1,10 +1,11 @@
 from nose.tools import *
 from azoth import executor
 from azoth import obj
+from azoth.container import Bag, Occupied, Tray
 import unittest
 
 def test_bag():
-    bag = obj.Bag()
+    bag = Bag()
     ok_(not bag)
     x = obj.Obj()
     bag.put(x)
@@ -22,7 +23,7 @@ def test_bag():
     ok_(not bag)
 
 def test_limited_bag():
-    bag = obj.Bag(limit=1)
+    bag = Bag(limit=1)
     x = obj.Obj()
     y = obj.Obj()
     bag.put(x)
@@ -35,8 +36,8 @@ def test_limited_bag():
     ok_(y in bag)
 
 def test_two_bags():
-    bag1 = obj.Bag()
-    bag2 = obj.Bag()
+    bag1 = Bag()
+    bag2 = Bag()
     eq_(bag1, bag2)
     x = obj.Obj()
     y = obj.Obj()
@@ -49,7 +50,7 @@ def test_two_bags():
     eq_(bag1, bag2)
 
 def test_1x1_tray():
-    tray = obj.Tray()
+    tray = Tray()
     ok_(not tray)
     obj1 = obj.Obj()
     tray.put(obj1)
@@ -57,7 +58,7 @@ def test_1x1_tray():
     ok_(obj1 in tray)
     obj2 = obj.Obj()
     assert_raises(IndexError, tray.put, obj2)
-    assert_raises(obj.Occupied, tray.insert, 0, 0, obj2)
+    assert_raises(Occupied, tray.insert, 0, 0, obj2)
     assert_raises(IndexError, tray.insert, 0, 1, obj2)
     assert_raises(IndexError, tray.insert, 1, 0, obj2)
     assert_raises(IndexError, tray.insert, 0, -1, obj2)
@@ -82,7 +83,7 @@ def test_1x1_tray():
     ok_(not tray)
 
 def test_2x2_tray():
-    tray = obj.Tray(2, 2)
+    tray = Tray(2, 2)
     ok_(not tray)
     objects = []
     for i in range(5):
@@ -99,7 +100,7 @@ def test_2x2_tray():
     assert_raises(IndexError, tray.put, objects[4])
     ok_(objects[4] not in tray)
 
-    assert_raises(obj.Occupied, tray.insert, 0, 0, objects[4])
+    assert_raises(Occupied, tray.insert, 0, 0, objects[4])
     assert_raises(IndexError, tray.insert, 0, 2, objects[4])
     assert_raises(IndexError, tray.insert, 2, 0, objects[4])
     assert_raises(IndexError, tray.insert, 0, -1, objects[4])
@@ -130,8 +131,8 @@ def test_2x2_tray():
     ok_(not tray)
 
 def test_two_trays():
-    tray1 = obj.Tray(2, 2)
-    tray2 = obj.Tray(2, 2)
+    tray1 = Tray(2, 2)
+    tray2 = Tray(2, 2)
     eq_(tray1, tray2)
     x = obj.Obj()
     y = obj.Obj()

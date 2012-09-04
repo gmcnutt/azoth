@@ -1,4 +1,10 @@
 ----------------------------------------------------------------------------
+04 September 2012 08:39
+
+Make container module. Move slots and body there. Move Bags and Trays from
+obj/__init__.py to their own files there. Fix tests.
+
+----------------------------------------------------------------------------
 03 September 2012 16:13
 
 When I change passability rules I have to reload the session. Not good. The
