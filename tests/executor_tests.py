@@ -1,7 +1,7 @@
 from tools import *
 from azoth import executor, place, terrain, terrainmap
 from azoth.container import Bag
-import azoth.obj as obj
+from azoth.obj import baseobject
 import unittest
 
 class TestException(Exception):
@@ -30,7 +30,7 @@ def assert_not_at(obj, pla, x, y):
 def test_impassable_exc():
     pla = place.Sector()
     print(pla)
-    exc = executor.Impassable(obj.Obj(), terrain.RockWall, 
+    exc = executor.Impassable(baseobject.BaseObject(), terrain.RockWall, 
                            'place', 'x', 'y')
     print(exc)
 
@@ -48,7 +48,7 @@ DIRMAP = {'north'    :( 0, -1),
 class Passability(unittest.TestCase):
 
     def setUp(self):
-        self.obj = obj.Obj()
+        self.obj = baseobject.BaseObject()
         self.place = place.Sector(default_terrain=terrain.Grass)
         self.rules = executor.Ruleset()
         self.hax2 = executor.Executor(self.rules)
@@ -66,7 +66,7 @@ class Default(unittest.TestCase):
         self.rules = executor.Ruleset()
         self.hax2 = executor.Executor(self.rules)
         self.tmap = terrainmap.load_from_nazghul_scm('gregors-hut.scm')
-        self.obj = obj.Obj()
+        self.obj = baseobject.BaseObject()
         self.place = place.Sector(default_terrain=terrain.Grass)
 
 class PutOnMap(Default):
@@ -76,8 +76,8 @@ class PutOnMap(Default):
         assert_item_at(self.obj, self.place, 0, 0)
 
     def test_impassable_occupant(self):
-        o1 = obj.Obj()
-        o2 = obj.Obj()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         assert_raises(executor.Occupied, self.hax2.put_being_on_map, o2, 
                       self.place, 0, 0)
@@ -129,8 +129,8 @@ class MoveOnMap(Default):
         assert_being_at(self.obj, self.place, 5, 5)
 
     def test_occupant(self):
-        o1 = obj.Obj()
-        o2 = obj.Obj()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         assert_raises(executor.Occupied, self.hax2.move_being_on_map, o1,
@@ -139,8 +139,8 @@ class MoveOnMap(Default):
         assert_being_at(o2, self.place, 1, 0)
 
     def test_swap(self):
-        o1 = obj.Obj()
-        o2 = obj.Obj()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         try:
@@ -165,7 +165,7 @@ class MoveFromMapToBag(Default):
 
     def test_full(self):
         self.hax2.put_item_on_map(self.obj, self.place, 0, 0)
-        obj2 = obj.Obj()
+        obj2 = baseobject.BaseObject()
         self.hax2.put_item_on_map(obj2, self.place, 0, 0)
         self.hax2.move_item_from_map_to_bag(self.obj, self.bag)
         raises_(executor.WontFitError, self.hax2.move_item_from_map_to_bag, 

@@ -11,7 +11,7 @@ import obj
 import inspect
 import json
 import logging
-from obj import Obj, being, weapon
+from obj import baseobject, being, weapon
 import pygame
 import os
 import session
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # Assign sprites based on class name
     for module in (weapon, being):
         for name, o in inspect.getmembers(module):	  	
-            if inspect.isclass(o) and issubclass(o, Obj):
+            if inspect.isclass(o) and issubclass(o, baseobject.BaseObject):
                 o.sprite = all_sprites[o.__name__]
 
     # Load the session.

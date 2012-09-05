@@ -1,10 +1,10 @@
 """ Beings are objects with movement modes and bodies. """
 
-import obj
+import baseobject
 import body
 
 
-class Human(obj.Obj):
+class Human(baseobject.BaseObject):
     """ A being with a humanoid body. """
 
     def __init__(self, name='obj'):
@@ -13,7 +13,7 @@ class Human(obj.Obj):
         self.name = name
         self.body = body.Humanoid()
 
-class Troll(obj.Obj):
+class Troll(baseobject.BaseObject):
 
     def __init__(self, name='troll'):
         super(Troll, self).__init__()

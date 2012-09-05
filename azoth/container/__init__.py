@@ -1,4 +1,4 @@
-from azoth.obj import Obj
+from azoth.obj import baseobject
 
 class ObjError(Exception):
     """ Base class for all Obj errors. """
@@ -19,7 +19,7 @@ class Occupied(ObjError):
             format(self.prag, self.cont, self.x, self.y)
 
 
-class Bag(Obj):
+class Bag(baseobject.BaseObject):
     """ A simple container for other pragmas. """
 
     def __init__(self, limit=None):
@@ -66,7 +66,7 @@ def assert_xy_gte_0(func):
         return func(instance, x, y, *args)
     return wrapf
 
-class Tray(Obj):
+class Tray(baseobject.BaseObject):
     """ A grid of holes, each of which can hold one pragma."""
 
     def __init__(self, width=1, height=1):

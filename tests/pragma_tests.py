@@ -1,20 +1,20 @@
 from nose.tools import *
 from azoth import executor
-from azoth import obj
+from azoth.obj import baseobject
 from azoth.container import Bag, Occupied, Tray
 import unittest
 
 def test_bag():
     bag = Bag()
     ok_(not bag)
-    x = obj.Obj()
+    x = baseobject.BaseObject()
     bag.put(x)
     ok_(x in bag)
     eq_(1, len(bag))
     ok_(bag)
     bag.put(x)
     eq_(1, len(bag))
-    y = obj.Obj()
+    y = baseobject.BaseObject()
     bag.put(y)
     eq_(2, len(bag))
     bag.remove(x)
@@ -24,8 +24,8 @@ def test_bag():
 
 def test_limited_bag():
     bag = Bag(limit=1)
-    x = obj.Obj()
-    y = obj.Obj()
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     bag.put(x)
     assert_raises(IndexError, bag.put, y)
     ok_(x in bag)
@@ -39,8 +39,8 @@ def test_two_bags():
     bag1 = Bag()
     bag2 = Bag()
     eq_(bag1, bag2)
-    x = obj.Obj()
-    y = obj.Obj()
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     bag1.put(x)
     bag2.put(x)
     eq_(bag1, bag2)
@@ -52,11 +52,11 @@ def test_two_bags():
 def test_1x1_tray():
     tray = Tray()
     ok_(not tray)
-    obj1 = obj.Obj()
+    obj1 = baseobject.BaseObject()
     tray.put(obj1)
     ok_(tray)
     ok_(obj1 in tray)
-    obj2 = obj.Obj()
+    obj2 = baseobject.BaseObject()
     assert_raises(IndexError, tray.put, obj2)
     assert_raises(Occupied, tray.insert, 0, 0, obj2)
     assert_raises(IndexError, tray.insert, 0, 1, obj2)
@@ -87,7 +87,7 @@ def test_2x2_tray():
     ok_(not tray)
     objects = []
     for i in range(5):
-        objects.append(obj.Obj())
+        objects.append(baseobject.BaseObject())
 
     for i in range(4):
         print(len(tray))
@@ -134,8 +134,8 @@ def test_two_trays():
     tray1 = Tray(2, 2)
     tray2 = Tray(2, 2)
     eq_(tray1, tray2)
-    x = obj.Obj()
-    y = obj.Obj()
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     tray1.put(x)
     tray2.put(x)
     eq_(tray1, tray2)

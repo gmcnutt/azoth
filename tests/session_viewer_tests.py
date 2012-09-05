@@ -1,6 +1,6 @@
 import unittest
 from tools import *
-from azoth import executor, gui, obj, place, session, sprite, terrain, \
+from azoth import executor, gui, place, session, sprite, terrain, \
     terrainmap
 from azoth.obj import being, weapon
 import pygame
