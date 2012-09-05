@@ -29,7 +29,7 @@ class Window(object):
     background_color = colors.black
 
     # XXX: use pygame.rect for dims
-    def __init__(self, x=0, y=0, width=0, height=0, title=None):
+    def __init__(self, x=0, y=0, width=0, height=0, title=None, font=None):
         if width <= 0:
             raise ValueError('width must be >= 1')
         if height <= 0:
@@ -42,9 +42,9 @@ class Window(object):
         self.title = title
         self.top_margin = 0
         self.left_margin = 0
-        self.surface = pygame.Surface((width, height)).convert_alpha()
-        self.font = pygame.font.Font(pygame.font.get_default_font(),
-                                     16)  # XXX: config.py
+        self.surface = pygame.Surface((width, height), flags=pygame.SRCALPHA).convert_alpha()
+        self.font = font or pygame.font.Font(pygame.font.get_default_font(),
+                                             16)  # XXX: config.py
         # XXX: assumes monospace
         self.font_width, self.font_height = self.font.size('x')
 
@@ -650,6 +650,28 @@ class PlaceWindow(Window):
         self.view = self.view.clamp(self.place_rect)
 
 
+class FpsViewer(Window):
+    """ Show the FPS """
+
+    def __init__(self, **kwargs):
+        font = pygame.font.Font(pygame.font.get_default_font(), 16)
+        dims = [font.size('%d' % x) for x in xrange(9)]
+        width, height = font.size('632')
+        super(FpsViewer, self).__init__(width=width, height=height, font=font,
+                                        **kwargs)
+        self.fps = 0
+
+    @property
+    def fps(self):
+        return self._fps
+
+    @fps.setter
+    def fps(self, val):
+        self._fps = val
+        self.surface.fill((0, 0, 0, 128))
+        self._print(0, '%d' % int(val))
+
+
 class SessionViewer(Viewer):
 
     def __init__(self, session):
@@ -661,6 +683,8 @@ class SessionViewer(Viewer):
         self.subject = self.session.player
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        self.fps_label = FpsViewer()
+        self.windows.append(self.fps_label)
 
     def move(self, dx, dy):
         try:
@@ -703,3 +727,17 @@ class SessionViewer(Viewer):
             }.get(event.key)
         if handler:
             handler()
+
+    def run(self):
+        while not self.done:
+            self.render()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:
+                        return
+                    else:
+                        self.on_keypress(event)
+            self.clock.tick(self.fps)
+            self.fps_label.fps = self.clock.get_fps()

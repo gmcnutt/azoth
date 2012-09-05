@@ -111,3 +111,10 @@ class PromptDialogTest(GuiTest):
         self.target = gui.PromptDialog(message=self.message, max_width=20, 
                                        max_height=10)
         self.show()
+
+class FpsViewerTest(GuiTest):
+    
+    def test_default(self):
+        self.target = gui.FpsViewer(digits=3)
+        self.target.fps = 632
+        self.show(prompt=True)

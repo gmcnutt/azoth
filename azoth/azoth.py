@@ -74,10 +74,8 @@ if __name__ == "__main__":
     terrain.Bog.sprite = all_sprites['bog']
     terrain.Water.sprite = all_sprites['shoals']
 
-    being.Human.sprite = all_sprites['townsman']
-
     # Assign sprites based on class name
-    for module in (weapon,):
+    for module in (weapon, being):
         for name, o in inspect.getmembers(module):	  	
             if inspect.isclass(o) and issubclass(o, Obj):
                 o.sprite = all_sprites[o.__name__]

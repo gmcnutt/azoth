@@ -26,6 +26,9 @@ sesh.hax2.put_being_on_map(sesh.player, sesh.world, 1, 1)
 sword = weapon.Sword()
 sesh.hax2.put_item_on_map(sword, sesh.world, 3, 3)
 
+troll = being.Troll('Skoligidornifor')
+sesh.hax2.put_being_on_map(troll, sesh.world, 5, 5)
+
 savefile = open('start.p', 'w')
 cPickle.dump(sesh, savefile)
 savefile.close()

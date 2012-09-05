@@ -3,7 +3,8 @@ F:Pathfinding.
 F:Inventory/body viewer
 F:Console
 F:action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door
-RF: move body out of obj
+F:object creation editor
+F:name generator
 RF: role executor methods up into session
 Fix animations to be independent of fps
 Basic working sprite set for first level.
