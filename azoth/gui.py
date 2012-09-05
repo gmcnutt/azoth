@@ -4,6 +4,7 @@ gui classes for azoth
 
 import colors
 import config
+import event
 import executor
 import libtcodpy as libtcod
 import logging
@@ -212,7 +213,7 @@ class PromptDialog(Window):
         self.prompt_area.paint(to_surface=self.surface)
 
 
-class Viewer(object):
+class Viewer(event.EventLoop):
     """ A stand-alone UI and keyhandler.  """
 
     background_color = colors.black
@@ -244,20 +245,24 @@ class Viewer(object):
         for window in self.windows:
             window.paint()
 
-    def run(self):
-        self.render()
-        while not self.done:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        return
-                    else:
-                        self.on_keypress(event)
-            self.render()
-            self.clock.tick(self.fps)
+    def on_event(self, event):
+        """ Hook for EventLoop. """
+        if event.type == pygame.QUIT:
+            return True
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                return True
+            else:
+                self.on_keypress(event)
+        return False
 
+    def on_loop_start(self):
+        """ Hook for EventLoop. """
+        self.render()
+
+    def on_loop_finish(self):
+        """ Hook for EventLoop. """
+        self.clock.tick(self.fps)
 
 class FileSelector(Viewer):
 
@@ -728,16 +733,9 @@ class SessionViewer(Viewer):
         if handler:
             handler()
 
-    def run(self):
-        while not self.done:
-            self.render()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    return
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q:
-                        return
-                    else:
-                        self.on_keypress(event)
-            self.clock.tick(self.fps)
-            self.fps_label.fps = self.clock.get_fps()
+    def on_loop_finish(self):
+        """ Do custom updates at the bottom of every event loop. """
+        super(SessionViewer, self).on_loop_finish()
+        self.fps_label.fps = self.clock.get_fps()
+
+        
