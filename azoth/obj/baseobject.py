@@ -35,3 +35,17 @@ class BaseObject(object):
         else:
             return 'pragma'
 
+
+class TakesTurns(object):
+    """ Mixin class for objects that take actions every turn. """
+
+    def do_turn(self, event_loop):
+        pass
+
+    def on_turn_start(self):
+        self.turn_is_done = False
+
+    def on_turn_end(self):
+        pass
+
+

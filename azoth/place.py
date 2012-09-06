@@ -168,6 +168,11 @@ class Place(object):
         """ Load from an open file. """
         return cPickle.load(loadfile)
 
+    @property
+    def pieces(self):
+        everything = self.occupants.values()
+        return [x for x in everything if hasattr(x, 'do_turn')]
+
 
 class Sector(Place):
     """ Fixed-size chunk of map, meant to be stitched together with other
@@ -176,7 +181,6 @@ class Sector(Place):
     def __init__(self, **kwargs):
         # XXX: move 31 to config.py
         super(Sector, self).__init__(width=31, height=31, **kwargs)
-
 
 
 class World(object):

@@ -700,24 +700,27 @@ class SessionViewer(Viewer):
             return
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        self.subject.turn_is_done = True
 
     def save(self):
         self.session.save('save.p')
 
     def get(self):
-        items = self.session.world.get_items(self.session.player.x,
-                                             self.session.player.y)
+        items = self.session.world.get_items(self.subject.x,
+                                             self.subject.y)
         if items is not None:
             item = items[0]
-            being = self.session.player
+            being = self.subject
             self.session.hax2.move_item_from_map_to_being(item, being)
+            being.turn_is_done = True
 
     def drop(self):
-        being = self.session.player
+        being = self.subject
         items = being.body.get()
         if items is not None:
             item = items[0]
             self.session.hax2.move_item_from_being_to_map(item, being)
+            being.turn_is_done = True
 
     def on_keypress(self, event):
         handler = {
@@ -738,4 +741,18 @@ class SessionViewer(Viewer):
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
 
-        
+    def run(self):
+        while True:
+            for actor in sorted(self.session.world.pieces):
+                actor.on_turn_start()
+                while not actor.turn_is_done:
+                    if actor == self.subject:
+                        while not actor.turn_is_done:
+                            self.on_loop_start()
+                            for event in pygame.event.get():
+                                if self.on_event(event):
+                                    return self.on_loop_exit()
+                            self.on_loop_finish()
+                    else:
+                        actor.do_turn(self.session)
+                actor.on_turn_end()
