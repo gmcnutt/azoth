@@ -42,7 +42,7 @@ class SessionViewerTest(unittest.TestCase):
     def sendkey(self, key):
         """ Curried wrapper to send a key event to the session viewer. """
         try:
-            self.session.player.controller.key_handler(key)
+            self.session.player.controller.on_keypress(key)
         except event.Handled:
             pass
 

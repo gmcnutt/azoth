@@ -52,9 +52,10 @@ class Player(Controller):
         """ Raise the Quit exception to signal the player is done. """
         raise event.Quit()
 
-    def key_handler(self, key):
+    def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Returns True
         when done with turn."""
+        
         handler = {
             pygame.K_DOWN: lambda: self.move(0, 1),
             pygame.K_UP: lambda: self.move(0, -1),
@@ -69,11 +70,15 @@ class Player(Controller):
             return handler()
         return False
 
+    def on_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            self.on_keypress(event.key)
+    
     def do_turn(self, event_loop):
         """ Let the player control the subject during the turn. """
-        event_loop.push_key_handler(self.key_handler)
+        event_loop.push_event_handler(self.on_event)
         event_loop.resume()
-        event_loop.pop_key_handler()
+        event_loop.pop_event_handler()
 
 
 class Beeline(Controller):

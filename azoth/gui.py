@@ -224,7 +224,6 @@ class Viewer(event.EventLoop):
         self.done = False
         self.windows = []
         self.clock = pygame.time.Clock()
-        self.key_handlers = []
 
     def add_window(self, window):
         self.windows.append(window)
@@ -247,8 +246,12 @@ class Viewer(event.EventLoop):
         for window in self.windows:
             window.paint()
 
+    def on_keypress(self, key):
+        """ Hook for subclasses to handle key events. """
+        pass
+
     def on_event(self, evt):
-        """ Handle an event. Returns True to break out of event loop. """
+        """ Handle an event. """
         if evt.type == pygame.QUIT:
             raise event.Quit()
         elif evt.type == pygame.KEYDOWN:
@@ -684,6 +687,7 @@ class SessionViewer(Viewer):
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
         self.fps_label = FpsViewer()
         self.windows.append(self.fps_label)
+        self.event_handlers = []
 
     def on_loop_finish(self):
         """ Do custom updates at the bottom of every event loop. """
@@ -697,15 +701,20 @@ class SessionViewer(Viewer):
         # wants to quit.
         super(SessionViewer, self).run()
 
-    def push_key_handler(self, key_handler):
-        self.key_handlers.append(key_handler)
+    def push_event_handler(self, handler):
+        self.event_handlers.append(handler)
 
-    def pop_key_handler(self):
-        return self.key_handlers.pop()
+    def pop_event_handler(self):
+        return self.event_handlers.pop()
 
-    def on_keypress(self, event):
-        if self.key_handlers:
-            self.key_handlers[-1](event)
+    def on_event(self, event):
+        """ Run the top of the event handler stack. If it does not handle the
+        event then fall back on the default handler. """
+        if self.event_handlers:
+            self.event_handlers[-1](event)
+        # The handler would have raised event.Handled if it had handled the
+        # event.
+        super(SessionViewer, self).on_event(event)
 
     def run(self):
         """ Run the main loop. """
