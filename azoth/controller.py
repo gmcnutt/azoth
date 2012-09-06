@@ -23,7 +23,7 @@ class Player(Controller):
             return
         except executor.RuleError:
             return
-        return True
+        raise event.Handled()
 
     def save(self):
         """ Save the session. """
@@ -37,7 +37,7 @@ class Player(Controller):
             item = items[0]
             being = self.subject
             self.session.hax2.move_item_from_map_to_being(item, being)
-            return True
+            raise event.Handled()
 
     def drop(self):
         """ Have the subject drop something from inventory to the ground. """
@@ -46,7 +46,7 @@ class Player(Controller):
         if items is not None:
             item = items[0]
             self.session.hax2.move_item_from_being_to_map(item, being)
-            return True
+            raise event.Handled()
 
     def quit(self):
         """ Raise the Quit exception to signal the player is done. """

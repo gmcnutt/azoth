@@ -1,7 +1,7 @@
 import unittest
 from tools import *
-from azoth import controller, executor, gui, place, session, sprite, terrain, \
-    terrainmap
+from azoth import controller, event, executor, gui, place, session, sprite, \
+    terrain, terrainmap
 from azoth.obj import being, weapon
 import pygame
 
@@ -41,7 +41,10 @@ class SessionViewerTest(unittest.TestCase):
 
     def sendkey(self, key):
         """ Curried wrapper to send a key event to the session viewer. """
-        self.session.player.controller.key_handler(key)
+        try:
+            self.session.player.controller.key_handler(key)
+        except event.Handled:
+            pass
 
     def test_scroll(self):
         self.session.world.set_terrain(1, 0, terrain.CobbleStone)

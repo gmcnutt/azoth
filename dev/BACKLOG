@@ -1,6 +1,5 @@
-RF:FpsViewer should not have to predetermine its dimensions
-F:NPC.
 F:Pathfinding.
+F:NPC.
 F:Inventory/body viewer
 F:Console
 F:action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door

@@ -1,7 +1,17 @@
 import pygame
 
+
 class Quit(Exception):
+    """ Raised by the event handler when it wants to indicate that the player
+    is quitting. """
     pass
+
+
+class Handled(Exception):
+    """ Raised by the event handler when it has handled the event and wants to
+    break out of the loop."""
+    pass
+
 
 class EventLoop(object):
     """ Provide a common framework to drive the event loop. """
@@ -30,14 +40,16 @@ class EventLoop(object):
         """ Run one iteration. Return True to break out of the main loop. """
         self.on_loop_start()
         for event in pygame.event.get():
-            if self.on_event(event):
-                return True
+            self.on_event(event)
         self.on_loop_finish()
 
     def run(self):
-        """ Loop until the event handler returns True. """
+        """ Loop until the event handler raises an exception. """
         self.on_loop_entry()
-        while True:
-            if self.run_one_iteration():
-                break
-        return self.on_loop_exit()
+        try:
+            while True:
+                self.run_one_iteration()
+        except Handled:
+            pass
+        finally:
+            self.on_loop_exit()

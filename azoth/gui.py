@@ -247,13 +247,12 @@ class Viewer(event.EventLoop):
         for window in self.windows:
             window.paint()
 
-    def on_event(self, event):
+    def on_event(self, evt):
         """ Handle an event. Returns True to break out of event loop. """
-        if event.type == pygame.QUIT:
-            return True
-        elif event.type == pygame.KEYDOWN:
-            return self.on_keypress(event.key)
-        return False
+        if evt.type == pygame.QUIT:
+            raise event.Quit()
+        elif evt.type == pygame.KEYDOWN:
+            self.on_keypress(evt.key)
 
     def on_loop_start(self):
         """ Render at start of loop. """
@@ -706,7 +705,7 @@ class SessionViewer(Viewer):
 
     def on_keypress(self, event):
         if self.key_handlers:
-            return self.key_handlers[-1](event)
+            self.key_handlers[-1](event)
 
     def run(self):
         """ Run the main loop. """
