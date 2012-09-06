@@ -1,4 +1,6 @@
 import event
+import executor
+import place
 import pygame
 
 

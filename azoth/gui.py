@@ -31,10 +31,6 @@ class Window(object):
 
     # XXX: use pygame.rect for dims
     def __init__(self, x=0, y=0, width=0, height=0, title=None, font=None):
-        if width <= 0:
-            raise ValueError('width must be >= 1')
-        if height <= 0:
-            raise ValueError('height must be >= 1')
         self.x = x
         self.y = y
         self.width = width
@@ -43,7 +39,12 @@ class Window(object):
         self.title = title
         self.top_margin = 0
         self.left_margin = 0
-        self.surface = pygame.Surface((width, height), flags=pygame.SRCALPHA).convert_alpha()
+        # Some windows may dynamically allocate their surface later
+        if width > 0 and height > 0:
+            self.surface = pygame.Surface((width, height), 
+                                          flags=pygame.SRCALPHA).convert_alpha()
+        else:
+            self.surface = None
         self.font = font or pygame.font.Font(pygame.font.get_default_font(),
                                              16)  # XXX: config.py
         # XXX: assumes monospace
@@ -658,11 +659,7 @@ class FpsViewer(Window):
     """ Show the FPS """
 
     def __init__(self, **kwargs):
-        font = pygame.font.Font(pygame.font.get_default_font(), 16)
-        dims = [font.size('%d' % x) for x in xrange(9)]
-        width, height = font.size('632')
-        super(FpsViewer, self).__init__(width=width, height=height, font=font,
-                                        **kwargs)
+        super(FpsViewer, self).__init__()
         self.fps = 0
 
     @property
@@ -672,9 +669,8 @@ class FpsViewer(Window):
     @fps.setter
     def fps(self, val):
         self._fps = val
-        self.surface.fill((0, 0, 0, 128))
-        self._print(0, '%d' % int(val))
-
+        self.surface = self.font.render('%d' % val, True, colors.white)
+        self.width, self.height = self.surface.get_size()
 
 class SessionViewer(Viewer):
 

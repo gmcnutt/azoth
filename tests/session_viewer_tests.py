@@ -1,6 +1,6 @@
 import unittest
 from tools import *
-from azoth import executor, gui, place, session, sprite, terrain, \
+from azoth import controller, executor, gui, place, session, sprite, terrain, \
     terrainmap
 from azoth.obj import being, weapon
 import pygame
@@ -20,6 +20,8 @@ class SessionViewerTest(unittest.TestCase):
         terrain.Ankh.sprite = sprite.AnimatedSprite(sheet, 1, 61)
         self.session = session.Session()
         self.session.player = being.Human()
+        self.session.player.controller = controller.Player(self.session.player,
+                                                           self.session)
         self.session.world = place.Sector(name='gh', 
                                           default_terrain=terrain.Grass)
         self.session.hax2.put_being_on_map(self.session.player, 
@@ -39,7 +41,7 @@ class SessionViewerTest(unittest.TestCase):
 
     def sendkey(self, key):
         """ Curried wrapper to send a key event to the session viewer. """
-        self.viewer.on_keypress(pygame.event.Event(pygame.USEREVENT, key=key))
+        self.session.player.controller.key_handler(key)
 
     def test_scroll(self):
         self.session.world.set_terrain(1, 0, terrain.CobbleStone)
