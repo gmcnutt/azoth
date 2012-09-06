@@ -223,12 +223,13 @@ class Viewer(event.EventLoop):
         self.done = False
         self.windows = []
         self.clock = pygame.time.Clock()
+        self.key_handlers = []
 
     def add_window(self, window):
         self.windows.append(window)
 
     def quit(self):
-        self.done = True
+        return True
 
     def render(self):
         pygame.display.get_surface().fill(self.background_color)
@@ -246,23 +247,21 @@ class Viewer(event.EventLoop):
             window.paint()
 
     def on_event(self, event):
-        """ Hook for EventLoop. """
+        """ Handle an event. Returns True to break out of event loop. """
         if event.type == pygame.QUIT:
             return True
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q:
-                return True
-            else:
-                self.on_keypress(event)
+            return self.on_keypress(event.key)
         return False
 
     def on_loop_start(self):
-        """ Hook for EventLoop. """
+        """ Render at start of loop. """
         self.render()
 
     def on_loop_finish(self):
-        """ Hook for EventLoop. """
+        """ Delay at end of loop to synch FPS. """
         self.clock.tick(self.fps)
+
 
 class FileSelector(Viewer):
 
@@ -691,68 +690,40 @@ class SessionViewer(Viewer):
         self.fps_label = FpsViewer()
         self.windows.append(self.fps_label)
 
-    def move(self, dx, dy):
-        try:
-            self.session.hax2.move_being_on_map(self.subject, dx, dy)
-        except place.PlaceError:
-            return
-        except executor.RuleError:
-            return
-        self.map.center = self.subject.x, self.subject.y
-        self.map.compute_fov(self.subject.x, self.subject.y, 11)
-        self.subject.turn_is_done = True
-
-    def save(self):
-        self.session.save('save.p')
-
-    def get(self):
-        items = self.session.world.get_items(self.subject.x,
-                                             self.subject.y)
-        if items is not None:
-            item = items[0]
-            being = self.subject
-            self.session.hax2.move_item_from_map_to_being(item, being)
-            being.turn_is_done = True
-
-    def drop(self):
-        being = self.subject
-        items = being.body.get()
-        if items is not None:
-            item = items[0]
-            self.session.hax2.move_item_from_being_to_map(item, being)
-            being.turn_is_done = True
-
-    def on_keypress(self, event):
-        handler = {
-            pygame.K_DOWN: lambda: self.move(0, 1),
-            pygame.K_UP: lambda: self.move(0, -1),
-            pygame.K_LEFT: lambda: self.move(-1, 0),
-            pygame.K_RIGHT: lambda: self.move(1, 0),
-            pygame.K_d: self.drop,
-            pygame.K_g: self.get,
-            pygame.K_q: self.quit,
-            pygame.K_s: self.save,
-            }.get(event.key)
-        if handler:
-            handler()
-
     def on_loop_finish(self):
         """ Do custom updates at the bottom of every event loop. """
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
 
+    def resume(self):
+        """ Continue running the main loop. """
+        # This is called from within actor.do_turn() in order to run the event
+        # handlers. It returns when the actor's turn is over or the player
+        # wants to quit.
+        super(SessionViewer, self).run()
+
+    def push_key_handler(self, key_handler):
+        self.key_handlers.append(key_handler)
+
+    def pop_key_handler(self):
+        return self.key_handlers.pop()
+
+    def on_keypress(self, event):
+        if self.key_handlers:
+            return self.key_handlers[-1](event)
+
     def run(self):
-        while True:
-            for actor in sorted(self.session.world.pieces):
-                actor.on_turn_start()
-                while not actor.turn_is_done:
-                    if actor == self.subject:
-                        while not actor.turn_is_done:
-                            self.on_loop_start()
-                            for event in pygame.event.get():
-                                if self.on_event(event):
-                                    return self.on_loop_exit()
-                            self.on_loop_finish()
-                    else:
-                        actor.do_turn(self.session)
-                actor.on_turn_end()
+        """ Run the main loop. """
+        self.on_loop_entry()
+        while not self.done:
+            for actor in sorted(self.session.world.actors):
+                try:
+                    actor.do_turn(self)
+                except event.Quit:
+                    self.on_loop_exit()
+                    return
+            self.map.center = self.subject.x, self.subject.y
+            self.map.compute_fov(self.subject.x, self.subject.y, 11)
+            if self.run_one_iteration():
+                break
+        self.on_loop_exit()

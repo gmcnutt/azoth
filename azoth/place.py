@@ -169,9 +169,10 @@ class Place(object):
         return cPickle.load(loadfile)
 
     @property
-    def pieces(self):
-        everything = self.occupants.values()
-        return [x for x in everything if hasattr(x, 'do_turn')]
+    def actors(self):
+        occupants = self.occupants.values()
+        return [getattr(x, 'controller') for x in occupants 
+                if hasattr(x, 'controller')]
 
 
 class Sector(Place):
