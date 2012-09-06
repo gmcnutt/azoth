@@ -78,7 +78,10 @@ if __name__ == "__main__":
     for module in (weapon, being):
         for name, o in inspect.getmembers(module):	  	
             if inspect.isclass(o) and issubclass(o, baseobject.BaseObject):
-                o.sprite = all_sprites[o.__name__]
+                try:
+                    o.sprite = all_sprites[o.__name__]
+                except KeyError:
+                    logging.warn('{} has no sprite'.format(o.__name__))
 
     # Load the session.
     session = session.load(cmdargs.start)
