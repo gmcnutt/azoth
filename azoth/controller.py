@@ -56,6 +56,16 @@ class Player(Controller):
         """ Let the player control the subject during the turn. """
         event_loop.resume()
 
+    def teleport(self, x, y):
+        try:
+            self.session.hax2.teleport_being_on_map(self.subject, x, y)
+        except place.PlaceError:
+            return
+        except executor.RuleError:
+            return
+        raise event.Handled()
+        
+
 
 class Beeline(Controller):
 

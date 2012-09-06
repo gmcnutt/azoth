@@ -647,6 +647,12 @@ class PlaceWindow(Window):
         if self.view.right < self.place.width:
             self.view.right += 1
 
+    def screen_to_map(self, scr_x, scr_y):
+        """ Convert screen coords in pixels to map coords in tiles. """
+        map_x = self.view.left + int((self.x + scr_x) / self.cell_width)
+        map_y = self.view.top + int((self.y + scr_y) / self.cell_height)
+        return map_x, map_y
+
     @property
     def center(self):
         return self.view.center
@@ -718,7 +724,9 @@ class SessionViewer(Viewer):
             handler()
 
     def on_mouse(self, button, x, y):
-        print(button, x, y)
+        """ Dispatch mouse-clicks. """
+        map_x, map_y = self.map.screen_to_map(x, y)
+        self.controller.teleport(map_x, map_y)
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the

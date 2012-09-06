@@ -197,6 +197,19 @@ class Executor(object):
         obj.loc = (obj.place, newx, newy)
         # hooks
         self.rules.on_put_occupant(obj)
+
+    def teleport_being_on_map(self, obj, newx, newy):
+        """ Move the object to a new location in its current place. """
+        # checks
+        self.rules.assert_remove_ok(obj)
+        self.rules.assert_unoccupied(obj.place, newx, newy)
+        self.rules.assert_passable(obj, obj.place, newx, newy)
+        # commit
+        obj.place.remove_occupant(obj.x, obj.y)
+        obj.place.set_occupant(newx, newy, obj)
+        obj.loc = (obj.place, newx, newy)
+        # hooks
+        self.rules.on_put_occupant(obj)
         
     def rotate_beings_on_map(self, *objs):
         """ Rotate locations. """
