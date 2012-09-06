@@ -1,4 +1,26 @@
 ----------------------------------------------------------------------------
+06 September 2012 06:13
+
+pygame-specifics move up to SessionViewer. The player.Controller pushes itself
+as the current controller and runs resume. It implements specific functions,
+not general event handling.
+
+SessionViewer.on_event maps events to controller commands and invokes them,
+using the key binding table to guide the mapping. In the future it will
+dispatch events to sub-widgets other than the controller.
+
+Refactor Player:
+* move on_event to SessionViewer
+* move on_keypress to SessionViewer
+
+Refactor SessionViewer:
+* remove event_handlers
+* set controller in run
+* in on_keypress, invoke controller (if any)
+
+Then, in on_mouse, translate coords to map and use it to teleport the player.
+
+----------------------------------------------------------------------------
 04 September 2012 08:39
 
 Make container module. Move slots and body there. Move Bags and Trays from

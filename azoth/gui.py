@@ -687,7 +687,7 @@ class SessionViewer(Viewer):
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
         self.fps_label = FpsViewer()
         self.windows.append(self.fps_label)
-        self.event_handlers = []
+        self.controller = None
 
     def on_loop_finish(self):
         """ Do custom updates at the bottom of every event loop. """
@@ -701,17 +701,32 @@ class SessionViewer(Viewer):
         # wants to quit.
         super(SessionViewer, self).run()
 
-    def push_event_handler(self, handler):
-        self.event_handlers.append(handler)
+    def on_keypress(self, key):
+        """ Handle a key to control the subject during its turn. Returns True
+        when done with turn."""        
+        handler = {
+            pygame.K_DOWN: lambda: self.controller.move(0, 1),
+            pygame.K_UP: lambda: self.controller.move(0, -1),
+            pygame.K_LEFT: lambda: self.controller.move(-1, 0),
+            pygame.K_RIGHT: lambda: self.controller.move(1, 0),
+            pygame.K_d: self.controller.drop,
+            pygame.K_g: self.controller.get,
+            pygame.K_q: self.controller.quit,
+            pygame.K_s: self.controller.save,
+            }.get(key)
+        if handler:
+            handler()
 
-    def pop_event_handler(self):
-        return self.event_handlers.pop()
+    def on_mouse(self, button, x, y):
+        print(button, x, y)
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the
         event then fall back on the default handler. """
-        if self.event_handlers:
-            self.event_handlers[-1](event)
+        if event.type == pygame.KEYDOWN:
+            self.on_keypress(event.key)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.on_mouse(event.button, event.pos[0], event.pos[1])
         # The handler would have raised event.Handled if it had handled the
         # event.
         super(SessionViewer, self).on_event(event)
@@ -719,15 +734,15 @@ class SessionViewer(Viewer):
     def run(self):
         """ Run the main loop. """
         self.on_loop_entry()
-        while not self.done:
-            for actor in sorted(self.session.world.actors):
-                try:
+        try:
+            while not self.done:
+                for actor in sorted(self.session.world.actors):
+                    self.controller = actor
                     actor.do_turn(self)
-                except event.Quit:
-                    self.on_loop_exit()
-                    return
-            self.map.center = self.subject.x, self.subject.y
-            self.map.compute_fov(self.subject.x, self.subject.y, 11)
-            if self.run_one_iteration():
-                break
-        self.on_loop_exit()
+                self.map.center = self.subject.x, self.subject.y
+                self.map.compute_fov(self.subject.x, self.subject.y, 11)
+                self.run_one_iteration()
+        except event.Quit:
+            pass
+        finally:
+            self.on_loop_exit()
