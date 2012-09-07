@@ -9,6 +9,7 @@ import executor
 import libtcodpy as libtcod
 import logging
 import os
+import path
 import place
 import pygame
 import sprite
@@ -725,8 +726,12 @@ class SessionViewer(Viewer):
 
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
-        map_x, map_y = self.map.screen_to_map(x, y)
-        self.controller.teleport(map_x, map_y)
+        to_x, to_y = self.map.screen_to_map(x, y)
+        from_x, from_y = self.controller.subject.xy
+        path = path.find(from_x, from_y, to_x, to_y)
+        for step in path:
+            self.controller.move(step.dx, step.dy)
+            self.render()
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the
