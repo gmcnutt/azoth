@@ -4,8 +4,8 @@ class Step(object):
 
     def __init__(self, loc, nearness=0, cost=0, depth=0, nextstep=None):
         self.loc = loc
-        self.nearness = 0
-        self.cost = 0
+        self.nearness = nearness
+        self.cost = cost
         self.nextstep = nextstep
         if nextstep is not None:
             self.depth = nextstep.depth + 1
@@ -32,18 +32,19 @@ def find(src, dst, is_valid, heuristic, max_depth=100):
     pq = []
     found = {}
     nearness, cost = heuristic(src, dst)
-    step = Step(src, nearness, cost)
-    heapq.heappush(pq, (step.nearness, step))
+    step = Step(src, nearness)
+    heapq.heappush(pq, (step.nearness, id(step), step))
     found[src] = step
     print("{} -> {}".format(src, dst))
     while pq:
         print(pq)
-        priority, step = heapq.heappop(pq)
+        priority, _id, step = heapq.heappop(pq)
 
         # Check if goal reached.
         if step.loc == dst:
             path = []
             path.append(step)
+            print('final step:{}'.format(step))
             while step.nextstep is not None:
                 step = step.nextstep
                 path.append(step)
@@ -62,9 +63,9 @@ def find(src, dst, is_valid, heuristic, max_depth=100):
                 continue
 
             nearness, cost = heuristic(newloc, dst)
+            print('{} cost={}+{}, nearness={}+{}'.format(newloc, cost, step.cost, nearness, cost + step.cost))
             cost += step.cost
             nearness += cost
-            print(nearness, cost)
 
             # Check if we already have a route here
             old = found.get(newloc, None)
@@ -75,12 +76,13 @@ def find(src, dst, is_valid, heuristic, max_depth=100):
                 else:
                     # The new one is better so discard the old one.
                     try:
-                        del pq[pq.index((old.nearness, old))]
+                        index = pq.index((old.nearness, id(old), old) )
+                        del pq[index]
                     except ValueError:
                         pass
 
             newstep = Step(newloc, nearness=nearness, cost=cost, nextstep=step)
-            heapq.heappush(pq, (newstep.nearness, newstep))
+            heapq.heappush(pq, (newstep.nearness, id(newstep), newstep))
             found[newloc] = newstep
 
     # No path found
