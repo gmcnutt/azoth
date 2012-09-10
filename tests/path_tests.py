@@ -101,9 +101,9 @@ class PathTest(unittest.TestCase):
         p[-1] == (0, 0)
 
     def test_simple_3x3(self):
-        self.map = ((0, 0, 0),
+        self.map = ((0, 1, 0),
                     (0, 0, 0),
-                    (0, 0, 0))
+                    (0, 1, 0))
         # start at (0, 0)
         p = path.find((0, 0), (2, 2), self.neighbors4, self.heuristic)
         eq_(p, [(0, 0), (0, 1), (1, 1), (2, 1), (2, 2)])

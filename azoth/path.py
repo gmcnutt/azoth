@@ -6,8 +6,6 @@ import heapq
 
 class Step(object):
     
-    count = 0
-
     """ Internal book-keeping object used when finding paths. """
     def __init__(self, loc, nearness=0, cost=0, depth=0, nextstep=None):
         self.loc = loc
@@ -18,8 +16,6 @@ class Step(object):
             self.depth = nextstep.depth + 1
         else:
             self.depth = 0
-        self.count = Step.count
-        Step.count += 1
 
     def __repr__(self):
         return "{} {}/{}:{}".format(self.loc, self.nearness, self.cost, 
@@ -49,7 +45,6 @@ def find(src, dst, neighbors, heuristic, max_depth=100):
     """
     pq = []
     found = {}
-    Step.count = 0  # reset stabilizer
 
     nearness, cost = heuristic(src, dst)
     step = Step(src, nearness)
