@@ -82,6 +82,36 @@ class Player(Controller):
             return
         raise event.Handled()
         
+    def check_neighbor(self, pla, x, y):
+        try:
+            self.session.rules.assert_unoccupied(pla, x, y)
+            self.session.rules.assert_passable(self.subject, pla, x, y)
+            return True
+        except executor.RuleError:
+            return False
+
+    def neighbors(self, loc):
+        return self.session.rules.get_neighbors(self.subject.place, *loc, 
+                                                filter=self.check_neighbor)
+
+    def heuristic(self, loc, dst):
+        # use city-block distance; return cost, nearness
+        x, y = loc
+        dx = abs(dst[0] - x)
+        dy = abs(dst[1] - y)
+        nearness = dx + dy
+        pla = self.subject.place
+        mmode = self.subject.mmode
+        cost = self.session.rules.get_movement_cost(mmode, pla, x, y)
+        cost += 1  # XXX: necessary?
+        return nearness, cost
+
+    def pathfind_to(self, x, y):
+        src = self.subject.xy
+        self.path = path.find(src, (x, y), self.neighbors, self.heuristic)
+        if self.path:
+            self.follow_path()
+        
 
 
 class Beeline(Controller):
