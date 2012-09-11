@@ -26,5 +26,8 @@ REAGENT_DATA_FILE = OBJECT_DIRECTORY + 'reagents.json'
 # The max frames per second
 FRAMES_PER_SECOND = 40
 
+# The seconds to delay between scripted animation frames
+ANIMATION_SECONDS_PER_FRAME = 0.1
+
 # The base directory for DLL's, should I actually need to distribute them
 DLL_DIRECTORY = '../dll/'

@@ -15,6 +15,7 @@ import place
 import pygame
 import sprite
 import textwrap
+import time
 
 DEFAULT_MAX_WIDTH = 320
 DEFAULT_MAX_HEIGHT = 240
@@ -747,6 +748,8 @@ class SessionViewer(Viewer):
                                 self.map.center = self.subject.x, self.subject.y
                                 self.map.compute_fov(self.subject.x, 
                                                      self.subject.y, 11)
+                                time.sleep(config.ANIMATION_SECONDS_PER_FRAME)
+                                self.render()
                                 continue
                         self.controller = actor
                         self.handle_events()
