@@ -50,19 +50,17 @@ def find(src, dst, neighbors, heuristic, max_depth=100):
     step = Step(src, nearness)
     heapq.heappush(pq, (step.nearness, step))
     found[src] = step
-    print("{} -> {}".format(src, dst))
     while pq:
-        print(pq)
         priority, step = heapq.heappop(pq)
 
         # Check if goal reached.
         if step.loc == dst:
             path = []
             path.append(step)
-            print('final step:{}'.format(step))
             while step.nextstep is not None:
                 step = step.nextstep
                 path.append(step)
+            path.pop()  # discard the starting tile
             return [x.loc for x in reversed(path)]
 
         # Check if path too long.
@@ -73,9 +71,6 @@ def find(src, dst, neighbors, heuristic, max_depth=100):
         for newloc in neighbors(step.loc):
 
             nearness, cost = heuristic(newloc, dst)
-            print('{} cost={}+{}, nearness={}+{}'.format(newloc, cost, 
-                                                         step.cost, nearness, 
-                                                         cost + step.cost))
             cost += step.cost
             nearness += cost
 

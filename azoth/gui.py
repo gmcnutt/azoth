@@ -724,14 +724,37 @@ class SessionViewer(Viewer):
         if handler:
             handler()
 
+    def check_neighbor(self, pla, x, y):
+        try:
+            self.session.rules.assert_unoccupied(pla, x, y)
+            self.session.rules.assert_passable(self.subject, pla, x, y)
+            return True
+        except executor.RuleError:
+            return False
+
+    def neighbors(self, loc):
+        return self.session.rules.get_neighbors(self.subject.place, *loc, 
+                                                filter=self.check_neighbor)
+
+    def heuristic(self, loc, dst):
+        # use city-block distance; return cost, nearness
+        x, y = loc
+        dx = abs(dst[0] - x)
+        dy = abs(dst[1] - y)
+        nearness = dx + dy
+        pla = self.subject.place
+        mmode = self.controller.subject.mmode
+        cost = self.session.rules.get_movement_cost(mmode, pla, x, y)
+        cost += 1  # XXX: necessary?
+        return nearness, cost
+
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
-        to_x, to_y = self.map.screen_to_map(x, y)
-        from_x, from_y = self.controller.subject.xy
-        path = path.find(from_x, from_y, to_x, to_y)
-        for step in path:
-            self.controller.move(step.dx, step.dy)
-            self.render()
+        dst = self.map.screen_to_map(x, y)
+        src = self.controller.subject.xy
+        self.controller.path = path.find(src, dst, self.neighbors, self.heuristic)
+        if self.controller.path:
+            self.controller.follow_path()
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the
@@ -754,7 +777,7 @@ class SessionViewer(Viewer):
                     actor.do_turn(self)
                 self.map.center = self.subject.x, self.subject.y
                 self.map.compute_fov(self.subject.x, self.subject.y, 11)
-                self.run_one_iteration()
+                #self.run_one_iteration()
         except event.Quit:
             pass
         finally:

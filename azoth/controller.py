@@ -10,6 +10,7 @@ class Controller(object):
     def __init__(self, subject, session):
         self.subject = subject
         self.session = session
+        self.path = None
 
 
 class Player(Controller):
@@ -53,9 +54,24 @@ class Player(Controller):
         """ Raise the Quit exception to signal the player is done. """
         raise event.Quit()
     
+    def follow_path(self):
+        x, y = self.path.pop(0)
+        dx = x - self.subject.x
+        dy = y - self.subject.y
+        self.session.hax2.move_being_on_map(self.subject, dx, dy)
+
     def do_turn(self, event_loop):
         """ Let the player control the subject during the turn. """
-        event_loop.resume()
+        if self.path:
+            print(self.path)
+            try:
+                self.follow_path()
+            except place.PlaceError:
+                self.path = None
+            except executor.RuleError:
+                self.path = None
+        else:
+                event_loop.resume()
 
     def teleport(self, x, y):
         try:
@@ -111,8 +127,8 @@ class Follow(Controller):
     def do_turn(self, session):
         p = path.find(self.subject.xy, self.target.xy, self.neighbors,
                       self.heuristic)
-        if len(p) > 2:
-            loc = p[1]
+        if len(p) > 1:
+            loc = p[0]
             dx = loc[0] - self.subject.x
             dy = loc[1] - self.subject.y
             self.session.hax2.move_being_on_map(self.subject, dx, dy)

@@ -68,30 +68,25 @@ class PathTest(unittest.TestCase):
     def test_1x1(self):
         self.map = ((0,),)
         p = path.find((0, 0), (0, 0), self.neighbors4, self.heuristic)
-        eq_(p, [(0, 0)])
+        eq_(p, [])
 
     def test_simple_2x2(self):
         self.map = ((0, 0),
                     (0, 0))
         # start at (0, 0)
         p = path.find((0, 0), (0, 1), self.neighbors4, self.heuristic)
-        eq_(p, [(0, 0), (0, 1)])
+        eq_(p, [(0, 1)])
         p = path.find((0, 0), (1, 0), self.neighbors4, self.heuristic)
-        eq_(len(p), 2)
-        p[-1] == (1, 0)
+        eq_(p, [(1, 0)])
         p = path.find((0, 0), (1, 1), self.neighbors4, self.heuristic)
-        eq_(len(p), 3)
-        p[-1] == (1, 1)
+        eq_(p, [(1, 0), (1, 1)])
         # start at (1, 1)
         p = path.find((1, 1), (0, 1), self.neighbors4, self.heuristic)
-        eq_(len(p), 2)
-        p[-1] == (0, 1)
+        eq_(p, [(0, 1)])
         p = path.find((1, 1), (1, 0), self.neighbors4, self.heuristic)
-        eq_(len(p), 2)
-        p[-1] == (1, 0)
+        eq_(p, [(1, 0)])
         p = path.find((1, 1), (0, 0), self.neighbors4, self.heuristic)
-        eq_(len(p), 3)
-        p[-1] == (0, 0)
+        eq_(p, [(1, 0), (0, 0)])
 
     def test_simple_3x3(self):
         self.map = ((0, 1, 0),
@@ -99,7 +94,7 @@ class PathTest(unittest.TestCase):
                     (0, 1, 0))
         # start at (0, 0)
         p = path.find((0, 0), (2, 2), self.neighbors4, self.heuristic)
-        eq_(p, [(0, 0), (0, 1), (1, 1), (2, 1), (2, 2)])
+        eq_(p, [(0, 1), (1, 1), (2, 1), (2, 2)])
 
     def test_offmap_destination(self):
         self.map = ((0, 0),
@@ -121,7 +116,7 @@ class PathTest(unittest.TestCase):
                     (9, 0, 9, 0, 9),
                     (0, 0, 0, 0, 0))
         p = path.find((0, 0), (4, 4), self.neighbors4, self.heuristic)
-        eq_ (p, [(0, 0), (0, 1), (0, 2), (1, 2), (1, 3), (1, 4), (2, 4),
+        eq_ (p, [(0, 1), (0, 2), (1, 2), (1, 3), (1, 4), (2, 4),
                  (3, 4), (4, 4)])
 
     def test_unreachable(self):
@@ -152,7 +147,7 @@ class PathTest(unittest.TestCase):
                     (0, 0, 3, 1, 0),
                     (0, 0, 0, 0, 0))
         p = path.find((0, 0), (4, 0), self.neighbors4, self.heuristic)
-        eq_(p, [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4),
+        eq_(p, [(0, 1), (0, 2), (0, 3), (0, 4),
                 (1, 4), (2, 4), (3, 4), (4, 4),
                 (4, 3), (4, 2), (4, 1), (4, 0)])
 
@@ -162,5 +157,5 @@ class PathTest(unittest.TestCase):
                     (0, 0, 0))
         # start at (0, 0)
         p = path.find((0, 0), (2, 2), self.neighbors8, self.heuristic)
-        eq_(p, [(0, 0), (1, 1), (2, 2)])
+        eq_(p, [(1, 1), (2, 2)])
         
