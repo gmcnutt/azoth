@@ -4,13 +4,6 @@ from azoth import path
 
 class PathTest(unittest.TestCase):
 
-    def is_valid(self, loc):
-        x, y = loc
-        height = len(self.map)
-        width = len(self.map[0])
-        onmap = ((x >= 0) and (x < width) and (y >= 0) and (y < height))
-        return onmap and self.map[y][x] != 9
-
     def neighbors4(self, loc):
         """ Enumerate the 4 neighbors, filtering out off-map or impassable
         neighbors. """

@@ -123,6 +123,22 @@ class Ruleset(object):
         if hasattr(terrain, 'effect') and terrain.effect is not None:
             terrain.effect(obj)
 
+    def get_neighbors(self, pla, x0, y0, filter):
+        # XXX: have caller provide filters, even for passability
+        """ Enumerate the 4 neighbors, filtering out off-map or impassable
+        neighbors. """
+        directions = ((-1, 0), (1, 0), (0, -1), (0, 1))
+        for direction in directions:
+            x = x0 + direction[0]
+            y = y0 + direction[1]
+            if pla.onmap(x, y):
+                if filter(pla, x, y):
+                    yield x, y
+
+    def get_movement_cost(self, mmode, pla, x, y):
+        ter = pla.get_terrain(x, y)
+        return self.pmap.get(mmode, {}).get(ter.pclass, PASS_DEF)
+
 
 class Executor(object):
     """ Runs transactions, invoking hooks. """
@@ -230,3 +246,5 @@ class Executor(object):
         # hooks
         for obj in objs:
             self.rules.on_put_occupant(obj)
+
+    

@@ -1,5 +1,6 @@
 import event
 import executor
+import path
 import place
 import pygame
 
@@ -74,3 +75,44 @@ class Beeline(Controller):
             self.session.hax2.move_being_on_map(self.subject, 1, 0)
         except:
             pass
+
+
+class Follow(Controller):
+
+    def __init__(self, target, *args, **kwargs):
+        """ 'target' is the object to follow. """
+        super(Follow, self).__init__(*args, **kwargs)
+        self.target = target
+
+    def check_neighbor(self, pla, x, y):
+        try:
+            if x != self.target.x and y != self.target.y:
+                self.session.rules.assert_unoccupied(pla, x, y)
+            self.session.rules.assert_passable(self.subject, pla, x, y)
+            return True
+        except executor.RuleError:
+            return False
+
+    def neighbors(self, loc):
+        return self.session.rules.get_neighbors(self.subject.place, *loc, 
+                                                filter=self.check_neighbor)
+
+    def heuristic(self, loc, dst):
+        # use city-block distance; return cost, nearness
+        x, y = loc
+        dx = abs(dst[0] - x)
+        dy = abs(dst[1] - y)
+        nearness = dx + dy
+        pla = self.subject.place
+        cost = self.session.rules.get_movement_cost(self.subject.mmode, pla, x, y)
+        cost += 1  # XXX: necessary?
+        return nearness, cost
+
+    def do_turn(self, session):
+        p = path.find(self.subject.xy, self.target.xy, self.neighbors,
+                      self.heuristic)
+        if len(p) > 2:
+            loc = p[1]
+            dx = loc[0] - self.subject.x
+            dy = loc[1] - self.subject.y
+            self.session.hax2.move_being_on_map(self.subject, dx, dy)

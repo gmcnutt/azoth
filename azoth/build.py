@@ -30,7 +30,7 @@ sword = weapon.Sword()
 sesh.hax2.put_item_on_map(sword, sesh.world, 3, 3)
 
 troll = being.Troll('Skoligidornifor')
-troll.controller = controller.Beeline(troll, sesh)
+troll.controller = controller.Follow(sesh.player, troll, sesh)
 sesh.hax2.put_being_on_map(troll, sesh.world, 0, 6)
 
 savefile = open('start.p', 'w')
