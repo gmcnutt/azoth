@@ -43,7 +43,7 @@ class EventLoop(object):
             self.on_event(event)
         self.on_loop_finish()
 
-    def run(self):
+    def handle_events(self):
         """ Loop until the event handler raises an exception. """
         self.on_loop_entry()
         try:

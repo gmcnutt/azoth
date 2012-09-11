@@ -3,6 +3,7 @@ gui classes for azoth
 """
 
 import colors
+import controller
 import config
 import event
 import executor
@@ -293,7 +294,7 @@ class FileSelector(Viewer):
             handler()
 
     def run(self):
-        super(FileSelector, self).run()
+        super(FileSelector, self).handle_events()
         return self.selection
 
 
@@ -701,13 +702,6 @@ class SessionViewer(Viewer):
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
 
-    def resume(self):
-        """ Continue running the main loop. """
-        # This is called from within actor.do_turn() in order to run the event
-        # handlers. It returns when the actor's turn is over or the player
-        # wants to quit.
-        super(SessionViewer, self).run()
-
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Returns True
         when done with turn."""        
@@ -742,16 +736,23 @@ class SessionViewer(Viewer):
 
     def run(self):
         """ Run the main loop. """
-        self.on_loop_entry()
         try:
             while not self.done:
                 for actor in sorted(self.session.world.actors):
-                    self.controller = actor
-                    actor.do_turn(self)
-                self.map.center = self.subject.x, self.subject.y
-                self.map.compute_fov(self.subject.x, self.subject.y, 11)
-                #self.run_one_iteration()
+                    if isinstance(actor, controller.Player):
+                        if actor.path:
+                            try:
+                                actor.follow_path()
+                            except event.Handled:
+                                self.map.center = self.subject.x, self.subject.y
+                                self.map.compute_fov(self.subject.x, 
+                                                     self.subject.y, 11)
+                                continue
+                        self.controller = actor
+                        self.handle_events()
+                        self.map.center = self.subject.x, self.subject.y
+                        self.map.compute_fov(self.subject.x, self.subject.y, 11)
+                    else:
+                        actor.do_turn(self)
         except event.Quit:
             pass
-        finally:
-            self.on_loop_exit()

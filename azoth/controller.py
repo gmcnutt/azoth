@@ -58,20 +58,13 @@ class Player(Controller):
         x, y = self.path.pop(0)
         dx = x - self.subject.x
         dy = y - self.subject.y
-        self.session.hax2.move_being_on_map(self.subject, dx, dy)
-
-    def do_turn(self, event_loop):
-        """ Let the player control the subject during the turn. """
-        if self.path:
-            print(self.path)
-            try:
-                self.follow_path()
-            except place.PlaceError:
-                self.path = None
-            except executor.RuleError:
-                self.path = None
-        else:
-                event_loop.resume()
+        try:
+            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+        except place.PlaceError:
+            self.path = None
+        except executor.RuleError:
+            self.path = None
+        raise event.Handled()
 
     def teleport(self, x, y):
         try:
@@ -112,16 +105,6 @@ class Player(Controller):
         if self.path:
             self.follow_path()
         
-
-
-class Beeline(Controller):
-
-    def do_turn(self, session):
-        try:
-            self.session.hax2.move_being_on_map(self.subject, 1, 0)
-        except:
-            pass
-
 
 class Follow(Controller):
 
