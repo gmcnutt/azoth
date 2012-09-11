@@ -735,27 +735,30 @@ class SessionViewer(Viewer):
         # event.
         super(SessionViewer, self).on_event(event)
 
+    def on_subject_moved(self):
+        """ Update our view of the subject. """
+        self.map.center = self.subject.x, self.subject.y
+        self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        self.render()
+
     def run(self):
         """ Run the main loop. """
+        self.subject.on('move', self.on_subject_moved)
         try:
             while not self.done:
                 for actor in sorted(self.session.world.actors):
-                    if isinstance(actor, controller.Player):
+                    if not isinstance(actor, controller.Player):
+                        actor.do_turn(self)
+                    else:
                         if actor.path:
                             try:
                                 actor.follow_path()
                             except event.Handled:
-                                self.map.center = self.subject.x, self.subject.y
-                                self.map.compute_fov(self.subject.x, 
-                                                     self.subject.y, 11)
                                 time.sleep(config.ANIMATION_SECONDS_PER_FRAME)
-                                self.render()
                                 continue
                         self.controller = actor
                         self.handle_events()
-                        self.map.center = self.subject.x, self.subject.y
-                        self.map.compute_fov(self.subject.x, self.subject.y, 11)
-                    else:
-                        actor.do_turn(self)
         except event.Quit:
             pass
+        finally:
+            self.subject.un('move', self.on_subject_moved)
