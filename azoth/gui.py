@@ -711,9 +711,15 @@ class SessionViewer(Viewer):
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
 
+    def quit(self):
+        raise event.Quit()
+
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Returns True
-        when done with turn."""        
+        when done with turn."""
+        # Cancel pathfinding on keystroke
+        if self.controller.path:
+            self.controller.path = None
         handler = {
             pygame.K_DOWN: lambda: self.controller.move(0, 1),
             pygame.K_UP: lambda: self.controller.move(0, -1),
@@ -759,13 +765,17 @@ class SessionViewer(Viewer):
                     if not isinstance(actor, controller.Player):
                         actor.do_turn(self)
                     else:
+                        self.controller = actor
+                        try:
+                            self.run_one_iteration()
+                        except event.Handled:
+                            continue
                         if actor.path:
                             try:
                                 actor.follow_path()
                             except event.Handled:
                                 time.sleep(config.ANIMATION_SECONDS_PER_FRAME)
                                 continue
-                        self.controller = actor
                         self.handle_events()
         except event.Quit:
             pass

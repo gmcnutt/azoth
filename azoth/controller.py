@@ -35,7 +35,7 @@ class Player(Controller):
         """ Have the subject pick up something on the ground at his feet. """
         items = self.session.world.get_items(self.subject.x,
                                              self.subject.y)
-        if items is not None:
+        if items:
             item = items[0]
             being = self.subject
             self.session.hax2.move_item_from_map_to_being(item, being)
@@ -45,7 +45,7 @@ class Player(Controller):
         """ Have the subject drop something from inventory to the ground. """
         being = self.subject
         items = being.body.get()
-        if items is not None:
+        if items:
             item = items[0]
             self.session.hax2.move_item_from_being_to_map(item, being)
             raise event.Handled()
