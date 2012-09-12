@@ -1,4 +1,7 @@
 RF:Vector utils
+F:clicking in out-of-los does nothing
+F:switch with friendlies
+F:goto-and-get
 F:NPC flicker in follow mode
 F:NPC.
 F:Inventory/body viewer

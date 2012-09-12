@@ -50,10 +50,6 @@ class Player(Controller):
             self.session.hax2.move_item_from_being_to_map(item, being)
             raise event.Handled()
 
-    def quit(self):
-        """ Raise the Quit exception to signal the player is done. """
-        raise event.Quit()
-    
     def follow_path(self):
         x, y = self.path.pop(0)
         dx = x - self.subject.x
@@ -79,7 +75,7 @@ class Player(Controller):
         try:
             self.session.rules.assert_unoccupied(pla, x, y)
             self.session.rules.assert_passable(self.subject, pla, x, y)
-            return True
+            return pla.get_explored(x, y)
         except executor.RuleError:
             return False
 

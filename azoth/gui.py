@@ -656,6 +656,12 @@ class PlaceWindow(Window):
         map_y = self.view.top + int((self.y + scr_y) / self.cell_height)
         return map_x, map_y
 
+    def in_fov(self, map_x, map_y):
+        return libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
+
+    def explored(self, map_x, map_y):
+        return self.place.get_explored(map_x, map_y)
+
     @property
     def center(self):
         return self.view.center
@@ -683,7 +689,9 @@ class FpsViewer(Window):
         self.surface = self.font.render('%d' % val, True, colors.white)
         self.width, self.height = self.surface.get_size()
 
+
 class SessionViewer(Viewer):
+    """ Main screen to run a session. """
 
     def __init__(self, session):
         super(SessionViewer, self).__init__()
@@ -713,7 +721,7 @@ class SessionViewer(Viewer):
             pygame.K_RIGHT: lambda: self.controller.move(1, 0),
             pygame.K_d: self.controller.drop,
             pygame.K_g: self.controller.get,
-            pygame.K_q: self.controller.quit,
+            pygame.K_q: self.quit,
             pygame.K_s: self.controller.save,
             }.get(key)
         if handler:
@@ -722,7 +730,8 @@ class SessionViewer(Viewer):
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
         dst = self.map.screen_to_map(x, y)
-        self.controller.pathfind_to(*dst)
+        if self.map.explored(*dst):
+            self.controller.pathfind_to(*dst)
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the
