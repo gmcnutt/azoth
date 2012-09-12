@@ -146,7 +146,7 @@ class MoveOnMap(Default):
         try:
             self.hax2.move_being_on_map(o1, *DIRMAP['east'])
         except executor.Occupied as e:
-            self.hax2.rotate_beings_on_map(o1, e.obj)
+            self.hax2.rotate_beings_on_map(o1, e.occupant)
         assert_being_at(o1, self.place, 1, 0)
         assert_being_at(o2, self.place, 0, 0)
 
