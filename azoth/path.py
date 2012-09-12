@@ -45,7 +45,6 @@ def find(src, dst, neighbors, heuristic, max_depth=100):
     """
     pq = []
     found = {}
-
     nearness, cost = heuristic(src, dst)
     step = Step(src, nearness)
     heapq.heappush(pq, (step.nearness, step))
@@ -69,11 +68,9 @@ def find(src, dst, neighbors, heuristic, max_depth=100):
 
         # Schedule the four neighbors, if valid
         for newloc in neighbors(step.loc):
-
             nearness, cost = heuristic(newloc, dst)
             cost += step.cost
             nearness += cost
-
             # Check if we already have a route here
             old = found.get(newloc, None)
             if old is not None:

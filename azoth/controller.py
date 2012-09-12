@@ -7,6 +7,8 @@ import pygame
 
 class Controller(object):
 
+    """ Base class for all controllers. """
+
     def __init__(self, subject, session):
         self.subject = subject
         self.session = session
@@ -15,12 +17,19 @@ class Controller(object):
 
 class Player(Controller):
 
-    """ A controller that lets the player control the subject. """
+    """ A controller that lets the player direct the subject. """
+
+    def move_or_swap(self, dx, dy):
+        """ Try to move; if blocked by an occupant try to swap. """
+        try:
+            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+        except executor.Occupied, e:
+            self.session.hax2.rotate_beings_on_map(self.subject, e.occupant)
 
     def move(self, dx, dy):
         """ Move the subject. """
         try:
-            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+            self.move_or_swap(dx, dy)
         except place.PlaceError:
             return
         except executor.RuleError:
@@ -51,11 +60,12 @@ class Player(Controller):
             raise event.Handled()
 
     def follow_path(self):
+        """ Take the next step along the saved path. """
         x, y = self.path.pop(0)
         dx = x - self.subject.x
         dy = y - self.subject.y
         try:
-            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+            self.move_or_swap(dx, dy)
         except place.PlaceError:
             self.path = None
         except executor.RuleError:
@@ -63,6 +73,7 @@ class Player(Controller):
         raise event.Handled()
 
     def teleport(self, x, y):
+        """ Jump to a location. """
         try:
             self.session.hax2.teleport_being_on_map(self.subject, x, y)
         except place.PlaceError:
@@ -71,19 +82,21 @@ class Player(Controller):
             return
         raise event.Handled()
         
-    def check_neighbor(self, pla, x, y):
+    def filter_neighbor(self, pla, x, y):
+        """ Return True iff this tile looks ok for pathfinding. """
         try:
-            self.session.rules.assert_unoccupied(pla, x, y)
             self.session.rules.assert_passable(self.subject, pla, x, y)
             return pla.get_explored(x, y)
         except executor.RuleError:
             return False
 
     def neighbors(self, loc):
+        """ Enumerate neighbors for pathfinding. """
         return self.session.rules.get_neighbors(self.subject.place, *loc, 
-                                                filter=self.check_neighbor)
+                                                filter=self.filter_neighbor)
 
     def heuristic(self, loc, dst):
+        """ Evaluate the tile for pathfinding. """
         # use city-block distance; return cost, nearness
         x, y = loc
         dx = abs(dst[0] - x)
@@ -96,6 +109,7 @@ class Player(Controller):
         return nearness, cost
 
     def pathfind_to(self, x, y):
+        """ Find and start following a path to (x, y). """
         src = self.subject.xy
         self.path = path.find(src, (x, y), self.neighbors, self.heuristic)
         if self.path:
@@ -103,6 +117,8 @@ class Player(Controller):
         
 
 class Follow(Controller):
+
+    """ AI that follows a target around. """
 
     def __init__(self, target, *args, **kwargs):
         """ 'target' is the object to follow. """

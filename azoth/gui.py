@@ -717,9 +717,8 @@ class SessionViewer(Viewer):
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Returns True
         when done with turn."""
-        # Cancel pathfinding on keystroke
-        if self.controller.path:
-            self.controller.path = None
+        # Cancel pathfinding on any keystroke
+        self.controller.path = None
         handler = {
             pygame.K_DOWN: lambda: self.controller.move(0, 1),
             pygame.K_UP: lambda: self.controller.move(0, -1),
@@ -766,6 +765,8 @@ class SessionViewer(Viewer):
                         actor.do_turn(self)
                     else:
                         self.controller = actor
+                        # Run one check of the event queue to allow the player
+                        # to cancel or redirect pathfinding.
                         try:
                             self.run_one_iteration()
                         except event.Handled:

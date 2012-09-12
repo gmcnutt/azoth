@@ -28,16 +28,16 @@ class Impassable(RuleError):
 
 class Occupied(RuleError):
     """ Location is occupied. """
-    def __init__(self, obj, place, x, y):
+    def __init__(self, occupant, place, x, y):
         super(Occupied, self).__init__()
-        self.obj = obj
+        self.occupant = occupant
         self.place = place
         self.x = x
         self.y = y
 
     def __str__(self):
         return '{} already in {} at ({}, {})'.\
-            format(self.obj, self.place, self.x, self.y)
+            format(self.occupant, self.place, self.x, self.y)
 
 
 class WontFitError(RuleError):
