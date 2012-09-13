@@ -1,4 +1,23 @@
 ----------------------------------------------------------------------------
+11 September 2012 23:32
+
+Pathfinding and an NPC follower all working. Need an inventory UI. A bit
+worried that the rule system, controller and gui interactions are not clean
+enough. Should consider consolidating exception classes into one module. Maybe
+revisit control flow, map it out and see if the right modules are handling the
+right part of the sequence.
+
+The base objects are mostly just containers. The rule system should define all
+legal interactions. The executor should handle transactions and recovery on
+rule violations (while bubbling the violations up). The controller should tell
+objects what to attempt to do, expecting the executor to reject some attempts;
+but meanwhile trying to predict what is possible. That's the part that bothers
+me: both controller and executor need to query the rule system, which seems
+redundant. But the controller cannot predict all problems with its choices,
+since it is operating under intentionally limited information (neither the
+player nor the AIs should be omniscient). So maybe that's unavoidable.
+
+----------------------------------------------------------------------------
 06 September 2012 06:13
 
 pygame-specifics move up to SessionViewer. The player.Controller pushes itself
