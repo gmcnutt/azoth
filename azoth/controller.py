@@ -13,6 +13,7 @@ class Controller(object):
         self.subject = subject
         self.session = session
         self.path = None
+        self.on_end_of_path = None
 
 
 class Player(Controller):
@@ -61,7 +62,10 @@ class Player(Controller):
 
     def follow_path(self):
         """ Take the next step along the saved path. """
-        x, y = self.path.pop(0)
+        step = self.path.pop(0)
+        if callable(step):
+            return step()
+        x, y = step
         dx = x - self.subject.x
         dy = y - self.subject.y
         try:
@@ -112,9 +116,7 @@ class Player(Controller):
         """ Find and start following a path to (x, y). """
         src = self.subject.xy
         self.path = path.find(src, (x, y), self.neighbors, self.heuristic)
-        if self.path:
-            self.follow_path()
-        
+        return self.path
 
 class Follow(Controller):
 

@@ -736,7 +736,10 @@ class SessionViewer(Viewer):
         """ Dispatch mouse-clicks. """
         dst = self.map.screen_to_map(x, y)
         if self.map.explored(*dst):
-            self.controller.pathfind_to(*dst)
+            if self.controller.pathfind_to(*dst):
+                if self.session.world.get_items(*dst):
+                    self.controller.path.append(self.controller.get)
+                self.controller.follow_path()
 
     def on_event(self, event):
         """ Run the top of the event handler stack. If it does not handle the

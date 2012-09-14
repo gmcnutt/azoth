@@ -1,8 +1,8 @@
-RF:Vector utils
 F:goto-and-get
-F:NPC flicker in follow mode
-F:NPC.
 F:Inventory/body viewer
+RF:Vector utils
+F:NPC flicker in follow mode
+F:Enemy AI
 F:Console
 F:action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door
 F:object creation editor
