@@ -1,4 +1,20 @@
 ----------------------------------------------------------------------------
+14 September 2012 09:00
+
+Create a body viewer. A simple paper doll. Bind the body to a template image
+for the paper doll, with a descriptor of slot locations in the image.
+
+Or, just a list of slots:
+
+Head: [icon] Helm {stats}
+Right Hand: [icon] Sword {stats}
+Left Hand: <empty>
+
+Make it full screen.
+
+Could make a generic grid viewer.
+
+----------------------------------------------------------------------------
 11 September 2012 23:32
 
 Pathfinding and an NPC follower all working. Need an inventory UI. A bit

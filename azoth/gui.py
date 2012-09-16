@@ -268,6 +268,9 @@ class Viewer(event.EventLoop):
         """ Delay at end of loop to synch FPS. """
         self.clock.tick(self.fps)
 
+    def run(self):
+        super(Viewer, self).handle_events()
+
 
 class FileSelector(Viewer):
 
@@ -284,13 +287,13 @@ class FileSelector(Viewer):
     def on_render(self):
         self.menu.paint()
 
-    def on_keypress(self, event):
+    def on_keypress(self, key):
         handler = {
             pygame.K_DOWN: self.menu.scroll_down,
             pygame.K_UP: self.menu.scroll_up,
             pygame.K_q: self.quit,
             pygame.K_RETURN: self.handle_enter
-            }.get(event.key)
+            }.get(key)
         if handler:
             handler()
 
@@ -381,7 +384,7 @@ class SpriteListViewer(Viewer):
         self.lister = SpriteListWindow(sprite_list, width=width, height=height)
         self.windows.append(self.lister)
 
-    def on_keypress(self, event):
+    def on_keypress(self, key):
         handler = {
             pygame.K_DOWN: self.lister.scroll_down,
             pygame.K_UP: self.lister.scroll_up,
@@ -390,7 +393,7 @@ class SpriteListViewer(Viewer):
             pygame.K_END: self.lister.end,
             pygame.K_PAGEUP: self.lister.pageup,
             pygame.K_PAGEDOWN: self.lister.pagedown
-            }.get(event.key)
+            }.get(key)
         if handler:
             handler()
 
@@ -463,7 +466,7 @@ class ObjectListViewer(Viewer):
         self.lister = ObjectListWindow(_list, width=width, height=height)
         self.windows.append(self.lister)
 
-    def on_keypress(self, event):
+    def on_keypress(self, key):
         handler = {
             pygame.K_DOWN: self.lister.scroll_down,
             pygame.K_UP: self.lister.scroll_up,
@@ -472,7 +475,7 @@ class ObjectListViewer(Viewer):
             pygame.K_END: self.lister.end,
             pygame.K_PAGEUP: self.lister.pageup,
             pygame.K_PAGEDOWN: self.lister.pagedown
-            }.get(event.key)
+            }.get(key)
         if handler:
             handler()
 
@@ -561,7 +564,7 @@ class TerrainGridViewer(Viewer):
                                         height=height)
         self.windows.append(self.lister)
 
-    def on_keypress(self, event):
+    def on_keypress(self, key):
         handler = {
             pygame.K_DOWN: self.lister.scroll_down,
             pygame.K_UP: self.lister.scroll_up,
@@ -570,7 +573,7 @@ class TerrainGridViewer(Viewer):
             pygame.K_END: self.lister.end,
             pygame.K_PAGEUP: self.lister.pageup,
             pygame.K_PAGEDOWN: self.lister.pagedown
-            }.get(event.key)
+            }.get(key)
         if handler:
             handler()
 
@@ -714,6 +717,11 @@ class SessionViewer(Viewer):
     def quit(self):
         raise event.Quit()
 
+    def show_inventory(self):
+        """ Pop up the modal inventory viewer. """
+        #viewer = BodyViewer(self.subject.body)
+        pass
+
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Returns True
         when done with turn."""
@@ -726,6 +734,7 @@ class SessionViewer(Viewer):
             pygame.K_RIGHT: lambda: self.controller.move(1, 0),
             pygame.K_d: self.controller.drop,
             pygame.K_g: self.controller.get,
+            pygame.K_i: self.show_inventory,
             pygame.K_q: self.quit,
             pygame.K_s: self.controller.save,
             }.get(key)
