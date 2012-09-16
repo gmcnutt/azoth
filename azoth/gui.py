@@ -315,6 +315,111 @@ class Alert(Viewer):
         if key.c == ord('\r'):
             self.done = True
 
+class TableWindow(Window):
+    """ Window for displaying a list of rows, where each row is a list. The
+    first row is assumed to be the column names. """
+
+    def __init__(self, table, row_height_pix, *args, **kwargs):
+        super(TableWindow, self).__init__(*args, **kwargs)
+        self.column_names = table[0]
+        self.num_columns = len(self.column_names)
+        self.table = table[1:]
+        self.row_height = row_height_pix
+        self.frame = 0
+        self.top_index = 0
+        self.max_index = len(self.table) - (self.height / row_height_pix)
+        # calculate the column widths
+        self.column_widths = []
+        for col in xrange(self.num_columns):
+            max_width = 0
+            for row in self.table:
+                v = row[col]
+                if isinstance(v, basestring):
+                    width, height = self.font.render(v, True, colors.white).get_size()
+                    print(v, width)
+                    if width > max_width:
+                        max_width = width
+                elif isinstance(v, sprite.Sprite):
+                    if v.width > max_width:
+                        max_width = v.width
+            self.column_widths.append(max_width)
+        print(self.column_widths)
+
+
+    def scroll_up(self):
+        if self.top_index > 0:
+            self.top_index -= 1
+
+    def scroll_down(self):
+        if self.top_index < self.max_index:
+            self.top_index += 1
+
+    def home(self):
+        self.top_index = 0
+
+    def end(self):
+        self.top_index = self.max_index
+
+    def pagedown(self):
+        height = self.height - self.row_height
+        while height > 0 and self.top_index < self.max_index:
+            height -= self.row_height
+            self.top_index += 1
+        if height < 0:
+            self.top_index -= 1
+
+    def pageup(self):
+        height = self.height - self.row_height
+        while height > 0 and self.top_index > 0:
+            height -= self.row_height
+            self.top_index -= 1
+        if height < 0:
+            self.top_index += 1
+
+    def on_paint(self):
+        self.surface.fill(self.background_color)
+        rect = pygame.Rect(0, 0, self.width, self.row_height)
+        index = self.top_index
+        while rect.bottom < self.height and index < len(self.table):
+            row = self.table[index]
+            rect.left = 0
+            for col in xrange(self.num_columns):
+                v = row[col]
+                rect.width = self.column_widths[col]
+                if isinstance(v, basestring):
+                    surf = self.font.render(v, True, colors.white)
+                    self.surface.blit(surf, rect.topleft)
+                elif isinstance(v, sprite.Sprite):
+                    surf = v.get_image(self.frame)
+                    self.surface.blit(surf, rect.midtop)
+                rect.left += rect.width
+            rect.top += rect.height
+            index += 1
+        self.frame += 1
+
+
+class TableViewer(Viewer):
+    """ Controller to scroll around a table window. """
+
+    def __init__(self, table, row_height):
+        super(TableViewer, self).__init__()
+        width, height = pygame.display.get_surface().get_size()
+        self.lister = TableWindow(table, row_height, width=width, height=height)
+        self.windows.append(self.lister)
+
+    def on_keypress(self, key):
+        handler = {
+            pygame.K_DOWN: self.lister.scroll_down,
+            pygame.K_UP: self.lister.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_HOME: self.lister.home,
+            pygame.K_END: self.lister.end,
+            pygame.K_PAGEUP: self.lister.pageup,
+            pygame.K_PAGEDOWN: self.lister.pagedown
+            }.get(key)
+        if handler:
+            handler()
+        
 
 class SpriteListWindow(Window):
 
@@ -794,3 +899,13 @@ class SessionViewer(Viewer):
             pass
         finally:
             self.subject.un('move', self.on_subject_moved)
+
+
+def BodyViewer(Viewer):
+
+    """ Show a body and its slots.  """
+    
+    def __init__(self, body):
+        pass
+
+    
