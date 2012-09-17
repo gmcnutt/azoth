@@ -59,8 +59,9 @@ if __name__ == "__main__":
             spr = sprite.WaveSprite(sheet, start)
         all_sprites[k] = spr
 
-    viewer = gui.TableViewer(all_sprites.items(), spr.height)
-    viewer.run()
+    # viewer = gui.TableViewer(title='Sprites', columns=('Name', 'Sprite'),
+    #                          rows=all_sprites.items())
+    # viewer.run()
 
     # Assign sprites
     all_terrains = {}

@@ -118,3 +118,13 @@ class FpsViewerTest(GuiTest):
         self.target = gui.FpsViewer()
         self.target.fps = 632
         self.show()
+
+
+class TableViewerTest(GuiTest):
+
+    def test_default(self):
+        columns = ('First Name', 'Last Name')
+        rows = (('Bilbo', 'Baggins'),
+                ('Samwise', 'Gamgee'))
+        self.target = gui.TableWindow(title='Test', columns=columns, rows=rows)
+        self.show(prompt=True)

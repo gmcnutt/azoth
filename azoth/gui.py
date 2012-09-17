@@ -315,96 +315,202 @@ class Alert(Viewer):
         if key.c == ord('\r'):
             self.done = True
 
+
+class TableColumn(object):
+    """ A column in a TableRow. """
+
+    def __init__(self):
+        self._width = None
+        self._height = None
+    
+    def _compute_size(self):
+        """ Internal helper to compute _width and _height in pixels. """
+        self._width, self._height = self.render().get_size()
+
+    @property
+    def height(self):
+        """ Return height in pixels. """
+        if self._height is not None:
+            return self._height
+        self._compute_size()
+        return self._height
+
+    @property
+    def width(self):
+        """ Return width in pixels. """
+        if self._width is not None:
+            return self._width
+        self._compute_size()
+        return self._width
+
+
+class TextColumn(TableColumn):
+    """ A column of text. """
+
+    def __init__(self, text, font):
+        super(TextColumn, self).__init__()
+        self.text = text
+        self.font = font
+
+    def render(self):
+        """ Return the a rendered surface. """
+        return self.font.render(self.text, True, colors.white)
+
+
+class SpriteColumn(TableColumn):
+    """ A column with a single sprite. """
+
+    def __init__(self, sprite, frame=0):
+        super(SpriteColumn, self).__init__()
+        self.sprite = sprite
+        self.frame = frame
+
+    def render(self):
+        """ Return the a rendered surface. """
+        surf = self.sprite.get_image(self.frame)
+        self.frame += 1
+        return surf
+
+
+class TableRow(object):
+    """ A row in a TableWindow. """
+
+    def __init__(self, row, font):
+        self.columns = []
+        self._height = None
+        for x in row:
+            if isinstance(x, basestring):
+                self.columns.append(TextColumn(x, font))
+            elif isinstance(x, sprite.Sprite):
+                self.columns.append(SpriteColumn(x))
+            else:
+                raise TypeError('{} is unsupported type {}'.format(x, type(x)))
+
+    def _compute_size(self):
+        """ Internal helper to compute _width and _height in pixels. """
+        self._height = 0
+        self._width = 0
+        for column in self.columns:
+            if column.height > self._height:
+                self._height = column.height
+            self._width += column.width
+
+    @property
+    def height(self):
+        """ Return height in pixels. """
+        if self._height is not None:
+            return self._height
+        self._compute_size()
+        return self._height
+
+    @property
+    def width(self):
+        """ Return width in pixels. """
+        if self._width is not None:
+            return self._width
+        self._compute_size()
+        return self._width
+
+
 class TableWindow(Window):
-    """ Window for displaying a list of rows, where each row is a list. The
-    first row is assumed to be the column names. """
+    """ Window for displaying a list of rows. """
 
-    def __init__(self, table, row_height_pix, *args, **kwargs):
-        super(TableWindow, self).__init__(*args, **kwargs)
-        self.column_names = table[0]
-        self.num_columns = len(self.column_names)
-        self.table = table[1:]
-        self.row_height = row_height_pix
-        self.frame = 0
-        self.top_index = 0
-        self.max_index = len(self.table) - (self.height / row_height_pix)
-        # calculate the column widths
+    def __init__(self, title=None, columns=None, rows=None, row_height=0, *args,
+                 **kwargs):
+        width, height = pygame.display.get_surface().get_size()
+        super(TableWindow, self).__init__(*args, width=width, height=height,
+                                           **kwargs)
+        self._row_height = None
+        self.title = title
+        self.headers = [TextColumn(column, self.font) for column in columns]
+        self.num_columns = len(self.headers)
+        self.rows = [TableRow(row, self.font) for row in rows]
         self.column_widths = []
-        for col in xrange(self.num_columns):
-            max_width = 0
-            for row in self.table:
-                v = row[col]
-                if isinstance(v, basestring):
-                    width, height = self.font.render(v, True, colors.white).get_size()
-                    print(v, width)
-                    if width > max_width:
-                        max_width = width
-                elif isinstance(v, sprite.Sprite):
-                    if v.width > max_width:
-                        max_width = v.width
-            self.column_widths.append(max_width)
-        print(self.column_widths)
+        # Find the width of each column using the max of any row:
+        for idx in xrange(self.num_columns):
+            mcw = max([r.columns[idx].width for r in self.rows])
+            mcw = max(mcw, self.headers[idx].width)
+            self.column_widths.append(mcw)
+        self.top_index = 0
+        self.rows_per_page = self.height / self.row_height
+        self.max_top_index = len(self.rows) - self.rows_per_page
+        if self.max_top_index < 0:
+            self.max_top_index = 0
 
+    @property
+    def row_height(self):
+        """ Return the height of each row in pixels (assumes all rows are the
+        same height). """
+        # Lazy eval, cache result
+        if self._row_height is None:
+            self._row_height = self.rows[0].height
+        return self._row_height
 
     def scroll_up(self):
+        """ Scroll up one row. """
         if self.top_index > 0:
             self.top_index -= 1
 
     def scroll_down(self):
-        if self.top_index < self.max_index:
+        """ Scroll down one row. """
+        if self.top_index < self.max_top_index:
             self.top_index += 1
 
     def home(self):
+        """ Scroll to top. """
         self.top_index = 0
 
     def end(self):
-        self.top_index = self.max_index
+        """ Scroll to bottom. """
+        self.top_index = self.max_top_index
 
     def pagedown(self):
-        height = self.height - self.row_height
-        while height > 0 and self.top_index < self.max_index:
-            height -= self.row_height
-            self.top_index += 1
-        if height < 0:
-            self.top_index -= 1
+        """ Scroll down one page. """
+        self.top_index += self.rows_per_page
+        if self.top_index > self.max_top_index:
+            self.top_index = self.max_top_index
 
     def pageup(self):
-        height = self.height - self.row_height
-        while height > 0 and self.top_index > 0:
-            height -= self.row_height
-            self.top_index -= 1
-        if height < 0:
-            self.top_index += 1
+        """ Scroll up one page. """
+        self.top_index -= self.rows_per_page
+        if self.top_index < 0:
+            self.top_index = 0
 
     def on_paint(self):
+        """ Blit the header and visible rows. """
         self.surface.fill(self.background_color)
+        # Print the column headers:
         rect = pygame.Rect(0, 0, self.width, self.row_height)
-        index = self.top_index
-        while rect.bottom < self.height and index < len(self.table):
-            row = self.table[index]
-            rect.left = 0
-            for col in xrange(self.num_columns):
-                v = row[col]
-                rect.width = self.column_widths[col]
-                if isinstance(v, basestring):
-                    surf = self.font.render(v, True, colors.white)
-                    self.surface.blit(surf, rect.topleft)
-                elif isinstance(v, sprite.Sprite):
-                    surf = v.get_image(self.frame)
-                    self.surface.blit(surf, rect.midtop)
+        for idx, header in enumerate(self.headers):
+            surf = header.render()
+            rect.width = self.column_widths[idx]
+            self.surface.blit(surf, rect.topleft)
+            rect.left += rect.width
+        rect.top += rect.height
+        rect.left = 0
+        # Compute the visible rows:
+        last_index = self.top_index + self.rows_per_page
+        max_index = len(self.rows)
+        if last_index > max_index:
+            last_index = max_index
+        rows = self.rows[self.top_index:last_index]
+        # Print the visible rows:
+        for row in rows:
+            for idx, column in enumerate(row.columns):
+                rect.width = self.column_widths[idx]
+                surf = column.render()
+                self.surface.blit(surf, rect.topleft)
                 rect.left += rect.width
             rect.top += rect.height
-            index += 1
-        self.frame += 1
+            rect.left = 0
 
 
 class TableViewer(Viewer):
     """ Controller to scroll around a table window. """
 
-    def __init__(self, table, row_height):
+    def __init__(self, title=None, columns=None, rows=None):
         super(TableViewer, self).__init__()
-        width, height = pygame.display.get_surface().get_size()
-        self.lister = TableWindow(table, row_height, width=width, height=height)
+        self.lister = TableWindow(title=title, columns=columns, rows=rows)
         self.windows.append(self.lister)
 
     def on_keypress(self, key):
@@ -907,5 +1013,3 @@ def BodyViewer(Viewer):
     
     def __init__(self, body):
         pass
-
-    
