@@ -86,7 +86,7 @@ class PathTest(unittest.TestCase):
         p = path.find((1, 1), (1, 0), self.neighbors4, self.heuristic)
         eq_(p, [(1, 0)])
         p = path.find((1, 1), (0, 0), self.neighbors4, self.heuristic)
-        eq_(p, [(1, 0), (0, 0)])
+        eq_(p, [(0, 1), (0, 0)])
 
     def test_simple_3x3(self):
         self.map = ((0, 1, 0),

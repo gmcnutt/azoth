@@ -1,4 +1,4 @@
-from azoth.obj import baseobject
+import baseobject
 
 class ObjError(Exception):
     """ Base class for all Obj errors. """

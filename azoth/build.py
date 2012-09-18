@@ -3,8 +3,7 @@
 import controller
 import cPickle
 import executor
-import obj
-from obj import being, weapon
+import being, weapon
 import place
 import session
 import sys

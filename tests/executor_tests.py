@@ -1,7 +1,6 @@
 from tools import *
-from azoth import executor, place, terrain, terrainmap
+from azoth import baseobject, executor, place, terrain, terrainmap
 from azoth.container import Bag
-from azoth.obj import baseobject
 import unittest
 
 class TestException(Exception):

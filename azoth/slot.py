@@ -38,11 +38,14 @@ class Slot(object):
     """ A container that accepts only a certain type of content.  """
 
     content_type = object
-    preposition = 'in'
+    preposition = "in"
+    desc = "slot"
 
-    def __init__(self, content=None, sibling=None):
+    def __init__(self, content=None, sibling=None, desc=None):
         self.content = content
         self.siblings = sibling
+        if desc is not None:
+            self.desc = desc
 
     def __nonzero__(self):
         return not self.empty
@@ -75,6 +78,10 @@ class Slot(object):
         """ Syntactic sugar for 'val in self' """
         return val in self
 
+    def items(self):
+        """ Return a list of (desc, content) pairs. """
+        return [(self.desc, self.content)]
+    
     def put(self, item):
         """ Put item into the slot. Raises TypeError if item is of the wrong
         type for this slot. Raise OccupiedError if something is already in the

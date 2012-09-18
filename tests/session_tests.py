@@ -1,6 +1,5 @@
 from tools import *
-from azoth import place, session, terrain, terrainmap
-from azoth.obj import baseobject
+from azoth import baseobject, place, session, terrain, terrainmap
 import unittest
 
 class SessionTest(unittest.TestCase):

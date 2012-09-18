@@ -232,7 +232,7 @@ class Viewer(event.EventLoop):
         self.windows.append(window)
 
     def quit(self):
-        return True
+        raise event.Handled()
 
     def render(self):
         pygame.display.get_surface().fill(self.background_color)
@@ -372,6 +372,17 @@ class SpriteColumn(TableColumn):
         return surf
 
 
+class NoneColumn(TableColumn):
+    """ A column for None. """
+
+    def __init__(self):
+        super(NoneColumn, self).__init__()
+        self._height = 0
+        self._width = 0
+
+    def render(self):
+        return None
+
 class TableRow(object):
     """ A row in a TableWindow. """
 
@@ -383,6 +394,8 @@ class TableRow(object):
                 self.columns.append(TextColumn(x, font))
             elif isinstance(x, sprite.Sprite):
                 self.columns.append(SpriteColumn(x))
+            elif x is None:
+                self.columns.append(NoneColumn())
             else:
                 raise TypeError('{} is unsupported type {}'.format(x, type(x)))
 
@@ -499,7 +512,8 @@ class TableWindow(Window):
             for idx, column in enumerate(row.columns):
                 rect.width = self.column_widths[idx]
                 surf = column.render()
-                self.surface.blit(surf, rect.topleft)
+                if surf is not None:
+                    self.surface.blit(surf, rect.topleft)
                 rect.left += rect.width
             rect.top += rect.height
             rect.left = 0
@@ -930,14 +944,16 @@ class SessionViewer(Viewer):
 
     def show_inventory(self):
         """ Pop up the modal inventory viewer. """
-        #viewer = BodyViewer(self.subject.body)
-        pass
+        x = BodyViewer(self.subject.body)
+        x.run()
+        raise event.Handled()
 
     def on_keypress(self, key):
-        """ Handle a key to control the subject during its turn. Returns True
-        when done with turn."""
+        """ Handle a key to control the subject during its turn. Raises Handled
+        when done. """
         # Cancel pathfinding on any keystroke
         self.controller.path = None
+        print(key)
         handler = {
             pygame.K_DOWN: lambda: self.controller.move(0, 1),
             pygame.K_UP: lambda: self.controller.move(0, -1),
@@ -1007,9 +1023,33 @@ class SessionViewer(Viewer):
             self.subject.un('move', self.on_subject_moved)
 
 
-def BodyViewer(Viewer):
-
+class BodyViewer(Viewer):
     """ Show a body and its slots.  """
     
     def __init__(self, body):
-        pass
+        super(BodyViewer, self).__init__()
+        title = body.name
+        columns = ('Slot', 'Contents')
+        rows = []
+        for slot, content in body.items():
+            if content is None:
+                spr = None
+            else:
+                spr = content.sprite
+            rows.append((slot, spr))
+        self.lister = TableWindow(title=title, columns=columns, rows=rows)
+        self.windows.append(self.lister)
+
+    def on_keypress(self, key):
+        handler = {
+            pygame.K_DOWN: self.lister.scroll_down,
+            pygame.K_UP: self.lister.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_HOME: self.lister.home,
+            pygame.K_END: self.lister.end,
+            pygame.K_PAGEUP: self.lister.pageup,
+            pygame.K_PAGEDOWN: self.lister.pagedown
+            }.get(key)
+        if handler:
+            handler()
+        

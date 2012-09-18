@@ -1,5 +1,5 @@
 from tools import *
-from azoth.obj import body, armor, slot, weapon
+from azoth import body, armor, slot, weapon
 
 def test_contains():
     man = body.Humanoid()

@@ -127,4 +127,4 @@ class TableViewerTest(GuiTest):
         rows = (('Bilbo', 'Baggins'),
                 ('Samwise', 'Gamgee'))
         self.target = gui.TableWindow(title='Test', columns=columns, rows=rows)
-        self.show(prompt=True)
+        self.show()

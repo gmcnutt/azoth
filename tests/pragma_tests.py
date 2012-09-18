@@ -1,6 +1,5 @@
 from nose.tools import *
-from azoth import executor
-from azoth.obj import baseobject
+from azoth import baseobject, executor
 from azoth.container import Bag, Occupied, Tray
 import unittest
 

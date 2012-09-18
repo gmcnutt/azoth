@@ -1,23 +1,24 @@
 #!/usr/bin/python
 
 import argparse
+import baseobject
+import being
 import executor
 import classes
 import cPickle
 import colors
 import config
 import gui
-import obj
 import inspect
 import json
 import logging
-from obj import baseobject, being, weapon
 import pygame
 import os
 import session
 import sprite
 import sys
 import terrain
+import weapon
 
 
 if __name__ == "__main__":
