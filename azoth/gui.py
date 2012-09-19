@@ -164,6 +164,8 @@ class Menu(ScrollingWindow):
         self.current_option = 0
         self.top_trigger = self.num_visible_rows / 2
         self.bottom_trigger = self.last_option - self.top_trigger
+        rows_per_screen = self.height / self.font.get_linesize()
+        self.top_margin = (rows_per_screen - self.num_visible_rows) / 2
 
     @property
     def selected(self):
@@ -196,7 +198,8 @@ class Menu(ScrollingWindow):
                 color = colors.yellow
             else:
                 color = colors.grey
-            self._print(row, self.options[option], color=color)
+            self._print(row + self.top_margin, self.options[option], 
+                        color=color, align='center')
 
 
 class TextLabel(Window):

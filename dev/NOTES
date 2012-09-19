@@ -47,6 +47,7 @@ When I start the game with no arguments, I want it to give me a menu:
 * Create game
 * Quit
 
+The menu should appear centered in the main screen.
 
 ----------------------------------------------------------------------------
 14 September 2012 09:00
