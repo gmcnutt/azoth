@@ -122,13 +122,39 @@ class Window(object):
         self.surface.blit(rendered_text, (x, y))
 
 
-class Menu(Window):
-    """ Simple menu. """
+class ScrollingWindow(Window):
+    """ Abstract base class for scrolling windows. """
 
-    def __init__(self, options=(), max_width=DEFAULT_MAX_WIDTH,
-                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
-        width = min(max_width, max([len(option) for option in options]) + 2)
-        height = min(max_height, len(options) + 2)
+    def scroll_up(self):
+        """ Scroll up one row. """
+        pass
+
+    def scroll_down(self):
+        """ Scroll down one row. """
+        pass
+
+    def home(self):
+        """ Scroll to top. """
+        pass
+
+    def end(self):
+        """ Scroll to bottom. """
+        pass
+
+    def pagedown(self):
+        """ Scroll down one page. """
+        pass
+
+    def pageup(self):
+        """ Scroll up one page. """
+        pass
+
+
+class Menu(ScrollingWindow):
+    """ Simple menu. 'options' should be a list of strings. """
+
+    def __init__(self, options=(), **kwargs):
+        width, height = pygame.display.get_surface().get_size()
         super(Menu, self).__init__(width=width, height=height, **kwargs)
         self.options = options
         self.current_option = 0
@@ -138,6 +164,10 @@ class Menu(Window):
         self.current_option = 0
         self.top_trigger = self.num_visible_rows / 2
         self.bottom_trigger = self.last_option - self.top_trigger
+
+    @property
+    def selected(self):
+        return self.options[self.current_option]
 
     def scroll_up(self):
         """ Scroll selector up. """
@@ -158,13 +188,14 @@ class Menu(Window):
             self.top_visible_option += 1
 
     def on_paint(self):
+        self.surface.fill(color=colors.black)
         for row, option in enumerate(range(self.top_visible_option,
                                            self.top_visible_option + \
                                                self.num_visible_rows)):
             if option == self.current_option:
                 color = colors.yellow
             else:
-                color = colors.gray
+                color = colors.grey
             self._print(row, self.options[option], color=color)
 
 
@@ -540,6 +571,39 @@ class TableViewer(Viewer):
         if handler:
             handler()
         
+
+class ScrollingViewer(Viewer):
+    """ Generic viewer of a scrolling window. """
+
+    def __init__(self, subject=None):
+        super(ScrollingViewer, self).__init__()
+        self.subject = subject
+        self.windows.append(self.subject)
+
+    def on_keypress(self, key):
+        handler = {
+            pygame.K_DOWN: self.subject.scroll_down,
+            pygame.K_UP: self.subject.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_HOME: self.subject.home,
+            pygame.K_END: self.subject.end,
+            pygame.K_PAGEUP: self.subject.pageup,
+            pygame.K_PAGEDOWN: self.subject.pagedown
+            }.get(key)
+        if handler:
+            handler()
+
+
+class MenuViewer(ScrollingViewer):
+    def on_keypress(self, key):
+        handler = {
+            pygame.K_RETURN: self.quit
+            }.get(key)
+        if handler:
+            handler()
+        else:
+            super(MenuViewer, self).on_keypress(key)
+
 
 class SpriteListWindow(Window):
 
@@ -1033,7 +1097,7 @@ class BodyViewer(Viewer):
         rows = []
         for slot, content in body.items():
             if content is None:
-                spr = None
+                spr = "<empty>"
             else:
                 spr = content.sprite
             rows.append((slot, spr))

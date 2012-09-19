@@ -1,6 +1,6 @@
 import unittest
 from tools import *
-from azoth import gui
+from azoth import event, gui
 import pygame
 
 SCREEN_COLUMNS = 80
@@ -128,3 +128,29 @@ class TableViewerTest(GuiTest):
                 ('Samwise', 'Gamgee'))
         self.target = gui.TableWindow(title='Test', columns=columns, rows=rows)
         self.show()
+
+
+class MenuTest(GuiTest):
+
+    def test_default(self):
+        self.target = gui.Menu(options=('Create Game', 'Quit'))
+        self.show()
+
+    def test_scroll(self):
+        self.target = gui.Menu(options=('Create Game', 'Quit'))
+        self.show()
+        self.target.scroll_down()
+        self.show()
+        self.target.scroll_up()
+        self.show()
+
+    @raises(event.Handled)
+    def test_viewer(self):
+        options = ('Create Game', 'Quit')
+        menu = gui.Menu(options=options)
+        self.viewer = gui.MenuViewer(menu)
+        self.viewer.on_keypress(pygame.K_DOWN)
+        eq_(menu.selected, 'Quit')
+        self.viewer.on_keypress(pygame.K_UP)
+        eq_(menu.selected, 'Create Game')
+        self.viewer.on_keypress(pygame.K_RETURN)

@@ -1,4 +1,54 @@
 ----------------------------------------------------------------------------
+18 September 2012 08:37
+
+The table viewer is working but infantile. It seems I should either invest in
+some kind of simple but solid, traditional widget system (perhaps taking extjs
+as a model) or perhaps ditch the concept of the traditional UI
+altogether. Instead of coercing everything into square forms and tables, and
+building a UI out of these fundamental building blocks (which I think of as the
+orthodox approach), perhaps I should instead approach each ineraction uniquely
+and try to do whatever is most natural, most obvious and least noticeable to
+the user.
+
+Take inventory for example. The u7 paper dolls were very natural and
+obvious. They had two drawbacks: popping them open left them in the way, and
+dragging things around in them was inefficient. The diablo-style was much
+better, and would have been better yet if the system automatically packed the
+grid space. In azoth dragging between party members will happen occasionally. I
+will often want to pop open all their views, make adjustments, and dispell them
+all at once. While adjusting I will want to observe how rebalancing inventory
+and equipment affects stats. If party members are too widely separated they may
+all be visible but won't all be able to swap items.
+
+Having automatic pick-up and drop policies (like drop least valuable when full)
+would go a long way as well. Automatic eating policies would also be good.
+
+***
+
+Minimum increment needed for a game: implement shroom's quest. Need:
+* a town
+* shroom
+* conversation
+* cave
+* slimes
+* mushrooms
+* quest log
+
+I have a town. I need shroom.
+
+* Add npc dir
+* Add npc/shroom.py, extends being.human
+
+Back up. How do I add shroom? How did I get the initial place? I want to do
+that via an editor.
+
+When I start the game with no arguments, I want it to give me a menu:
+
+* Create game
+* Quit
+
+
+----------------------------------------------------------------------------
 14 September 2012 09:00
 
 Create a body viewer. A simple paper doll. Bind the body to a template image

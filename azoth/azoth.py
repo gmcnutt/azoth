@@ -24,7 +24,7 @@ import weapon
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Play Azoth')
-    parser.add_argument('start', metavar='file', help='Saved game')
+    parser.add_argument('--start', metavar='file', help='Saved game')
     cmdargs = parser.parse_args()
 
     # Initialize the log file.
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((640, 480), 0)
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
-    # Load the sprite.
+    # Load the sprites.
     sheets = {}
     sheet_table = json.loads(open(config.SHEET_DATA_FILE).read())
     for k, v in sheet_table.items():
@@ -89,13 +89,14 @@ if __name__ == "__main__":
                     logging.warn('{} has no sprite'.format(o.__name__))
 
     # Load the session.
-    session = session.load(cmdargs.start)
-
-    # Update the session passability rules
-    session.rules.set_passability('walk', 'wall', executor.PASS_NONE)
-    session.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
-    session.rules.set_passability('walk', 'water', executor.PASS_NONE)
-
-    session_viewer = gui.SessionViewer(session)
-    session_viewer.run()
-
+    if cmdargs.start is not None:
+        session = session.load(cmdargs.start)
+        session.rules.set_passability('walk', 'wall', executor.PASS_NONE)
+        session.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
+        session.rules.set_passability('walk', 'water', executor.PASS_NONE)
+        session_viewer = gui.SessionViewer(session)
+        session_viewer.run()
+    else:
+        menu = gui.Menu(options=('Create Game', 'Quit'))
+        viewer = gui.MenuViewer(menu)
+        viewer.run()
