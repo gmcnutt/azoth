@@ -38,5 +38,8 @@ Icon?
 ehthumbs.db
 Thumbs.db
 
+# Mine #
+########
 # Python pickled files
 *.p
+venv
