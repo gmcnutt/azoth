@@ -1,6 +1,0 @@
-Make a guy move around.
-Fix hard-coded log location.
-Fix config.py to not use relative paths.
-Rename config.py to settings.py.
-Figure out setup.py.
-Replace all sprite images with own or clearly licensed material.
