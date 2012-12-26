@@ -1,9 +1,6 @@
 #!/usr/bin/python
 
 import argparse
-import classes
-import cPickle
-import colors
 import config
 import gui
 import inspect
@@ -14,14 +11,13 @@ import reagents
 import os
 import session
 import sprites
-import sys
 import terrain
 
 
 class AzothObject(object):
     name = "azoth object"  # placeholder
 
-
+    
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Play Azoth')
@@ -40,6 +36,9 @@ if __name__ == "__main__":
     pygame.display.set_caption('Azoth')
     screen = pygame.display.set_mode((640, 480), 0)
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
+
+    # Run the main menu.
+    
 
     # Load the sprites.
     sheets = {}
