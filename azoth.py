@@ -27,16 +27,26 @@ if __name__ == "__main__":
 
     # Show the splash screen.
     splash = pygame.image.load('resources/splash.png')
-    
     main_surface = pygame.display.get_surface()
     main_surface.blit(splash, (0, 0))
-    pygame.display.flip()
+    
+    # Show [Press any key to continue] over the splash
+    font_size = 16
+    font = pygame.font.Font(pygame.font.get_default_font(), font_size)
+    color = (191, 191, 191)
+    prompt = font.render("[Press any key to continue]", True, color)
+    rect = prompt.get_rect()
+    main_rect = main_surface.get_rect()
+    rect.centerx = main_rect.centerx
+    rect.bottom = main_rect.bottom
+    main_surface.blit(prompt, rect)
 
+    # Wait for quit
+    pygame.display.flip()
     doquit = False
     while not doquit:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 doquit = True
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    doquit = True
+                doquit = True
