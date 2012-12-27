@@ -80,6 +80,9 @@ class Menu(Window):
         y = row * self.font.get_linesize()
         self.surface.blit(rendered_text, (x, y))
 
+    def get_selection(self):
+        return self.options[self.current_option]
+
     def scroll_up(self):
         """ Scroll selector up. """
         if self.current_option == 0:
@@ -108,6 +111,10 @@ class Menu(Window):
                 color = colors.grey
             self._print(row, self.options[option], color=color, align='center')
 
+    def on_mouse_event(self, event):
+        row = event.pos[1] // self.font.get_linesize()
+        self.current_option = min(row, len(self.options) - 1)
+
 
 class Viewer(object):
     """ A stand-alone UI and keyhandler.  """
@@ -132,6 +139,11 @@ class Viewer(object):
         for window in self.windows:
             window.paint()
 
+    def on_mouse_event(self, event):
+        for window in self.windows:
+            if window.rect.collidepoint(event.pos):
+                window.on_mouse_event(event)
+
     def run(self):
         self.render()
         while not self.done:
@@ -143,6 +155,10 @@ class Viewer(object):
                         return
                     else:
                         self.on_keypress(event)
+                elif event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION,
+                                    pygame.MOUSEBUTTONUP):
+                    self.on_mouse_event(event)
+
             self.render()
             self.clock.tick(self.fps)
 
@@ -184,16 +200,23 @@ class MainMenu(Viewer):
         self.menu = Menu(options=('Start New Game', 'Load Saved Game', 'Quit'))
         self.windows.append(self.menu)
 
-    def handle_enter(self):
-        print('Entering')
-        self.done = True
+    def select(self):
+        selection = self.menu.get_selection()
+        print('Selected {}'.format(selection))
+        if selection == 'Quit':
+            self.done = True
 
     def on_keypress(self, event):
         handler = {
             pygame.K_DOWN: self.menu.scroll_down,
             pygame.K_UP: self.menu.scroll_up,
             pygame.K_q: self.quit,
-            pygame.K_RETURN: self.handle_enter
+            pygame.K_RETURN: self.select
             }.get(event.key)
         if handler:
             handler()
+
+    def on_mouse_event(self, event):
+        super(MainMenu, self).on_mouse_event(event)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.select()
