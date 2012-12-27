@@ -68,9 +68,11 @@ class Menu(Window):
         self.num_visible_rows = min(self.rect.height - 2, len(options))
         self.last_option = len(options) - 1
         self.current_option = 0
-        self.top_trigger = self.num_visible_rows / 2
+        self.top_trigger = self.num_visible_rows // 2
         self.bottom_trigger = self.last_option - self.top_trigger
         self.font = pygame.font.Font(pygame.font.get_default_font(), 16)
+        options_height = self.num_visible_rows * self.font.get_linesize()
+        self.y_offset = (self.rect.height - options_height) // 2
 
     def _print(self, row, fmt, color=colors.white, align='left'):
         """ Convenience wrapper for most common print call. """
@@ -80,7 +82,7 @@ class Menu(Window):
             x = 0
         elif align == 'center':
             x = (self.rect.width - rendered_text.get_width()) / 2
-        y = row * self.font.get_linesize()
+        y = (row * self.font.get_linesize()) + self.y_offset
         self.surface.blit(rendered_text, (x, y))
 
     def get_selection(self):
@@ -115,9 +117,10 @@ class Menu(Window):
             self._print(row, self.options[option], color=color, align='center')
 
     def on_mouse_event(self, event):
-        row = event.pos[1] // self.font.get_linesize()
-        self.current_option = min(row, len(self.options) - 1)
-
+        relative_y = event.pos[1] - self.y_offset
+        row = relative_y // self.font.get_linesize()
+        row = min(row, len(self.options) - 1)
+        self.current_option = max(row, 0)
 
 class Viewer(object):
     """ A stand-alone UI and keyhandler.  """
