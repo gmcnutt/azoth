@@ -46,7 +46,6 @@ if __name__ == "__main__":
     doquit = False
     while not doquit:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                doquit = True
-            elif event.type == pygame.KEYDOWN:
+            if event.type in (pygame.QUIT, pygame.KEYDOWN, 
+                              pygame.MOUSEBUTTONDOWN):
                 doquit = True
