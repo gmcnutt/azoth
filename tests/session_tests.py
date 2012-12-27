@@ -1,6 +1,5 @@
 from tools import eq_
-from azoth import place, session, terrain, terrainmap
-from azoth.hax2 import pragma
+from azoth import baseobject, place, session, terrain, terrainmap
 import unittest
 
 class SessionTest(unittest.TestCase):
@@ -9,14 +8,10 @@ class SessionTest(unittest.TestCase):
         self.session = session.Session()
 
     def save(self):
-        sfile = open('session_tests.p', 'w')
-        self.session.dump(sfile)
-        sfile.close()
+        self.session.save('session_tests.p')
 
     def load(self):
-        lfile = open('session_tests.p')
-        self.session = session.load(lfile)
-        lfile.close()
+        self.session = session.load('session_tests.p')
 
     def test_basic(self):
         self.session.player = 'player'
@@ -26,7 +21,7 @@ class SessionTest(unittest.TestCase):
 
     def test_player_loc(self):
         tmap = terrainmap.load_from_nazghul_scm('gregors-hut.scm')
-        self.session.player = pragma.Pragma()
+        self.session.player = baseobject.BaseObject()
         self.session.player.glyph = '@'
         self.session.player.name = 'player'
         self.session.world = place.Sector(name='gh', 

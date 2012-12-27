@@ -1,5 +1,5 @@
 from tools import *
-from azoth.hax2 import body, armor, slot, weapon
+from azoth import body, armor, slot, weapon
 
 def test_contains():
     man = body.Humanoid()
@@ -81,6 +81,13 @@ def test_2h_in_occupied_rhand():
 def test_get():
     man = body.Humanoid()
     helm = armor.Helm()
+    sword = weapon.Sword()
     man.put(helm)
     eq_(helm, man.head.get())
     ok_(helm in man.get())
+    eq_(helm, man.get()[0])
+    man.put(sword)
+    print(man.hands.get())
+    eq_([sword], man.hands.get())
+    print(man.get())
+    ok_(sword in man.get())

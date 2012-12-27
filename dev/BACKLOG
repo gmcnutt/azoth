@@ -1,6 +1,29 @@
-Make a guy move around.
+F:Inventory/body viewer
+RF:Vector utils
+F:NPC flicker in follow mode
+F:Enemy AI
+F:Console
+F:action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door
+F:object creation editor
+F:name generator
+RF: role executor methods up into session
+Fix animations to be independent of fps
+Basic working sprite set for first level.
+Basic sounds (owned property).
+RF:add copyright header to everything
+Research minecraft sales and licensing model.
+Day/night
+Astronomy view
 Fix hard-coded log location.
 Fix config.py to not use relative paths.
 Rename config.py to settings.py.
 Figure out setup.py.
-Replace all sprite images with own or clearly licensed material.
+Replace all sprite images with own or clearly licensed material
+Mouse following.
+Passability.
+Stitch multiple sectors.
+Terrain blending.
+Smooth-scrolling step animations.
+8-direction facings.
+Convert libtcod into standard python C module.
+Items should be obscured under brush (paint trees and shrubs as their own layer).

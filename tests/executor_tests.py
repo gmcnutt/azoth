@@ -1,6 +1,6 @@
-from tools import eq_, ok_, assert_raises, raises_
-from azoth import executor, place, terrain, terrainmap
-from azoth.hax2 import item, pragma, weapon
+from tools import *
+from azoth import baseobject, executor, place, terrain, terrainmap
+from azoth.container import Bag
 import unittest
 
 
@@ -35,7 +35,7 @@ def assert_not_at(obj, pla, x, y):
 def test_impassable_exc():
     pla = place.Sector()
     print(pla)
-    exc = executor.Impassable(pragma.Pragma(), terrain.RockWall,
+    exc = executor.Impassable(baseobject.BaseObject(), terrain.RockWall, 
                            'place', 'x', 'y')
     print(exc)
 
@@ -52,7 +52,7 @@ DIRMAP = {'north': (0, -1),
 class Passability(unittest.TestCase):
 
     def setUp(self):
-        self.obj = pragma.Pragma()
+        self.obj = baseobject.BaseObject()
         self.place = place.Sector(default_terrain=terrain.Grass)
         self.rules = executor.Ruleset()
         self.hax2 = executor.Executor(self.rules)
@@ -71,7 +71,7 @@ class Default(unittest.TestCase):
         self.rules = executor.Ruleset()
         self.hax2 = executor.Executor(self.rules)
         self.tmap = terrainmap.load_from_nazghul_scm('gregors-hut.scm')
-        self.obj = pragma.Pragma()
+        self.obj = baseobject.BaseObject()
         self.place = place.Sector(default_terrain=terrain.Grass)
 
 
@@ -82,23 +82,14 @@ class PutOnMap(Default):
         assert_item_at(self.obj, self.place, 0, 0)
 
     def test_impassable_occupant(self):
-        o1 = pragma.Pragma()
-        o2 = pragma.Pragma()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         assert_raises(executor.Occupied, self.hax2.put_being_on_map, o2,
                       self.place, 0, 0)
         assert_being_at(o1, self.place, 0, 0)
         eq_(o2.loc, (None, None, None))
 
-    def test_item(self):
-        itm = item.Item()
-        self.hax2.put_item_on_map(itm, self.place, 0, 0)
-        assert_item_at(itm, self.place, 0, 0)
-
-    def test_sword(self):
-        sword = weapon.Sword()
-        self.hax2.put_item_on_map(sword, self.place, 0, 0)
-        assert_item_at(sword, self.place, 0, 0)
 
 
 class RemoveFromMap(Default):
@@ -145,8 +136,8 @@ class MoveOnMap(Default):
         assert_being_at(self.obj, self.place, 5, 5)
 
     def test_occupant(self):
-        o1 = pragma.Pragma()
-        o2 = pragma.Pragma()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         assert_raises(executor.Occupied, self.hax2.move_being_on_map, o1,
@@ -155,14 +146,14 @@ class MoveOnMap(Default):
         assert_being_at(o2, self.place, 1, 0)
 
     def test_swap(self):
-        o1 = pragma.Pragma()
-        o2 = pragma.Pragma()
+        o1 = baseobject.BaseObject()
+        o2 = baseobject.BaseObject()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         try:
             self.hax2.move_being_on_map(o1, *DIRMAP['east'])
         except executor.Occupied as e:
-            self.hax2.rotate_beings_on_map(o1, e.obj)
+            self.hax2.rotate_beings_on_map(o1, e.occupant)
         assert_being_at(o1, self.place, 1, 0)
         assert_being_at(o2, self.place, 0, 0)
 
@@ -171,7 +162,7 @@ class MoveFromMapToBag(Default):
 
     def setUp(self):
         super(MoveFromMapToBag, self).setUp()
-        self.bag = pragma.Bag(limit=1)
+        self.bag = Bag(limit=1)
     
     def test_ok(self):
         self.hax2.put_item_on_map(self.obj, self.place, 0, 0)
@@ -181,7 +172,7 @@ class MoveFromMapToBag(Default):
 
     def test_full(self):
         self.hax2.put_item_on_map(self.obj, self.place, 0, 0)
-        obj2 = pragma.Pragma()
+        obj2 = baseobject.BaseObject()
         self.hax2.put_item_on_map(obj2, self.place, 0, 0)
         self.hax2.move_item_from_map_to_bag(self.obj, self.bag)
         raises_(executor.WontFitError, self.hax2.move_item_from_map_to_bag, 

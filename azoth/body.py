@@ -24,21 +24,22 @@ class Head(slot.Slot):
     content_type = armor.Helm
     desc = "head"
     preposition = "on"
-    def __init__(self):
-        super(Head, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Head, self).__init__(*args, **kwargs)
 
 class Hand(slot.Slot):
     """ Basic hand slot. """
     content_type = item.HandItem
     desc = "hand"
-    def __init__(self):
-        super(Hand, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(Hand, self).__init__(*args, **kwargs)
+
 
 class Hands(object):
 
     def __init__(self):
-        self.right = Hand()
-        self.left = Hand()
+        self.right = Hand(desc="right hand")
+        self.left = Hand(desc="left hand")
 
     def __contains__(self, thing):
         return thing in self.right or thing in self.left
@@ -55,7 +56,14 @@ class Hands(object):
             return False
 
     def get(self):
-        return iter(set([self.right.get(), self.left.get()]))
+        """ Get a list of the items held. """
+        # For 2h items return only one thing
+        items = set([self.right.get(), self.left.get()])
+        return [x for x in items if x is not None]
+
+    def items(self):
+        """ Return a list of (slot, content) pairs. """
+        return self.right.items() + self.left.items()
 
     def put(self, item):
         if item.slots == 1:
@@ -80,6 +88,9 @@ class Hands(object):
 
 class Humanoid(object):
     """ A body with a head and two hands. """
+
+    name = 'Humanoid'
+
     def __init__(self):
         self.head = Head()
         self.hands = Hands()
@@ -103,15 +114,22 @@ class Humanoid(object):
 
     def canput(self, item):
         avail = [s for s in self.slots if s.canput(item)]
-        return item.slots >= len(avail)
+        return item.slots <= len(avail)
 
     def get(self):
-        """ Get all the items that are held. Returns an iteraror. """
-        return [s.get() for s in self.slots if s]
+        """ Get all the items that are held. Returns a flat list. """
+        items = [self.head.get()]
+        items += (self.hands.get())
+        return [x for x in items if x]
 
     def has(self, something):
         """ Syntactic sugar for 'something in body' """
         return something in self
+
+    def items(self):
+        """ Like dict.items(), returns a list of (slot, content) pairs. """
+        return self.head.items() + self.hands.items()
+        
 
     def put(self, item):
         try:
@@ -124,5 +142,12 @@ class Humanoid(object):
         for s in self.slots:
             if item in s:
                 s.remove(item)
+
+    def canremove(self, item):
+        """ Remove an item. """
+        for s in self.slots:
+            if item in s:
+                return True
+        return False
 
         

@@ -1,5 +1,17 @@
+Ubuntu:
 
-sudo apt-get install python-pygame
+    sudo apt-get install python-pygame
+
+Fedora:
+
+    yum install pygame
+
+Download libtcod:
+
+    http://doryen.eptalys.net/libtcod/download/
+
+mkdir azoth/dll
+Copy libtcod.so into azoth/dll.
 
 $ cd azoth/azoth
 $ ./azoth.py

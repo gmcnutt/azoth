@@ -1,38 +1,11 @@
-""" Core world object classes. I know "pragma" is an unintuitive name but
-"object" (which is what I really want) is too overloaded. The word "pragma"
-comes from the greek word for a real, physical thing. """
+import baseobject
 
-class Pragma(object):
-    """ A pragma is a physical thing with dimensions and a location. """
-
-    def __init__(self):
-        self.mmode = None
-        self.place = None
-        self.x = None
-        self.y = None
-
-    @property
-    def loc(self):
-        """ Return (place, x, y) as a tuple.  """
-        return self.place, self.x, self.y
-
-    @loc.setter
-    def loc(self, val):
-        """ Assign place, x, y from a tuple. """
-        self.place, self.x, self.y = val
-
-    def __str__(self):
-        if hasattr(self, 'name'):
-            return self.name
-        else:
-            return 'pragma'
-
-class PragmaError(Exception):
-    """ Base class for all Pragma errors. """
+class ObjError(Exception):
+    """ Base class for all Obj errors. """
     pass
 
 
-class Occupied(PragmaError):
+class Occupied(ObjError):
     """ Location is occupied. """
     def __init__(self, prag, cont, x, y):
         super(Occupied, self).__init__()
@@ -46,7 +19,7 @@ class Occupied(PragmaError):
             format(self.prag, self.cont, self.x, self.y)
 
 
-class Bag(Pragma):
+class Bag(baseobject.BaseObject):
     """ A simple container for other pragmas. """
 
     def __init__(self, limit=None):
@@ -93,7 +66,7 @@ def assert_xy_gte_0(func):
         return func(instance, x, y, *args)
     return wrapf
 
-class Tray(Pragma):
+class Tray(baseobject.BaseObject):
     """ A grid of holes, each of which can hold one pragma."""
 
     def __init__(self, width=1, height=1):
@@ -184,4 +157,3 @@ class Tray(Pragma):
     def full(self):
         """ True iff nothing else will fit. """
         return len(self) == self.width * self.height
-

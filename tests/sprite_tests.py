@@ -1,7 +1,7 @@
 import cPickle
 import unittest
 from tools import *
-from azoth import sprites, terrain
+from azoth import sprite, terrain
 import pygame
 
 class BaseTest(unittest.TestCase):
@@ -11,7 +11,7 @@ class BaseTest(unittest.TestCase):
     def setUp(self):
         pygame.init()
         self.screen = pygame.display.set_mode((640, 480), 0)
-        self.sheet = sprites.Sheet(32, 32, 16, 16, 'shapes.png')
+        self.sheet = sprite.Sheet(32, 32, 16, 16, 'shapes.png')
         self.clock = pygame.time.Clock()
 
     def prompt(self):
@@ -28,7 +28,7 @@ class BaseTest(unittest.TestCase):
                     y = row * sprite.height
                     for column in range(columns):
                         x = column * sprite.width
-                        self.screen.blit(sprite.get_image(i), (x, y))
+                        self.screen.blit(spr.get_image(i), (x, y))
                 pygame.display.flip()
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
@@ -39,27 +39,27 @@ class BaseTest(unittest.TestCase):
 class AnimatedSpriteTest(BaseTest):
 
     def test_32x32x1x1_1x1(self):
-        sheet = sprites.Sheet(32, 32, 1, 1, 'shapes.png')
-        sprite = sprites.AnimatedSprite(sheet, 1, 0)
-        self.screen.blit(sprite.get_image(0), (0, 0))
+        sheet = sprite.Sheet(32, 32, 1, 1, 'shapes.png')
+        spr = sprite.AnimatedSprite(sheet, 1, 0)
+        self.screen.blit(spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()
 
     def test_32x32x16x16_1x2(self):
-        sprite = sprites.AnimatedSprite(self.sheet, 1, 2)
-        self.screen.blit(sprite.get_image(0), (0, 0))
+        spr = sprite.AnimatedSprite(self.sheet, 1, 2)
+        self.screen.blit(spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()
 
     def test_32x32x16x16_1x15(self):
-        sprite = sprites.AnimatedSprite(self.sheet, 1, 15)
-        self.screen.blit(sprite.get_image(0), (0, 0))
+        spr = sprite.AnimatedSprite(self.sheet, 1, 15)
+        self.screen.blit(spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()
 
     def test_32x32x16x16_1x16(self):
-        sprite = sprites.AnimatedSprite(self.sheet, 1, 16)
-        self.screen.blit(sprite.get_image(0), (0, 0))
+        spr = sprite.AnimatedSprite(self.sheet, 1, 16)
+        self.screen.blit(spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()
 
@@ -67,9 +67,9 @@ class AnimatedSpriteTest(BaseTest):
 class WaveSpriteTest(BaseTest):
     
     def test_water(self):
-        sprite = sprites.WaveSprite(self.sheet, 0)
+        spr = sprite.WaveSprite(self.sheet, 0)
         if self.prompt_all:
-            self.animate(sprite, rows=3, columns=3)
+            self.animate(spr, rows=3, columns=3)
 
 class SaveLoadTest(BaseTest):
 
@@ -77,7 +77,7 @@ class SaveLoadTest(BaseTest):
 
     def setUp(self):
         super(SaveLoadTest, self).setUp()
-        self.sprites = {'ship':sprites.AnimatedSprite(self.sheet, 1, 16)}
+        self.sprites = {'ship':sprite.AnimatedSprite(self.sheet, 1, 16)}
         self.reverse_sprites = dict(zip(self.sprites.values(), 
                                         self.sprites.keys()))
 
@@ -104,16 +104,16 @@ class SaveLoadTest(BaseTest):
 
     def test_save_load(self):
         self.save(self.sprites['ship'])
-        sprite = self.load()
-        self.screen.blit(sprite.get_image(0), (0, 0))
+        spr = self.load()
+        self.screen.blit(spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()
 
     def test_referent_save_load(self):
-        ter = terrain.Terrain()
-        ter.sprite = self.sprites['ship']
+        ter = terrain.Boulder()
+        terrain.Boulder.spr = self.sprites['ship']
         self.save(ter)
         ter = self.load()
-        self.screen.blit(ter.sprite.get_image(0), (0, 0))
+        self.screen.blit(ter.spr.get_image(0), (0, 0))
         pygame.display.flip()
         self.prompt()

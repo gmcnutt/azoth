@@ -1,19 +1,19 @@
 from nose.tools import *
-from azoth import executor
-from azoth.hax2 import pragma
+from azoth import baseobject, executor
+from azoth.container import Bag, Occupied, Tray
 import unittest
 
 def test_bag():
-    bag = pragma.Bag()
+    bag = Bag()
     ok_(not bag)
-    x = pragma.Pragma()
+    x = baseobject.BaseObject()
     bag.put(x)
     ok_(x in bag)
     eq_(1, len(bag))
     ok_(bag)
     bag.put(x)
     eq_(1, len(bag))
-    y = pragma.Pragma()
+    y = baseobject.BaseObject()
     bag.put(y)
     eq_(2, len(bag))
     bag.remove(x)
@@ -22,9 +22,9 @@ def test_bag():
     ok_(not bag)
 
 def test_limited_bag():
-    bag = pragma.Bag(limit=1)
-    x = pragma.Pragma()
-    y = pragma.Pragma()
+    bag = Bag(limit=1)
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     bag.put(x)
     assert_raises(IndexError, bag.put, y)
     ok_(x in bag)
@@ -35,11 +35,11 @@ def test_limited_bag():
     ok_(y in bag)
 
 def test_two_bags():
-    bag1 = pragma.Bag()
-    bag2 = pragma.Bag()
+    bag1 = Bag()
+    bag2 = Bag()
     eq_(bag1, bag2)
-    x = pragma.Pragma()
-    y = pragma.Pragma()
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     bag1.put(x)
     bag2.put(x)
     eq_(bag1, bag2)
@@ -49,15 +49,15 @@ def test_two_bags():
     eq_(bag1, bag2)
 
 def test_1x1_tray():
-    tray = pragma.Tray()
+    tray = Tray()
     ok_(not tray)
-    obj1 = pragma.Pragma()
+    obj1 = baseobject.BaseObject()
     tray.put(obj1)
     ok_(tray)
     ok_(obj1 in tray)
-    obj2 = pragma.Pragma()
+    obj2 = baseobject.BaseObject()
     assert_raises(IndexError, tray.put, obj2)
-    assert_raises(pragma.Occupied, tray.insert, 0, 0, obj2)
+    assert_raises(Occupied, tray.insert, 0, 0, obj2)
     assert_raises(IndexError, tray.insert, 0, 1, obj2)
     assert_raises(IndexError, tray.insert, 1, 0, obj2)
     assert_raises(IndexError, tray.insert, 0, -1, obj2)
@@ -82,39 +82,39 @@ def test_1x1_tray():
     ok_(not tray)
 
 def test_2x2_tray():
-    tray = pragma.Tray(2, 2)
+    tray = Tray(2, 2)
     ok_(not tray)
-    obj = []
+    objects = []
     for i in range(5):
-        obj.append(pragma.Pragma())
+        objects.append(baseobject.BaseObject())
 
     for i in range(4):
         print(len(tray))
         print(tray)
-        tray.put(obj[i])
-        ok_(obj[i] in tray)
+        tray.put(objects[i])
+        ok_(objects[i] in tray)
     eq_(4, len(tray))
     ok_(tray.full)
 
-    assert_raises(IndexError, tray.put, obj[4])
-    ok_(obj[4] not in tray)
+    assert_raises(IndexError, tray.put, objects[4])
+    ok_(objects[4] not in tray)
 
-    assert_raises(pragma.Occupied, tray.insert, 0, 0, obj[4])
-    assert_raises(IndexError, tray.insert, 0, 2, obj[4])
-    assert_raises(IndexError, tray.insert, 2, 0, obj[4])
-    assert_raises(IndexError, tray.insert, 0, -1, obj[4])
-    assert_raises(IndexError, tray.insert, -1, 0, obj[4])
-    assert_raises(ValueError, tray.remove, obj[4])
+    assert_raises(Occupied, tray.insert, 0, 0, objects[4])
+    assert_raises(IndexError, tray.insert, 0, 2, objects[4])
+    assert_raises(IndexError, tray.insert, 2, 0, objects[4])
+    assert_raises(IndexError, tray.insert, 0, -1, objects[4])
+    assert_raises(IndexError, tray.insert, -1, 0, objects[4])
+    assert_raises(ValueError, tray.remove, objects[4])
 
     assert_raises(IndexError, tray.available)
 
-    x, y = tray.index(obj[0])
-    tray.remove(obj[0])
+    x, y = tray.index(objects[0])
+    tray.remove(objects[0])
     eq_(3, len(tray))
     ok_(not tray.full)
     eq_((x, y), tray.available())
-    tray.insert(x, y, obj[4])
-    eq_((x, y), tray.index(obj[4]))
+    tray.insert(x, y, objects[4])
+    eq_((x, y), tray.index(objects[4]))
 
     assert_raises(IndexError, tray.access, 0, 2)
     assert_raises(IndexError, tray.access, 2, 0)
@@ -130,11 +130,11 @@ def test_2x2_tray():
     ok_(not tray)
 
 def test_two_trays():
-    tray1 = pragma.Tray(2, 2)
-    tray2 = pragma.Tray(2, 2)
+    tray1 = Tray(2, 2)
+    tray2 = Tray(2, 2)
     eq_(tray1, tray2)
-    x = pragma.Pragma()
-    y = pragma.Pragma()
+    x = baseobject.BaseObject()
+    y = baseobject.BaseObject()
     tray1.put(x)
     tray2.put(x)
     eq_(tray1, tray2)

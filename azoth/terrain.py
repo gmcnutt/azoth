@@ -6,6 +6,9 @@ class Terrain(object):
     def __str__(self):
         return self.name
 
+class Ankh(Terrain):
+    name = 'ankh'
+    pclass = 'wall'
 
 class HeavyForest(Terrain):
     name = 'heavy forest'
@@ -62,6 +65,7 @@ class Bog(Terrain):
 class FirePlace(Terrain):
     name = 'fireplace'
     pclass = 'road'
+    blocks_sight = True
 
 
 class Window(Terrain):

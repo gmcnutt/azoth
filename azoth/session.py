@@ -8,9 +8,12 @@ class Session(object):
         self.player = None
         self.world = None
         self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
+        self.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
 
-    def dump(self, _file):
-        cPickle.dump(self, _file)
+    def save(self, filename):
+        cPickle.dump(self, open(filename, 'w'))
 
-def load(_file):
-    return cPickle.load(_file)
+
+
+def load(filename):
+    return cPickle.load(open(filename, 'r'))

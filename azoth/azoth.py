@@ -1,17 +1,20 @@
 #!/usr/bin/python
 
 import argparse
+import baseobject
+import being
+import executor
 import config
 import gui
 import inspect
 import json
 import logging
 import pygame
-import reagents
 import os
 import session
-import sprites
+import sprite
 import terrain
+import weapon
 
 
 class AzothObject(object):
@@ -21,7 +24,7 @@ class AzothObject(object):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Play Azoth')
-    parser.add_argument('--start', dest='start', metavar='s', help='Saved game')
+    parser.add_argument('--start', metavar='file', help='Saved game')
     cmdargs = parser.parse_args()
 
     # Initialize the log file.
@@ -44,7 +47,7 @@ if __name__ == "__main__":
     sheets = {}
     sheet_table = json.loads(open(config.SHEET_DATA_FILE).read())
     for k, v in sheet_table.items():
-        sheets[k] = sprites.Sheet(*v)
+        sheets[k] = sprite.Sheet(*v)
 
     all_sprites = {}
     sprite_table = json.loads(open(config.SPRITE_DATA_FILE).read())
@@ -55,12 +58,16 @@ if __name__ == "__main__":
         wave = v[3]
         facings = v[4]
         if not wave:
-            sprite = sprites.AnimatedSprite(sheet, frames, start, facings=facings)
+            spr = sprite.AnimatedSprite(sheet, frames, start, facings=facings)
         else:
-            sprite = sprites.WaveSprite(sheet, start)
-        all_sprites[k] = sprite
+            spr = sprite.WaveSprite(sheet, start)
+        all_sprites[k] = spr
 
-    # Initialize terrains
+    # viewer = gui.TableViewer(title='Sprites', columns=('Name', 'Sprite'),
+    #                          rows=all_sprites.items())
+    # viewer.run()
+
+    # Assign sprites
     all_terrains = {}
     terrain.HeavyForest.sprite = all_sprites['forest']
     terrain.Forest.sprite = all_sprites['trees']
@@ -75,26 +82,24 @@ if __name__ == "__main__":
     terrain.Bog.sprite = all_sprites['bog']
     terrain.Water.sprite = all_sprites['shoals']
 
-    # Show them in a window for dev.
-    for name, obj in inspect.getmembers(terrain):
-        if inspect.isclass(obj):
-            if hasattr(obj, 'sprite'):
-                all_terrains[obj.name] = obj
-    #gui.TerrainGridViewer(sorted(all_terrains.items())).run()
-
-    # Initialize reagents.
-    all_reagents = {}
-    for name, obj in inspect.getmembers(reagents):
-        if (inspect.isclass(obj) and issubclass(obj, reagents.AzothObject) 
-            and (obj != reagents.AzothObject)):
-            obj.sprite = all_sprites[obj.__name__]
-            all_reagents[obj.name] = obj
-    gui.ObjectListViewer(sorted(all_reagents.items())).run()
+    # Assign sprites based on class name
+    for module in (weapon, being):
+        for name, o in inspect.getmembers(module):	  	
+            if inspect.isclass(o) and issubclass(o, baseobject.BaseObject):
+                try:
+                    o.sprite = all_sprites[o.__name__]
+                except KeyError:
+                    logging.warn('{} has no sprite'.format(o.__name__))
 
     # Load the session.
-    session = session.load(open(cmdargs.start))
-    sector = session.world
-    place_view = gui.PlaceViewer(sector)
-    place_view.run()
-
-
+    if cmdargs.start is not None:
+        session = session.load(cmdargs.start)
+        session.rules.set_passability('walk', 'wall', executor.PASS_NONE)
+        session.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
+        session.rules.set_passability('walk', 'water', executor.PASS_NONE)
+        session_viewer = gui.SessionViewer(session)
+        session_viewer.run()
+    else:
+        menu = gui.Menu(options=('Create Game', 'Quit'))
+        viewer = gui.MenuViewer(menu)
+        viewer.run()
