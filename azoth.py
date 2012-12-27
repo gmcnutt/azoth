@@ -4,7 +4,7 @@ import argparse
 import logging
 import pygame
 import os
-
+import ui
 
 if __name__ == "__main__":
 
@@ -26,26 +26,10 @@ if __name__ == "__main__":
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
     # Show the splash screen.
-    splash = pygame.image.load('resources/splash.png')
-    main_surface = pygame.display.get_surface()
-    main_surface.blit(splash, (0, 0))
-    
-    # Show [Press any key to continue] over the splash
-    font_size = 16
-    font = pygame.font.Font(pygame.font.get_default_font(), font_size)
-    color = (191, 191, 191)
-    prompt = font.render("[Press any key to continue]", True, color)
-    rect = prompt.get_rect()
-    main_rect = main_surface.get_rect()
-    rect.centerx = main_rect.centerx
-    rect.bottom = main_rect.bottom
-    main_surface.blit(prompt, rect)
+    splash = ui.SplashScreen('resources/splash.png')
+    splash.run()
 
-    # Wait for quit
-    pygame.display.flip()
-    doquit = False
-    while not doquit:
-        for event in pygame.event.get():
-            if event.type in (pygame.QUIT, pygame.KEYDOWN, 
-                              pygame.MOUSEBUTTONDOWN):
-                doquit = True
+    # Show main menu
+    menu = ui.MainMenu()
+    menu.run()
+
