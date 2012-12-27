@@ -35,6 +35,8 @@ class SplashScreen(object):
 class Window(object):
     """ Base class for windows. """
 
+    background_color = colors.black
+
     def __init__(self):
         size = pygame.display.get_surface().get_size()
         self.surface = pygame.Surface(size).convert_alpha()
@@ -48,6 +50,7 @@ class Window(object):
         """ Paint the window to the destination surface or the currently set
         display surface if none is given. Subclasses should implement
         on_paint()."""
+        self.surface.fill(self.background_color)
         self.on_paint()
         if to_surface is None:
             to_surface = pygame.display.get_surface()
@@ -119,7 +122,6 @@ class Menu(Window):
 class Viewer(object):
     """ A stand-alone UI and keyhandler.  """
 
-    background_color = colors.black
     fps = settings.FRAMES_PER_SECOND
 
     def __init__(self):
@@ -131,7 +133,7 @@ class Viewer(object):
         self.done = True
 
     def render(self):
-        pygame.display.get_surface().fill(self.background_color)
+        #pygame.display.get_surface().fill(self.background_color)
         self.on_render()
         pygame.display.flip()
 
