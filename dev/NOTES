@@ -13,6 +13,8 @@ resources/
 saves/
 tests/
 
+After moving azoth/azoth.py up to main.py, saved games did not load correctly
+(couldn't find session.py).
 
 ----------------------------------------------------------------------------
 18 September 2012 08:37
