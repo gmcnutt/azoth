@@ -2,14 +2,18 @@
 Azoth configuration.
 """
 
+import os
+
+BASE_DIRECTORY = os.path.dirname(__file__) + "/.."
+
 # The base directory for sprite-related data and images
-SPRITE_DIRECTORY = '../data/sprites/'
+SPRITE_DIRECTORY = BASE_DIRECTORY + '/data/sprites/'
 
 # The base directory for object-related data
-OBJECT_DIRECTORY = '../data/objects/'
+OBJECT_DIRECTORY = BASE_DIRECTORY + '/data/objects/'
 
 # The base directory for terrain-related data
-TERRAIN_DIRECTORY = '../data/terrain/'
+TERRAIN_DIRECTORY = BASE_DIRECTORY + '/data/terrain/'
 
 # The file containing all the sprite sheet descriptors
 SHEET_DATA_FILE = SPRITE_DIRECTORY + 'sheets.json'
@@ -28,6 +32,3 @@ FRAMES_PER_SECOND = 40
 
 # The seconds to delay between scripted animation frames
 ANIMATION_SECONDS_PER_FRAME = 0.1
-
-# The base directory for DLL's, should I actually need to distribute them
-DLL_DIRECTORY = '../dll/'
