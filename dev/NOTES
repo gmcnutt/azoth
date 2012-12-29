@@ -1,4 +1,20 @@
 ----------------------------------------------------------------------------
+29 December 2012 10:48
+
+New desired layout:
+
+settings.py
+main.py
+azoth/
+ <python>
+resources/
+ images/
+ sounds/
+saves/
+tests/
+
+
+----------------------------------------------------------------------------
 18 September 2012 08:37
 
 The table viewer is working but infantile. It seems I should either invest in
