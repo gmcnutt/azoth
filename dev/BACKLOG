@@ -1,7 +1,7 @@
-Add splash
 Add main menu
 Convert build.py to return a session, have start new game call it
 Add saves dir to config
+Load terrain sprites based on class name
 Inventory/body viewer
 move role executor methods up into session
 NPC flicker in follow mode

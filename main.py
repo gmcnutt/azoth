@@ -3,6 +3,7 @@
 import argparse
 from azoth import baseobject, being, executor, config, gui, session, sprite, \
     terrain, weapon
+import build
 import inspect
 import json
 import logging
@@ -88,17 +89,11 @@ if __name__ == "__main__":
     # Load the session.
     if cmdargs.start is not None:
         session = session.load(cmdargs.start)
-        session.rules.set_passability('walk', 'wall', executor.PASS_NONE)
-        session.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
-        session.rules.set_passability('walk', 'water', executor.PASS_NONE)
         session_viewer = gui.SessionViewer(session)
         session_viewer.run()
     else:
-        menu = gui.Menu(options=('Create Game', 'Quit'))
-        viewer = gui.MenuViewer(menu)
-        viewer.run()
         # Show main menu
-    #menu = gui.MainMenu()
-    #menu.run()
+        menu = gui.MainMenu(generator=build.generate)
+        menu.run()
     
 

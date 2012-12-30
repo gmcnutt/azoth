@@ -37,10 +37,6 @@ class Player(Controller):
             return
         raise event.Handled()
 
-    def save(self):
-        """ Save the session. """
-        self.session.save('save.p')
-
     def get(self):
         """ Have the subject pick up something on the ground at his feet. """
         items = self.session.world.get_items(self.subject.x,

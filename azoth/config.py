@@ -7,6 +7,9 @@ import os
 
 BASE_DIRECTORY = os.path.dirname(__file__) + "/../"
 
+# The directory to hold saved games
+SAVE_DIRECTORY = BASE_DIRECTORY + 'save/'
+
 # The base directory for non-sprite images
 IMAGE_DIRECTORY = BASE_DIRECTORY + 'data/images/'
 

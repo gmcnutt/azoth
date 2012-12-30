@@ -9,6 +9,7 @@ import event
 import logging
 import os
 import pygame
+import session
 import sprite
 import textwrap
 import time
@@ -23,7 +24,6 @@ FOV_ALGO = 0  # default
 #DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(),
 #                                DEFAULT_FONT_SIZE)
 
-
 class Window(object):
     """ Base class for terminal windows. """
     background_color = colors.black
@@ -36,18 +36,19 @@ class Window(object):
         self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
         self.title = title
-        self.top_margin = 0
         self.left_margin = 0
         # Some windows may dynamically allocate their surface later
         if width > 0 and height > 0:
             self.surface = pygame.Surface((width, height), 
                                           flags=pygame.SRCALPHA).convert_alpha()
         else:
-            self.surface = None
+            size = pygame.display.get_surface().get_size()
+            self.surface = pygame.Surface(size).convert_alpha()
         self.font = font or pygame.font.Font(pygame.font.get_default_font(),
                                              16)  # XXX: config.py
         # XXX: assumes monospace
         self.font_width, self.font_height = self.font.size('x')
+        self.rect = self.surface.get_rect()
 
     @property
     def left(self):
@@ -103,7 +104,6 @@ class Window(object):
         self.on_paint()
         if to_surface is None:
             to_surface = pygame.display.get_surface()
-        self.log.debug('paint:{}@({},{})'.format(to_surface, self.x, self.y))
         to_surface.blit(self.surface, (self.x, self.y))
 
     def _print(self, row, fmt, color=colors.white, align='left'):
@@ -116,7 +116,10 @@ class Window(object):
             x = (self.surface.get_width() - rendered_text.get_width()) / 2
         y = row * self.font.get_linesize()
         self.surface.blit(rendered_text, (x, y))
-
+    
+    def on_mouse_event(self, evt):
+        """ Hook for subclasses. """
+        pass
 
 class ScrollingWindow(Window):
     """ Abstract base class for scrolling windows. """
@@ -149,10 +152,11 @@ class ScrollingWindow(Window):
 class Menu(ScrollingWindow):
     """ Simple menu. 'options' should be a list of strings. """
 
-    def __init__(self, options=(), **kwargs):
+    def __init__(self, options=(), align='center', **kwargs):
         width, height = pygame.display.get_surface().get_size()
         super(Menu, self).__init__(width=width, height=height, **kwargs)
         self.options = options
+        self.align = align
         self.current_option = 0
         self.top_visible_option = 0
         self.num_visible_rows = min(self.height - 2, len(options))
@@ -161,10 +165,10 @@ class Menu(ScrollingWindow):
         self.top_trigger = self.num_visible_rows / 2
         self.bottom_trigger = self.last_option - self.top_trigger
         rows_per_screen = self.height / self.font.get_linesize()
-        self.top_margin = (rows_per_screen - self.num_visible_rows) / 2
+        self.top_margin = (rows_per_screen - self.num_visible_rows) // 2
+        self.y_offset = self.top_margin * self.font.get_linesize()
 
-    @property
-    def selected(self):
+    def get_selection(self):
         return self.options[self.current_option]
 
     def scroll_up(self):
@@ -195,7 +199,13 @@ class Menu(ScrollingWindow):
             else:
                 color = colors.grey
             self._print(row + self.top_margin, self.options[option], 
-                        color=color, align='center')
+                        color=color, align=self.align)
+
+    def on_mouse_event(self, evt):
+        relative_y = evt.pos[1] - self.y_offset
+        row = relative_y // self.font.get_linesize()
+        row = min(row, len(self.options) - 1)
+        self.current_option = max(row, 0)
 
 
 class TextLabel(Window):
@@ -254,9 +264,9 @@ class Viewer(event.EventLoop):
     fps = config.FRAMES_PER_SECOND
 
     def __init__(self):
-        self.done = False
         self.windows = []
         self.clock = pygame.time.Clock()
+        self.log = logging.getLogger(self.__class__.__name__)
 
     def add_window(self, window):
         self.windows.append(window)
@@ -269,11 +279,10 @@ class Viewer(event.EventLoop):
         self.on_render()
         pygame.display.flip()
 
-    def on_mouse_left_click(self, x, y):
+    def on_mouse_event(self, evt):
         for window in self.windows:
-            if window.contains_point(x, y):
-                window.on_mouse_left_click(x - window.x, y - window.y)
-                return
+            if window.rect.collidepoint(evt.pos):
+                window.on_mouse_event(evt)
 
     def on_render(self):
         for window in self.windows:
@@ -289,6 +298,9 @@ class Viewer(event.EventLoop):
             raise event.Quit()
         elif evt.type == pygame.KEYDOWN:
             self.on_keypress(evt.key)
+        elif evt.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION,
+                          pygame.MOUSEBUTTONUP):
+            self.on_mouse_event(evt)
 
     def on_loop_start(self):
         """ Render at start of loop. """
@@ -299,7 +311,11 @@ class Viewer(event.EventLoop):
         self.clock.tick(self.fps)
 
     def run(self):
-        super(Viewer, self).handle_events()
+        try:
+            super(Viewer, self).handle_events()
+        except event.Quit:
+            print("Caught quit")
+            pass
 
 
 class FileSelector(Viewer):
@@ -308,11 +324,11 @@ class FileSelector(Viewer):
         super(FileSelector, self).__init__()
         self.selection = None
         files = ['.'] + sorted(os.listdir(path))
-        self.menu = Menu(options=files)
+        self.menu = Menu(options=files, align='left')
 
     def handle_enter(self):
         self.selection = self.menu.options[self.menu.current_option]
-        self.done = True
+        raise event.Quit()
 
     def on_render(self):
         self.menu.paint()
@@ -328,7 +344,7 @@ class FileSelector(Viewer):
             handler()
 
     def run(self):
-        super(FileSelector, self).handle_events()
+        super(FileSelector, self).run()
         return self.selection
 
 
@@ -343,7 +359,7 @@ class Alert(Viewer):
 
     def on_keypress(self, key):
         if key.c == ord('\r'):
-            self.done = True
+            raise event.Quit()
 
 
 class TableColumn(object):
@@ -1013,12 +1029,16 @@ class SessionViewer(Viewer):
         x.run()
         raise event.Handled()
 
+    def save(self):
+        """ Save the session. """
+        path = config.SAVE_DIRECTORY + 'save.p'
+        self.session.save(path)
+
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Raises Handled
         when done. """
         # Cancel pathfinding on any keystroke
         self.controller.path = None
-        print(key)
         handler = {
             pygame.K_DOWN: lambda: self.controller.move(0, 1),
             pygame.K_UP: lambda: self.controller.move(0, -1),
@@ -1028,7 +1048,7 @@ class SessionViewer(Viewer):
             pygame.K_g: self.controller.get,
             pygame.K_i: self.show_inventory,
             pygame.K_q: self.quit,
-            pygame.K_s: self.controller.save,
+            pygame.K_s: self.save,
             }.get(key)
         if handler:
             handler()
@@ -1042,16 +1062,16 @@ class SessionViewer(Viewer):
                     self.controller.path.append(self.controller.get)
                 self.controller.follow_path()
 
-    def on_event(self, event):
+    def on_event(self, evt):
         """ Run the top of the event handler stack. If it does not handle the
         event then fall back on the default handler. """
-        if event.type == pygame.KEYDOWN:
-            self.on_keypress(event.key)
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            self.on_mouse(event.button, event.pos[0], event.pos[1])
+        if evt.type == pygame.KEYDOWN:
+            self.on_keypress(evt.key)
+        if evt.type == pygame.MOUSEBUTTONDOWN:
+            self.on_mouse(evt.button, evt.pos[0], evt.pos[1])
         # The handler would have raised event.Handled if it had handled the
         # event.
-        super(SessionViewer, self).on_event(event)
+        super(SessionViewer, self).on_event(evt)
 
     def on_subject_moved(self):
         """ Update our view of the subject. """
@@ -1063,7 +1083,7 @@ class SessionViewer(Viewer):
         """ Run the main loop. """
         self.subject.on('move', self.on_subject_moved)
         try:
-            while not self.done:
+            while True:
                 for actor in sorted(self.session.world.actors):
                     if not isinstance(actor, controller.Player):
                         actor.do_turn(self)
@@ -1141,7 +1161,51 @@ class SplashScreen(object):
         pygame.display.flip()
         doquit = False
         while not doquit:
-            for event in pygame.event.get():
-                if event.type in (pygame.QUIT, pygame.KEYDOWN,
-                                  pygame.MOUSEBUTTONDOWN):
+            for evt in pygame.event.get():
+                if evt.type in (pygame.QUIT, pygame.KEYDOWN,
+                                pygame.MOUSEBUTTONDOWN):
                     doquit = True
+
+class MainMenu(Viewer):
+
+    def __init__(self, generator=None):
+        super(MainMenu, self).__init__()
+        self.generator = generator
+        self.menu = Menu(options=('Start New Game', 'Load Saved Game', 'Quit'))
+        self.windows.append(self.menu)
+
+    def select(self):
+        selection = self.menu.get_selection()
+        if selection == 'Quit':
+            raise event.Quit()
+        elif selection == 'Start New Game':
+            session_viewer = SessionViewer(self.generator())
+            session_viewer.run()
+        elif selection == 'Load Saved Game':
+            selector = FileSelector(config.SAVE_DIRECTORY)
+            fname = selector.run()
+            print(fname)
+            if fname:
+                try:
+                    path = config.SAVE_DIRECTORY + fname
+                    s = session.load(path)
+                except IOError, e:
+                    self.log.exception('{}'.format(e))
+                    return
+                session_viewer = SessionViewer(s)
+                session_viewer.run()
+
+    def on_keypress(self, key):
+        handler = {
+            pygame.K_DOWN: self.menu.scroll_down,
+            pygame.K_UP: self.menu.scroll_up,
+            pygame.K_q: self.quit,
+            pygame.K_RETURN: self.select
+            }.get(key)
+        if handler:
+            handler()
+
+    def on_mouse_event(self, evt):
+        super(MainMenu, self).on_mouse_event(evt)
+        if evt.type == pygame.MOUSEBUTTONDOWN:
+            self.select()
