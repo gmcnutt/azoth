@@ -2,6 +2,7 @@
 Azoth configuration.
 """
 
+import logging
 import os
 
 BASE_DIRECTORY = os.path.dirname(__file__) + "/.."
@@ -32,3 +33,9 @@ FRAMES_PER_SECOND = 40
 
 # The seconds to delay between scripted animation frames
 ANIMATION_SECONDS_PER_FRAME = 0.1
+
+# The log file
+LOG_FILE = BASE_DIRECTORY + '/azoth.log'
+
+# Log verbosity
+LOG_LEVEL = logging.DEBUG

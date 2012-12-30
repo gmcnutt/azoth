@@ -1,25 +1,21 @@
-Add 'make test'
-Move azoth up one level
-Reorganize image directory
-Fix hard-coded log location.
-Fix config.py to not use relative paths.
-Rename config.py to settings.py.
-Add saves dir to config
-Fix README
-Add Players_Guide
 Add splash
 Add main menu
 Convert build.py to return a session, have start new game call it
-Replace tcod map_compute_fov and map_is_in_fov
+Add saves dir to config
 Inventory/body viewer
-Vector utils
+move role executor methods up into session
 NPC flicker in follow mode
+Convert libtcod into standard python C module.
+Replace tcod map_compute_fov and map_is_in_fov
 Enemy AI
+Fix README
+Add Players_Guide
+
+Vector utils
 Console
 action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door
 object creation editor
 name generator
-move role executor methods up into session
 Fix animations to be independent of fps
 Basic working sprite set for first level.
 Basic sounds (owned property).
@@ -30,10 +26,8 @@ Astronomy view
 Figure out setup.py.
 Replace all sprite images with own or clearly licensed material
 Mouse following.
-Passability.
 Stitch multiple sectors.
 Terrain blending.
 Smooth-scrolling step animations.
 8-direction facings.
-Convert libtcod into standard python C module.
 Items should be obscured under brush (paint trees and shrubs as their own layer).
