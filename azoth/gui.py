@@ -1118,3 +1118,30 @@ class BodyViewer(Viewer):
         if handler:
             handler()
         
+class SplashScreen(object):
+
+    def __init__(self, image_fname):
+        splash = pygame.image.load(image_fname)
+        main_surface = pygame.display.get_surface()
+        main_surface.blit(splash, (0, 0))
+
+        # Show [Press any key to continue] over the splash
+        font_size = 16
+        font = pygame.font.Font(pygame.font.get_default_font(), font_size)
+        color = colors.light_grey
+        prompt = font.render("[Press any key to continue]", True, color)
+        rect = prompt.get_rect()
+        main_rect = main_surface.get_rect()
+        rect.centerx = main_rect.centerx
+        rect.bottom = main_rect.bottom
+        main_surface.blit(prompt, rect)
+
+    def run(self):
+        # Wait for quit
+        pygame.display.flip()
+        doquit = False
+        while not doquit:
+            for event in pygame.event.get():
+                if event.type in (pygame.QUIT, pygame.KEYDOWN,
+                                  pygame.MOUSEBUTTONDOWN):
+                    doquit = True

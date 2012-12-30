@@ -33,8 +33,9 @@ if __name__ == "__main__":
     screen = pygame.display.set_mode((640, 480), 0)
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
-    # Run the main menu.
-    
+    # Show the splash screen.
+    splash = gui.SplashScreen(config.IMAGE_DIRECTORY + 'splash.png')
+    splash.run()
 
     # Load the sprites.
     sheets = {}
@@ -96,3 +97,8 @@ if __name__ == "__main__":
         menu = gui.Menu(options=('Create Game', 'Quit'))
         viewer = gui.MenuViewer(menu)
         viewer.run()
+        # Show main menu
+    #menu = gui.MainMenu()
+    #menu.run()
+    
+
