@@ -29,21 +29,19 @@ class Window(object):
     background_color = colors.black
 
     # XXX: use pygame.rect for dims
-    def __init__(self, x=0, y=0, width=0, height=0, title=None, font=None):
+    def __init__(self, x=0, y=0, width=None, height=None, title=None, 
+                 font=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
         self.title = title
-        self.left_margin = 0
-        # Some windows may dynamically allocate their surface later
-        if width > 0 and height > 0:
-            self.surface = pygame.Surface((width, height), 
-                                          flags=pygame.SRCALPHA).convert_alpha()
-        else:
-            size = pygame.display.get_surface().get_size()
-            self.surface = pygame.Surface(size).convert_alpha()
+        size = pygame.display.get_surface().get_size()
+        width = width or size[0]
+        height = height or size[1]
+        self.surface = pygame.Surface((width, height), 
+                                      flags=pygame.SRCALPHA).convert_alpha()
         self.font = font or pygame.font.Font(pygame.font.get_default_font(),
                                              16)  # XXX: config.py
         # XXX: assumes monospace

@@ -1,5 +1,5 @@
 import unittest
-from tools import *
+from tools import eq_, raises
 from azoth import event, gui
 import pygame
 
@@ -150,7 +150,7 @@ class MenuTest(GuiTest):
         menu = gui.Menu(options=options)
         self.viewer = gui.MenuViewer(menu)
         self.viewer.on_keypress(pygame.K_DOWN)
-        eq_(menu.selected, 'Quit')
+        eq_(menu.get_selection(), 'Quit')
         self.viewer.on_keypress(pygame.K_UP)
-        eq_(menu.selected, 'Create Game')
+        eq_(menu.get_selection(), 'Create Game')
         self.viewer.on_keypress(pygame.K_RETURN)
