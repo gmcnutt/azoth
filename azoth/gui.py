@@ -14,15 +14,9 @@ import sprite
 #import textwrap
 import time
 
-DEFAULT_MAX_WIDTH = 320
-DEFAULT_MAX_HEIGHT = 240
-DEFAULT_FONT_SIZE = 16  # XXX: move to config.py
 FOV_LIGHT_WALLS = True
 FOV_ALGO = 0  # default
 
-# XXX: move to config.py
-#DEFAULT_FONT = pygame.font.Font(pygame.font.get_default_font(),
-#                                DEFAULT_FONT_SIZE)
 
 class Window(object):
     """ Base class for terminal windows. """
@@ -33,14 +27,12 @@ class Window(object):
                  font=None):
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
         self.log = logging.getLogger(self.__class__.__name__)
         self.title = title
         size = pygame.display.get_surface().get_size()
-        width = width or size[0]
-        height = height or size[1]
-        self.surface = pygame.Surface((width, height), 
+        self.width = width or size[0]
+        self.height = height or size[1]
+        self.surface = pygame.Surface((self.width, self.height), 
                                       flags=pygame.SRCALPHA).convert_alpha()
         self.font = font or pygame.font.Font(pygame.font.get_default_font(),
                                              16)  # XXX: config.py
@@ -151,8 +143,7 @@ class Menu(ScrollingWindow):
     """ Simple menu. 'options' should be a list of strings. """
 
     def __init__(self, options=(), align='center', **kwargs):
-        width, height = pygame.display.get_surface().get_size()
-        super(Menu, self).__init__(width=width, height=height, **kwargs)
+        super(Menu, self).__init__(**kwargs)
         self.options = options
         self.align = align
         self.current_option = 0
@@ -411,9 +402,7 @@ class TableWindow(Window):
 
     def __init__(self, title=None, columns=None, rows=None, row_height=0, *args,
                  **kwargs):
-        width, height = pygame.display.get_surface().get_size()
-        super(TableWindow, self).__init__(*args, width=width, height=height,
-                                           **kwargs)
+        super(TableWindow, self).__init__(*args, **kwargs)
         self._row_height = None
         self.title = title
         self.headers = [TextColumn(column, self.font) for column in columns]
@@ -619,8 +608,7 @@ class SpriteListViewer(Viewer):
 
     def __init__(self, sprite_list):
         super(SpriteListViewer, self).__init__()
-        width, height = pygame.display.get_surface().get_size()
-        self.lister = SpriteListWindow(sprite_list, width=width, height=height)
+        self.lister = SpriteListWindow(sprite_list)
         self.windows.append(self.lister)
 
     def on_keypress(self, key):
@@ -701,8 +689,7 @@ class ObjectListViewer(Viewer):
 
     def __init__(self, _list):
         super(ObjectListViewer, self).__init__()
-        width, height = pygame.display.get_surface().get_size()
-        self.lister = ObjectListWindow(_list, width=width, height=height)
+        self.lister = ObjectListWindow(_list)
         self.windows.append(self.lister)
 
     def on_keypress(self, key):
@@ -798,9 +785,7 @@ class TerrainGridViewer(Viewer):
 
     def __init__(self, terrain_list):
         super(TerrainGridViewer, self).__init__()
-        width, height = pygame.display.get_surface().get_size()
-        self.lister = TerrainGridWindow(terrain_list, width=width,
-                                        height=height)
+        self.lister = TerrainGridWindow(terrain_list)
         self.windows.append(self.lister)
 
     def on_keypress(self, key):
@@ -940,8 +925,7 @@ class SessionViewer(Viewer):
     def __init__(self, session):
         super(SessionViewer, self).__init__()
         self.session = session
-        width, height = pygame.display.get_surface().get_size()
-        self.map = PlaceWindow(self.session.world, width=width, height=height)
+        self.map = PlaceWindow(self.session.world)
         self.windows.append(self.map)
         self.subject = self.session.player
         self.map.center = self.subject.x, self.subject.y
