@@ -11,7 +11,7 @@ import os
 import pygame
 import session
 import sprite
-import textwrap
+#import textwrap
 import time
 
 DEFAULT_MAX_WIDTH = 320
@@ -206,55 +206,6 @@ class Menu(ScrollingWindow):
         self.current_option = max(row, 0)
 
 
-class TextLabel(Window):
-    """ A box of read-only text. The text will be wrapped to fill the width. If
-    it exceeds the height it will be truncated. """
-
-    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH,
-                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
-        super(TextLabel, self).__init__(width=max_width, height=max_height,
-                                       **kwargs)
-        self.width = 0
-        self.height = 0
-        if message is not None:
-            max_columns = max_width / self.font_width
-            if max_columns == 0:
-                return
-            self.lines = textwrap.wrap(message, max_columns)
-            for row, line in enumerate(self.lines):
-                self._print(row, line)
-                line_width, line_height = self.font.size(line)
-                self.width = max(self.width, line_width)
-                self.height += line_height
-
-    def on_paint(self):
-        """ Paint the text. """
-        pass
-
-
-class PromptDialog(Window):
-    """ Show a message and a prompt to continue. """
-
-    prompt = '(Ok)'
-
-    def __init__(self, message=None, max_width=DEFAULT_MAX_WIDTH,
-                 max_height=DEFAULT_MAX_HEIGHT, **kwargs):
-        super(PromptDialog, self). __init__(width=max_width, height=max_height,
-                                            **kwargs)
-        self.message_area = TextLabel(message=message, max_width=self.width,
-                                      max_height=self.height, **kwargs)
-        self.prompt_area = TextLabel(message=self.prompt,
-                                     y=(self.message_area.height +
-                                        self.font_height),
-                                     max_width=self.width,
-                                     max_height=self.height, **kwargs)
-
-    def on_paint(self):
-        """ Paint the text area then the prompt. """
-        self.message_area.paint(to_surface=self.surface)
-        self.prompt_area.paint(to_surface=self.surface)
-
-
 class Viewer(event.EventLoop):
     """ A stand-alone UI and keyhandler.  """
 
@@ -344,20 +295,6 @@ class FileSelector(Viewer):
     def run(self):
         super(FileSelector, self).run()
         return self.selection
-
-
-class Alert(Viewer):
-
-    def __init__(self, message, **kwargs):
-        super(Alert, self).__init__()
-        self.window = PromptDialog(message, **kwargs)
-
-    def on_render(self):
-        self.window.paint()
-
-    def on_keypress(self, key):
-        if key.c == ord('\r'):
-            raise event.Quit()
 
 
 class TableColumn(object):
