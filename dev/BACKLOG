@@ -1,14 +1,13 @@
-Cleanup surface dimension mess in Window and subclasses
-Load terrain sprites based on class name
-Inventory/body viewer
 move role executor methods up into session
 NPC flicker in follow mode
 Convert libtcod into standard python C module.
-Replace tcod map_compute_fov and map_is_in_fov
-Enemy AI
 Fix README
 Add Players_Guide
 
+Make tcod pip-installable
+Design blendable terrain layout image & use it for terrains
+Inventory/body viewer
+Enemy AI
 Vector utils
 Console
 action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door

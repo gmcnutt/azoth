@@ -6,6 +6,7 @@ import colors
 import controller
 import config
 import event
+import libtcodpy as libtcod
 import logging
 import os
 import pygame
@@ -16,7 +17,6 @@ import time
 
 FOV_LIGHT_WALLS = True
 FOV_ALGO = 0  # default
-
 
 class Window(object):
     """ Base class for terminal windows. """
@@ -818,12 +818,12 @@ class PlaceWindow(Window):
         self.place_rect = pygame.Rect(0, 0, self.place.width, self.place.height)
         # experiment with a fov (aka los) map
         self.fade = sprite.Fade(spr.width, spr.height).surf
-        #self.fov_map = libtcod.map_new(self.place.width, self.place.height)
+        self.fov_map = libtcod.map_new(self.place.width, self.place.height)
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
-                #libtcod.map_set_properties(self.fov_map, x, y, 
-                #                           not ter.blocks_sight, False)
+                libtcod.map_set_properties(self.fov_map, x, y, 
+                                           not ter.blocks_sight, False)
 
     def on_paint(self):
         self.surface.fill(self.background_color)
@@ -831,7 +831,7 @@ class PlaceWindow(Window):
         for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
             for map_x in xrange(self.view.left, self.view.right):
-                visible = True #libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
+                visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
                 explored = self.place.get_explored(map_x, map_y)
                 if visible or explored:
                     # terrain
@@ -858,9 +858,8 @@ class PlaceWindow(Window):
         self.animation_frame += 1
 
     def compute_fov(self, x, y, radius):
-        #libtcod.map_compute_fov(self.fov_map, x, y, radius, FOV_LIGHT_WALLS,
-        #                        FOV_ALGO)
-        pass
+        libtcod.map_compute_fov(self.fov_map, x, y, radius, FOV_LIGHT_WALLS,
+                                FOV_ALGO)
 
     def scroll_up(self):
         if self.view.top > 0:
@@ -885,8 +884,7 @@ class PlaceWindow(Window):
         return map_x, map_y
 
     def in_fov(self, map_x, map_y):
-        #return libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
-        return True
+        return libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
 
     def explored(self, map_x, map_y):
         return self.place.get_explored(map_x, map_y)

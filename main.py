@@ -62,20 +62,13 @@ if __name__ == "__main__":
     #                          rows=all_sprites.items())
     # viewer.run()
 
-    # Assign sprites
-    all_terrains = {}
-    terrain.HeavyForest.sprite = all_sprites['forest']
-    terrain.Forest.sprite = all_sprites['trees']
-    terrain.Grass.sprite = all_sprites['grass']
-    terrain.Trail.sprite = all_sprites['trail_f']
-    terrain.RockWall.sprite = all_sprites['wall_stone']
-    terrain.CobbleStone.sprite = all_sprites['cobblestone']
-    terrain.Window.sprite = all_sprites['window_in_stone']
-    terrain.CounterTop.sprite = all_sprites['counter_1x1']
-    terrain.FirePlace.sprite = all_sprites['fireplace']
-    terrain.Boulder.sprite = all_sprites['boulder']
-    terrain.Bog.sprite = all_sprites['bog']
-    terrain.Water.sprite = all_sprites['shoals']
+    # Assign terrain sprites
+    for name, o in inspect.getmembers(terrain):
+        if inspect.isclass(o) and issubclass(o, terrain.Terrain):
+            try:
+                o.sprite = all_sprites[o.__name__]
+            except KeyError:
+                logging.warn('{} has no sprite'.format(o.__name__))
 
     # Assign sprites based on class name
     for module in (weapon, being):
