@@ -1,9 +1,10 @@
 move role executor methods up into session
+convert file paths to use os.join
 NPC flicker in follow mode
-Convert libtcod into standard python C module.
 Fix README
 Add Players_Guide
 
+Grid outline
 Make tcod pip-installable
 Design blendable terrain layout image & use it for terrains
 Inventory/body viewer

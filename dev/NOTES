@@ -1,4 +1,15 @@
 ----------------------------------------------------------------------------
+01 January 2013 18:37
+
+Found some great sprite tutorials that make surprisingly good reading. Also
+reading up on distutils to see if I can wrestle libtcodpy into a
+pip-installable module. It just feels dirty to distribute compiled library
+files as part of the game. I suppose it would work, but I want to see if I can
+do it the Right Way.
+
+
+
+----------------------------------------------------------------------------
 30 December 2012 19:10
 
 Moved the basic cleanup items to the top of the BACKLOG. After knocking those
