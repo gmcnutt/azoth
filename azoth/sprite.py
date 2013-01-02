@@ -2,6 +2,7 @@
 Sprites - animations for objects.
 """
 import config
+import os
 import pygame
 
 class Sheet(object):
@@ -15,7 +16,8 @@ class Sheet(object):
         self.columns = columns
         self.width = width
         self.height = height
-        self.surface = pygame.image.load(config.SPRITE_DIRECTORY + filename)
+        path = os.path.join(config.SPRITE_DIRECTORY, filename)
+        self.surface = pygame.image.load(path)
         self.surface.convert_alpha()
 
     def get_image(self, index):

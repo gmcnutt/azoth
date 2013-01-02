@@ -35,7 +35,8 @@ if __name__ == "__main__":
     pygame.key.set_repeat(500, 10) # XXX: put in config.py
 
     # Show the splash screen.
-    splash = gui.SplashScreen(config.IMAGE_DIRECTORY + 'splash.png')
+    path = os.path.join(config.IMAGE_DIRECTORY, 'splash.png')
+    splash = gui.SplashScreen(path)
     splash.run()
 
     # Load the sprites.
