@@ -4,12 +4,13 @@ import array
 import collections
 import cPickle
 
+
 class PlaceError(Exception):
     """ Base exception for all place errors. """
     def __init__(self, place):
         super(PlaceError, self).__init__()
         self.place = place
-        
+
 
 class AlreadyThereError(PlaceError):
     """ Put failed because the item is already there.  """
@@ -18,9 +19,11 @@ class AlreadyThereError(PlaceError):
         self.item = item
         self.xloc = xloc
         self.yloc = yloc
+
     def __str__(self):
         return '{} already in {} at ({}, {})'.format(self.item, self.place,
                                                      self.xloc, self.yloc)
+
 
 class NotThereError(PlaceError):
     """ Remove failed because the item was not there. """
@@ -29,6 +32,7 @@ class NotThereError(PlaceError):
         self.item = item
         self.xloc = xloc
         self.yloc = yloc
+
     def __str__(self):
         return '{} not in {} at ({}, {})'.format(self.item, self.place,
                                                  self.xloc, self.yloc)
@@ -40,6 +44,7 @@ class OffMapError(PlaceError):
         super(OffMapError, self).__init__(place)
         self.x = x
         self.y = y
+
     def __str__(self):
         return '({}, {}) not in {} {}'.format(self.x, self.y,
                                               self.place.__class__.__name__,
@@ -65,7 +70,7 @@ class Place(object):
         self.name = name
         self.terrain_map = []
         for column in range(self.width):
-            self.terrain_map.append([default_terrain,] * self.height)
+            self.terrain_map.append([default_terrain, ] * self.height)
         self.items = collections.defaultdict(list)
         self.occupants = {}
         self.explored = []
@@ -171,8 +176,7 @@ class Place(object):
     @property
     def actors(self):
         occupants = self.occupants.values()
-        return [getattr(x, 'controller') for x in occupants 
-                if hasattr(x, 'controller')]
+        return [x.controller for x in occupants if hasattr(x, 'controller')]
 
 
 class Sector(Place):
@@ -185,7 +189,7 @@ class Sector(Place):
 
 
 class World(object):
-    """ 
+    """
     A plane of sectors.
 
     Lazily creates sectors when none specified.
@@ -197,19 +201,19 @@ class World(object):
         self.default_terrain = default_terrain
         self.sectors = []
         for x in range(width):
-            self.sectors.append([None,] * height)
+            self.sectors.append([None, ] * height)
 
     def onmap(self, x, y):
         """ Return True iff x, y is on the map. """
         return x >= 0 and y >= 0 and x < self.width and y < self.height
-        
+
     @check_index
     def get_sector(self, x, y):
         """ Return the sector at x, y (in sector, not cell, coordinates). If
-        there is no sector create one.""" 
+        there is no sector create one."""
         sector = self.sectors[x][y]
         if sector is None:
-            sector = Sector(name='auto-%d-%d'%(x, y), 
+            sector = Sector(name='auto-%d-%d' % (x, y),
                             default_terrain=self.default_terrain)
             self.set_sector(x, y, sector)
         return sector

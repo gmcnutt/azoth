@@ -254,7 +254,7 @@ class Viewer(event.EventLoop):
         try:
             super(Viewer, self).handle_events()
         except event.Quit:
-            print("Caught quit")
+            self.log.debug("Caught quit")
             pass
 
 
@@ -991,17 +991,21 @@ class SessionViewer(Viewer):
         super(SessionViewer, self).on_event(evt)
 
     def on_subject_moved(self):
-        """ Update our view of the subject. """
+        """ Update field of view. """
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
-        self.render()
 
     def run(self):
         """ Run the main loop. """
         self.subject.on('move', self.on_subject_moved)
         try:
             while True:
-                for actor in sorted(self.session.world.actors):
+                # rendering here instead of on_subject_moved prevents the
+                # rear-ending effect of companions in follow mode
+                self.render()
+                for actor in sorted(self.session.world.actors,
+                                    cmp=lambda x, y: cmp(x.subject.order, 
+                                                         y.subject.order)):
                     if not isinstance(actor, controller.Player):
                         actor.do_turn(self)
                     else:
@@ -1009,14 +1013,14 @@ class SessionViewer(Viewer):
                         # Run one check of the event queue to allow the player
                         # to cancel or redirect pathfinding.
                         try:
-                            self.run_one_iteration()
+                            self.drain_events()
                         except event.Handled:
                             continue
                         if actor.path:
                             try:
                                 actor.follow_path()
                             except event.Handled:
-                                time.sleep(config.ANIMATION_SECONDS_PER_FRAME)
+                                time.sleep(config.PATHFIND_SECONDS_PER_FRAME)
                                 continue
                         self.handle_events()
         except event.Quit:
@@ -1101,7 +1105,7 @@ class MainMenu(Viewer):
         elif selection == 'Load Saved Game':
             selector = FileSelector(config.SAVE_DIRECTORY)
             fname = selector.run()
-            print(fname)
+            self.log.debug(fname)
             if fname:
                 try:
                     path = config.SAVE_DIRECTORY + fname

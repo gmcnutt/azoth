@@ -1,25 +1,21 @@
 import event
 import executor
+import logging
 import path
 import place
-import pygame
 
+logger = logging.getLogger('controller')
 
 class Controller(object):
-
     """ Base class for all controllers. """
-
     def __init__(self, subject, session):
         self.subject = subject
         self.session = session
         self.path = None
         self.on_end_of_path = None
 
-
 class Player(Controller):
-
     """ A controller that lets the player direct the subject. """
-
     def move_or_swap(self, dx, dy):
         """ Try to move; if blocked by an occupant try to swap. """
         try:
@@ -35,6 +31,10 @@ class Player(Controller):
             return
         except executor.RuleError:
             return
+        import traceback
+        for x in traceback.format_stack():
+            logger.debug(x)
+        logger.debug('moved {} {} {}'.format(self.subject, dx, dy))
         raise event.Handled()
 
     def get(self):
@@ -114,14 +114,14 @@ class Player(Controller):
         self.path = path.find(src, (x, y), self.neighbors, self.heuristic)
         return self.path
 
+
 class Follow(Controller):
-
     """ AI that follows a target around. """
-
     def __init__(self, target, *args, **kwargs):
         """ 'target' is the object to follow. """
         super(Follow, self).__init__(*args, **kwargs)
         self.target = target
+        self.subject.order = self.target.order + 1
 
     def check_neighbor(self, pla, x, y):
         try:
@@ -143,15 +143,19 @@ class Follow(Controller):
         dy = abs(dst[1] - y)
         nearness = dx + dy
         pla = self.subject.place
-        cost = self.session.rules.get_movement_cost(self.subject.mmode, pla, x, y)
+        cost = self.session.rules.get_movement_cost(self.subject.mmode, pla, x,
+                                                    y)
         cost += 1  # XXX: necessary?
         return nearness, cost
 
     def do_turn(self, session):
         p = path.find(self.subject.xy, self.target.xy, self.neighbors,
                       self.heuristic)
+        logger.debug('xy={}'.format(self.subject.xy))
+        logger.debug('path={}'.format(p))
         if len(p) > 1:
             loc = p[0]
             dx = loc[0] - self.subject.x
             dy = loc[1] - self.subject.y
+            logger.debug('move {} {}'.format(dx, dy))
             self.session.hax2.move_being_on_map(self.subject, dx, dy)

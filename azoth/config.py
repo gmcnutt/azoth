@@ -41,7 +41,7 @@ DLL_DIRECTORY = os.path.join(BASE_DIRECTORY, 'dll')
 FRAMES_PER_SECOND = 40
 
 # The seconds to delay between scripted animation frames
-ANIMATION_SECONDS_PER_FRAME = 0.1
+PATHFIND_SECONDS_PER_FRAME = 0.01
 
 # The log file
 LOG_FILE = os.path.join(BASE_DIRECTORY, 'azoth.log')

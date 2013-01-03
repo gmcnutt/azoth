@@ -36,19 +36,18 @@ class EventLoop(object):
         """ Hook for subclasses to override. """
         pass
 
-    def run_one_iteration(self):
-        """ Run one iteration. Return True to break out of the main loop. """
-        self.on_loop_start()
+    def drain_events(self):
         for event in pygame.event.get():
             self.on_event(event)
-        self.on_loop_finish()
 
     def handle_events(self):
         """ Loop until the event handler raises an exception. """
         self.on_loop_entry()
         try:
             while True:
-                self.run_one_iteration()
+                self.on_loop_start()
+                self.drain_events()
+                self.on_loop_finish()
         except Handled:
             pass
         finally:

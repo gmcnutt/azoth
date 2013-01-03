@@ -13,5 +13,4 @@ Download libtcod:
 mkdir azoth/dll
 Copy libtcod.so into azoth/dll.
 
-$ cd azoth/azoth
 $ ./azoth.py
