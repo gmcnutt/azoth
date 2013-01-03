@@ -1,9 +1,10 @@
-NPC flicker in follow mode
 Handle animation changes slower than frame rate
 Smooth step transitions
 If an area cannot be pathfound to give an error message
 Keyboard shorcuts should highlight menu option briefly before processing
 
+Fix multi-party follow laggards
+Attack animations
 Inventory/body viewer
 Design blendable terrain layout image & use it for terrains
 Add Players_Guide

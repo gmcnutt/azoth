@@ -5,6 +5,7 @@ import config
 import os
 import pygame
 
+
 class Sheet(object):
     """ An single large image composed of smaller images used for sprite
     animations. All the sprites on the sheet must be the same size. The width x
@@ -74,7 +75,6 @@ class AnimatedSprite(Sprite):
         super(AnimatedSprite, self).__init__(sheet)
         self.num_frames = num_frames
         self.facings = facings
-        rect = pygame.Rect(0, 0, sheet.width, sheet.height)
         self.frames = []
         for frame in range(num_frames):
             index = start_frame + frame
@@ -82,6 +82,8 @@ class AnimatedSprite(Sprite):
             
     def get_image(self, frame):
         """ Return the image for the given animation frame number. """
+        msec = frame * config.MS_PER_FRAME
+        frame = msec // 250
         return self.frames[frame % self.num_frames]
 
 
@@ -103,6 +105,8 @@ class WaveSprite(Sprite):
     def get_image(self, frame):
         """ Return the image for the given animation frame number. """
         rect = pygame.Rect(0, 0, self.width, self.height)
+        msec = frame * config.MS_PER_FRAME
+        frame = msec // 100
         rect.y = self.height - (frame % self.height)
         return self.double.subsurface(rect)
 
