@@ -158,4 +158,7 @@ class Follow(Controller):
             dx = loc[0] - self.subject.x
             dy = loc[1] - self.subject.y
             logger.debug('move {} {}'.format(dx, dy))
-            self.session.hax2.move_being_on_map(self.subject, dx, dy)
+            try:
+                self.session.hax2.move_being_on_map(self.subject, dx, dy)
+            except executor.Occupied:
+                pass

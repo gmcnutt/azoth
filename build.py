@@ -24,6 +24,10 @@ def generate():
     troll.controller = controller.Follow(sesh.player, troll, sesh)
     sesh.hax2.put_being_on_map(troll, sesh.world, 0, 6)
 
+    unicorn = being.Unicorn('Whitey')
+    unicorn.controller = controller.Follow(sesh.player, unicorn, sesh)
+    sesh.hax2.put_being_on_map(unicorn, sesh.world, 0, 7)
+
     sesh.rules.set_passability('walk', 'wall', executor.PASS_NONE)
     sesh.rules.set_passability('walk', 'boulder', executor.PASS_NONE)
     sesh.rules.set_passability('walk', 'water', executor.PASS_NONE)

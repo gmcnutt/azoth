@@ -32,3 +32,12 @@ class Troll(Being):
         self.mmode = 'walk'
         self.name = name
         self.body = body.Humanoid()
+
+
+class Unicorn(Being):
+
+    def __init__(self, name='unicorn'):
+        super(Unicorn, self).__init__()
+        self.mmode = 'walk'
+        self.name = name
+        self.body = None

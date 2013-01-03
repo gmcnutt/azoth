@@ -1,5 +1,6 @@
 {
     "addon" : [ 32, 32, 16,  8, "addons.png"],
+    "unicorn": [ 32, 32, 1, 1, "unicorn.png"],
     "arms" : [ 32, 32, 9, 8, "arms.png" ],
     "bigobjects" : [ 40, 40, 8,  8, "bigobjects.png"],
     "books" : [ 32, 32, 2, 2, "books.png" ],
