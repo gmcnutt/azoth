@@ -14,6 +14,9 @@ class Being(baseobject.BaseObject):
     def __lt__(self, other):
         return self.controller < other.controller
 
+    def get_offset(self):
+        return (0, 0)
+
 
 class Human(Being):
     """ A being with a humanoid body. """

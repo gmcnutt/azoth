@@ -1,8 +1,8 @@
-Handle animation changes slower than frame rate
 Smooth step transitions
 If an area cannot be pathfound to give an error message
 Keyboard shorcuts should highlight menu option briefly before processing
 
+When changing direction follower should step behind, not parallel
 Fix multi-party follow laggards
 Attack animations
 Inventory/body viewer

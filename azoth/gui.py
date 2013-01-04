@@ -827,6 +827,8 @@ class PlaceWindow(Window):
 
     def on_paint(self):
         self.surface.fill(self.background_color)
+
+        # pass 1 - terrain
         tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
         for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
@@ -834,7 +836,6 @@ class PlaceWindow(Window):
                 visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
                 explored = self.place.get_explored(map_x, map_y)
                 if visible or explored:
-                    # terrain
                     terrain = self.place.get_terrain(map_x, map_y)
                     spr = terrain.sprite
                     self.surface.blit(spr.get_image(self.animation_frame),
@@ -843,18 +844,45 @@ class PlaceWindow(Window):
                         self.surface.blit(self.fade, tile.topleft)  # haze
                     else:
                         self.place.set_explored(map_x, map_y, True)
-                        items = self.place.get_items(map_x, map_y)
-                        for item in items:
-                            spr = item.sprite
-                            image = spr.get_image(self.animation_frame)
-                            self.surface.blit(image, tile.topleft)
-                        occupant = self.place.get_occupant(map_x, map_y)
-                        if occupant and visible:
-                            spr = occupant.sprite
-                            image = spr.get_image(self.animation_frame)
-                            self.surface.blit(image, tile.topleft)
                 tile.left += tile.width
             tile.top += tile.height
+
+        # pass 2 - items
+        tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
+        for map_y in xrange(self.view.top, self.view.bottom):
+            tile.left = 0
+            for map_x in xrange(self.view.left, self.view.right):
+                visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
+                if visible:
+                    items = self.place.get_items(map_x, map_y)
+                    for item in items:
+                        spr = item.sprite
+                        image = spr.get_image(self.animation_frame)
+                        self.surface.blit(image, tile.topleft)
+                tile.left += tile.width
+            tile.top += tile.height
+
+        # pass 3 - beings
+        tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
+        for map_y in xrange(self.view.top, self.view.bottom):
+            tile.left = 0
+            for map_x in xrange(self.view.left, self.view.right):
+                visible = libtcod.map_is_in_fov(self.fov_map, map_x, map_y)
+                if visible:
+                    occupant = self.place.get_occupant(map_x, map_y)
+                    if occupant:
+                        spr = occupant.sprite
+                        image = spr.get_image(self.animation_frame)
+                        ####
+                        (dx, dy) = occupant.get_offset()
+                        dx = dx * 32
+                        dy = dy * 32
+                        dest = tile.move(dx, dy)
+                        ####
+                        self.surface.blit(image, dest)
+                tile.left += tile.width
+            tile.top += tile.height
+
         self.animation_frame += 1
 
     def compute_fov(self, x, y, radius):
@@ -995,34 +1023,41 @@ class SessionViewer(Viewer):
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
+    def _run_player(self, actor):
+        """ Run a player-controlled actor inside the main control loop. """
+        self.controller = actor
+        # Run one check of the event queue to allow the player
+        # to cancel or redirect pathfinding.
+        try:
+            self.drain_events()
+        except event.Handled:
+            return
+        if actor.path:
+            try:
+                actor.follow_path()
+            except event.Handled:
+                time.sleep(config.PATHFIND_SECONDS_PER_FRAME)
+                return
+        self.handle_events()
+
+    def _run_actors(self):
+        """ Run all the actors in the world inside the main control loop. """
+        for actor in sorted(self.session.world.actors,
+                            cmp=lambda x, y: cmp(x.subject.order, 
+                                                 y.subject.order)):
+            if not isinstance(actor, controller.Player):
+                actor.do_turn(self)
+            else:
+                self._run_player(actor)
+
     def run(self):
-        """ Run the main loop. """
+        """ Run the main control loop. """
         self.subject.on('move', self.on_subject_moved)
         try:
             while True:
-                # rendering here instead of on_subject_moved prevents the
-                # rear-ending effect of companions in follow mode
-                self.render()
-                for actor in sorted(self.session.world.actors,
-                                    cmp=lambda x, y: cmp(x.subject.order, 
-                                                         y.subject.order)):
-                    if not isinstance(actor, controller.Player):
-                        actor.do_turn(self)
-                    else:
-                        self.controller = actor
-                        # Run one check of the event queue to allow the player
-                        # to cancel or redirect pathfinding.
-                        try:
-                            self.drain_events()
-                        except event.Handled:
-                            continue
-                        if actor.path:
-                            try:
-                                actor.follow_path()
-                            except event.Handled:
-                                time.sleep(config.PATHFIND_SECONDS_PER_FRAME)
-                                continue
-                        self.handle_events()
+                self.on_loop_start()
+                self._run_actors()
+                self.on_loop_finish()
         except event.Quit:
             pass
         finally:
