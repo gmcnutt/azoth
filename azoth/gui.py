@@ -1023,40 +1023,16 @@ class SessionViewer(Viewer):
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
-    def _run_player(self, actor):
-        """ Run a player-controlled actor inside the main control loop. """
-        self.controller = actor
-        # Run one check of the event queue to allow the player
-        # to cancel or redirect pathfinding.
-        try:
-            self.drain_events()
-        except event.Handled:
-            return
-        if actor.path:
-            try:
-                actor.follow_path()
-            except event.Handled:
-                time.sleep(config.PATHFIND_SECONDS_PER_FRAME)
-                return
-        self.handle_events()
-
-    def _run_actors(self):
-        """ Run all the actors in the world inside the main control loop. """
-        for actor in sorted(self.session.world.actors,
-                            cmp=lambda x, y: cmp(x.subject.order, 
-                                                 y.subject.order)):
-            if not isinstance(actor, controller.Player):
-                actor.do_turn(self)
-            else:
-                self._run_player(actor)
-
     def run(self):
         """ Run the main control loop. """
         self.subject.on('move', self.on_subject_moved)
         try:
             while True:
                 self.on_loop_start()
-                self._run_actors()
+                for actor in sorted(self.session.world.actors,
+                                    cmp=lambda x, y: cmp(x.subject.order, 
+                                                         y.subject.order)):
+                    actor.do_turn(self)
                 self.on_loop_finish()
         except event.Quit:
             pass

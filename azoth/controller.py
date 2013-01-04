@@ -1,10 +1,14 @@
+import config
 import event
 import executor
 import logging
 import path
 import place
+import time
+
 
 logger = logging.getLogger('controller')
+
 
 class Controller(object):
     """ Base class for all controllers. """
@@ -13,6 +17,7 @@ class Controller(object):
         self.session = session
         self.path = None
         self.on_end_of_path = None
+
 
 class Player(Controller):
     """ A controller that lets the player direct the subject. """
@@ -113,6 +118,22 @@ class Player(Controller):
         src = self.subject.xy
         self.path = path.find(src, (x, y), self.neighbors, self.heuristic)
         return self.path
+
+    def do_turn(self, session):
+        session.controller = self
+        # Run one check of the event queue to allow the player
+        # to cancel or redirect pathfinding.
+        try:
+            session.drain_events()
+        except event.Handled:
+            return
+        if self.path:
+            try:
+                self.follow_path()
+            except event.Handled:
+                time.sleep(config.PATHFIND_SECONDS_PER_FRAME)
+                return
+        session.handle_events()
 
 
 class Follow(Controller):
