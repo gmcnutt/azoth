@@ -13,14 +13,22 @@ class Being(baseobject.BaseObject):
         super(Being, self).__init__()
         self.controller = None
         self.frameno = 0
+        # Animations cannot be pickled, so I can't refer to them directly in my
+        # instance fields, so I keep track of the current animation via its key
+        # XXX: use a custom pickler?
         self.animation_key = "standing"
 
     def __lt__(self, other):
         return self.controller < other.controller
 
     def get_current_frame(self):
-        self.frameno += 1
+        """ Return the current animation frame. """
         return self.animations[self.animation_key][self.frameno]
+
+    def tick(self):
+        """ Called by the animation loop to advance to the next frame. """
+        current_animation = self.animations[self.animation_key]
+        self.frameno = (self.frameno + 1) % len(current_animation)
 
 
 class Player(Being):

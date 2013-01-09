@@ -3,7 +3,6 @@ gui classes for azoth
 """
 
 import colors
-import controller
 import config
 import event
 import libtcodpy as libtcod
@@ -12,8 +11,8 @@ import os
 import pygame
 import session
 import sprite
-#import textwrap
-import time
+import threading
+
 
 FOV_LIGHT_WALLS = True
 FOV_ALGO = 0  # default
@@ -939,6 +938,25 @@ class FpsViewer(Window):
         self.width, self.height = self.surface.get_size()
 
 
+class LoopThread(threading.Thread):
+    """ Generic loop that runs in its own thread. """
+
+    def __init__(self, subject, *args, **kwargs):
+        super(LoopThread, self).__init__(*args, **kwargs)
+        self.subject = subject
+        self.quit = False
+
+    def run(self):
+        while not self.quit:
+            self.subject.on_loop_start()
+            self.subject.on_update()
+            self.subject.on_loop_finish()
+
+    def join(self):
+        self.quit = True
+        super(LoopThread, self).join()
+
+
 class SessionViewer(Viewer):
     """ Main screen to run a session. """
 
@@ -950,14 +968,44 @@ class SessionViewer(Viewer):
         self.subject = self.session.player
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        self.render_thread = LoopThread(self)
         self.fps_label = FpsViewer()
         self.windows.append(self.fps_label)
         self.controller = None
 
+    def _do_turn_loop(self):
+        """ The main control loop where the actors (including the player) all
+        take turns. """
+        # Usually exits via a Quit exception. This runs concurrently with the
+        # render loop.
+        while True:
+            for actor in sorted(self.session.world.actors,
+                                cmp=lambda x, y: cmp(x.subject.order, 
+                                                     y.subject.order)):
+                actor.do_turn(self)
+
+    def handle_events(self):
+        """ Loop until an event handler raises an exception. """
+        # This is part of the turn thread. Override base class to not call
+        # on_loop_ hooks, since the render thread calls those.
+        while True:
+            try:
+                self.drain_events()
+            except event.Handled:
+                return
+
     def on_loop_finish(self):
-        """ Do custom updates at the bottom of every event loop. """
+        """ Called by tick thread at the bottom of every loop. """
+        # Let the superclass insert the FPS delay then record our frame rate.
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
+
+    def on_update(self):
+        """ Called by tick thread in every loop. Sends a tick update to all the
+        animate-able objects."""
+        # Currently only beings handle ticks.
+        for x in self.session.world.occupants.values():
+            x.tick()
 
     def quit(self):
         raise event.Quit()
@@ -1018,20 +1066,20 @@ class SessionViewer(Viewer):
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
     def run(self):
-        """ Run the main control loop. """
-        self.subject.on('move', self.on_subject_moved)
+        """ Run the viewer. """
+        # Start the render loop in a separate thread and run the turn loop in
+        # this one.
+        self.render_thread.start()
         try:
-            while True:
-                self.on_loop_start()
-                for actor in sorted(self.session.world.actors,
-                                    cmp=lambda x, y: cmp(x.subject.order, 
-                                                         y.subject.order)):
-                    actor.do_turn(self)
-                self.on_loop_finish()
-        except event.Quit:
-            pass
+            self.subject.on('move', self.on_subject_moved)
+            try:
+                self._do_turn_loop()
+            except event.Quit:
+                pass
+            finally:
+                self.subject.un('move', self.on_subject_moved)
         finally:
-            self.subject.un('move', self.on_subject_moved)
+            self.render_thread.join()
 
 
 class BodyViewer(Viewer):

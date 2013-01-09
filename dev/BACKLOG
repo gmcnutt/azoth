@@ -12,6 +12,7 @@ Smooth step transitions:
 If an area cannot be pathfound to give an error message
 Keyboard shorcuts should highlight menu option briefly before processing
 
+Custom pickler for being so I can refer to animation directly?
 Pathfinding should highlight destination tile
 Pathfinding should highlight destination object that will be picked up
 Pathfinding should show ghostly footprints on intended path
