@@ -871,15 +871,9 @@ class PlaceWindow(Window):
                 if visible:
                     occupant = self.place.get_occupant(map_x, map_y)
                     if occupant:
-                        spr = occupant.sprite
-                        image = spr.get_image(self.animation_frame)
-                        ####
-                        (dx, dy) = occupant.get_offset()
-                        dx = dx * 32
-                        dy = dy * 32
-                        dest = tile.move(dx, dy)
-                        ####
-                        self.surface.blit(image, dest)
+                        frame = occupant.get_current_frame()
+                        dest = tile.move(*frame.offset)
+                        self.surface.blit(frame.image, dest)
                 tile.left += tile.width
             tile.top += tile.height
 

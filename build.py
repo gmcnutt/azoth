@@ -13,7 +13,7 @@ def generate():
     sesh.world = place.Sector(name='gh', default_terrain=terrain.Grass)
     sesh.world.blit_terrain_map(0, 0, tmap)
 
-    sesh.player = being.Human('Scaramouche')
+    sesh.player = being.Player('Scaramouche')
     sesh.player.controller = controller.Player(sesh.player, sesh)
     sesh.hax2.put_being_on_map(sesh.player, sesh.world, 0, 5)
 

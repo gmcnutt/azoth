@@ -1,4 +1,172 @@
 ----------------------------------------------------------------------------
+09 January 2013
+
+
+----------------------------------------------------------------------------
+08 January 2013
+
+The tick/render loop:
+
+while not quit:
+    cv.aquire()
+    update_tick_on_all()
+    if all_looping():
+        cv.notify()
+    cv.release()
+    fps_wait()
+    render()
+
+The movement observer:
+
+if obj.is_visible()
+    cv.aquire()
+    while not all_looping():
+        cv.wait()
+    cv.release()
+
+Left off updating the PLAN for the experimental render branch. Tick loop is
+sketched out, need to delve into the turn loop next.
+
+----------------------------------------------------------------------------
+07 January 2013 09:38
+
+Removed the line
+
+    self.animation = self.animations["standing"]
+
+from Being.__init__ and now saves work. That assignment created a path from the
+object back to a surface, without going through any classes.
+
+Adding a listener on every object seems unweildy. Suppose I put the listener on
+the place. 
+
+Now who sets the animation on the being? The baseobject class fires
+the events. The subclass with the animation could override and sets its
+animation. 
+
+How does it finish the animation? When the frames are all ticked.
+
+How does it know which animation to use next? It could go back to default, or
+we could use a stack or a state machine (default for now).
+
+If it is not observed, will it get ticked? It shouldn't. 
+
+How then does it finish the animation? Well, what if it didn't? The next time
+it took a turn it would replace the animation anyway. At the start of turn it
+could finish the animation (ie, replace it with default, or pop the stack, or
+advance the state machine).
+
+If it is observed, how does it get ticked? One option is to have the session
+viewer run the tick loop when something changes in line-of-sight. Another
+option is to run the tick loop in a thread.
+
+If the session viewer runs the tick loop, how will the tick loop know when to
+exit? When an object runs out of frames in a non-looping animation it could
+raise an exception (while expiring it). Or, the tick loop could check and keep
+running as long as any object has a non-looping animation.
+
+If a thread runs the tick loop, how will the turn loop block until the
+animation is done? I could use thread conditions. When an object expires an
+animation it could post the condition, the turn loop can wait for these
+conditions. Or the condition could be fired from the tick loop. Suppose I have
+the session viewer put a listener on the place. Something changes in the place,
+the listener gets called. It tells the tick loop it wants to be notified when
+all animations are back to looping.
+
+----------------------------------------------------------------------------
+07 January 2013 06:43
+
+Images must be re-loaded at runtime because I can't save them. They must be
+kept in files separate from the save file. Something must map the filenames to
+the classes that need them.
+
+I could name a model.json for every class. Or I could put the model's python in
+the class, but that would require putting image filenames in the class, which
+I'm reluctant to do. Why? I guess I can't think of any actual reason this would
+be worse; I suppose it's just my instinct to reduce static coupling. But I
+can't think of a case (in python) where changing the model file is easier than
+changing the class file.
+
+Tried it. Works until I try to save: can't pickle Surface objects. Maybe
+because class variables are referring to object instances that contain
+Surfaces in their definitions? If I assign the class variable at runtime
+(outside the definition) I don't have this problem. Not sure how pickle can
+tell the difference.
+
+Tried pulling the models out of the class definitions and assigning
+after-the-fact: same result on save.
+
+In the old sprite scheme the class was assigned a sprite, which had a sheet,
+which had a surface. The path from objects to surface was more indirect but it
+was there.
+
+
+----------------------------------------------------------------------------
+05 January 2013 12:19
+
+In Player:move_or_swap, for the move case, need to setup the walk animation and
+run it. This assumes the player is visible. The same thing must be done in
+Follow:do_turn for the case where it is moving. In general, when a being moves,
+and it is visible, it needs to run its move animation.
+
+I could have the viewer setup observers on every being (maybe later on every
+visible being). When the being moves, it checks if it is moving to or from a
+visible tile, and if so, sets up and runs the animation.
+
+The tick loop. This loop starts with a call to render. Then it loops over every
+object, calling update_tick(). Then it calls the clock.fps().
+
+object.update_tick() will advance the animation frame. It may also adjust the
+image offset. An animation is a list of frames. It is stateless. It could be a
+class. A frame is an image and an offset in pixels. The offset tells where to
+paint the image relative to the subject's current tile's ulc. An instance of an
+animation keeps track of the current frame. It supports get_current_frame(). It
+also supports advance_frame(), which loops or raises an exception on
+end-of-list.
+
+The trick is the render. Render does all the terrains, then items, then
+beings. All the layers in order. For each layer, for each thing, it gets two
+things: the current image and its offset from the thing's location. Usually the
+offset is (0, 0). The image will depend on the thing's current animation and
+frame (which is adjusted via update_tick()).
+
+A model is a set of animations indexed by name. The player needs 5 animations:
+standing and moving in the four directions. These all need to be loaded with
+frames, which need to be poked with images at runtime. Started sketching out
+what a JSON descriptor would look like for a player model.
+
+----------------------------------------------------------------------------
+04 January 2013 07:45
+
+Sketched out plans for a dual-loop system: a real-time fixed-rate
+rendering/tick loop to drive animations concurrent with a blocking turn
+loop. Probably the turn loop can drive the tick loop, or I can experiment with
+two threads. The two-threaded approach might be simpler but I'm not sure how to
+synchronize the two, so that the turn loop can block until the tick loop is
+done rendering animation batches that it sets up and needs to wait for.
+
+Also started downloading and tinkering with game-icons.net images as possible
+game sprites. I've long had the notion that the game graphics are unimportant
+once the player's brain is trained to recognize them for what they mean. If
+true, then a very simple glyphic system would be just as effective - if not
+more so - then a densely illustrated realistic animation system.
+
+However, I often determine whether or not to even try a game based on its
+screenshots. Heh, I remember back when I bought ultima 4... I don't think it
+had any screen shots, but it had a great cover picture on the front of the box
+and compelling verbage on the back.
+
+So, if I were brave, I would go with even lower-res graphics that focused on
+clearly conveying as much meaningful information as possible, and providing as
+much quality feedback as possible, and ignore the screenshots. To that end the
+roguelikes have a thing going for them, but the alphanumeric characters could
+be improved upon with something more like heiroglyphics -- so long as they were
+intuitive, systematics, and displayed the most important information at less
+than a glance. And they'd have to be at least pretty if not realistic. That
+might actually be harder to design than a realistic isometric animation view.
+
+
+----------------------------------------------------------------------------
 03 January 2013 06:28
 
 Working out how to scroll inter-tile transitions when walking.

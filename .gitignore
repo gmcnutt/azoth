@@ -44,3 +44,5 @@ Thumbs.db
 # Python pickled files
 *.p
 venv
+.#*
+PLAN

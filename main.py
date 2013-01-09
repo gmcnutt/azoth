@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-from azoth import baseobject, being, executor, config, gui, session, sprite, \
+from azoth import baseobject, being, config, gui, session, sprite, \
     terrain, weapon
 import build
 import inspect
