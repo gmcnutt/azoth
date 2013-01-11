@@ -17,6 +17,15 @@ import threading
 FOV_LIGHT_WALLS = True
 FOV_ALGO = 0  # default
 
+
+def locked(fn):
+    """ Decorator to run a method while holding an object's lock. """
+    def wrapper(instance, *args, **kwargs):
+        with instance.lock:
+            return fn(instance, *args, **kwargs)
+    return wrapper
+
+
 class Window(object):
     """ Base class for terminal windows. """
     background_color = colors.black
@@ -818,12 +827,14 @@ class PlaceWindow(Window):
         # experiment with a fov (aka los) map
         self.fade = sprite.Fade(spr.width, spr.height).surf
         self.fov_map = libtcod.map_new(self.place.width, self.place.height)
+        self.lock = threading.Lock()
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
                 libtcod.map_set_properties(self.fov_map, x, y, 
                                            not ter.blocks_sight, False)
 
+    @locked
     def on_paint(self):
         self.surface.fill(self.background_color)
 
@@ -1001,8 +1012,8 @@ class SessionViewer(Viewer):
         self.fps_label.fps = self.clock.get_fps()
 
     def on_update(self):
-        """ Called by tick thread in every loop. Sends a tick update to all the
-        animate-able objects."""
+        """ Called by render thread in every loop. Sends a tick update to all
+        the animate-able objects."""
         # Currently only beings handle ticks.
         for x in self.session.world.occupants.values():
             x.tick()
@@ -1062,8 +1073,9 @@ class SessionViewer(Viewer):
 
     def on_subject_moved(self):
         """ Update field of view. """
-        self.map.center = self.subject.x, self.subject.y
-        self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        with self.map.lock:
+            self.map.center = self.subject.x, self.subject.y
+            self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
     def run(self):
         """ Run the viewer. """
