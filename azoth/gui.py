@@ -827,7 +827,7 @@ class PlaceWindow(Window):
         # experiment with a fov (aka los) map
         self.fade = sprite.Fade(spr.width, spr.height).surf
         self.fov_map = libtcod.map_new(self.place.width, self.place.height)
-        self.lock = threading.Lock()
+        self.lock = threading.Condition()
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
@@ -886,8 +886,9 @@ class PlaceWindow(Window):
                         self.surface.blit(frame.image, dest)
                 tile.left += tile.width
             tile.top += tile.height
-
         self.animation_frame += 1
+        # notify anyone waiting on the render to complete
+        self.lock.notify()
 
     def compute_fov(self, x, y, radius):
         libtcod.map_compute_fov(self.fov_map, x, y, radius, FOV_LIGHT_WALLS,
@@ -1018,20 +1019,6 @@ class SessionViewer(Viewer):
         for x in self.session.world.occupants.values():
             x.tick()
 
-    def quit(self):
-        raise event.Quit()
-
-    def show_inventory(self):
-        """ Pop up the modal inventory viewer. """
-        x = BodyViewer(self.subject.body)
-        x.run()
-        raise event.Handled()
-
-    def save(self):
-        """ Save the session. """
-        path = config.SAVE_DIRECTORY + 'save.p'
-        self.session.save(path)
-
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Raises Handled
         when done. """
@@ -1073,9 +1060,15 @@ class SessionViewer(Viewer):
 
     def on_subject_moved(self):
         """ Update field of view. """
+        # Hold the map's render lock/cv to prevent screen tearing, and wait for
+        # it to render to pace stepping.
         with self.map.lock:
             self.map.center = self.subject.x, self.subject.y
             self.map.compute_fov(self.subject.x, self.subject.y, 11)
+            self.map.lock.wait()
+
+    def quit(self):
+        raise event.Quit()
 
     def run(self):
         """ Run the viewer. """
@@ -1092,6 +1085,17 @@ class SessionViewer(Viewer):
                 self.subject.un('move', self.on_subject_moved)
         finally:
             self.render_thread.join()
+
+    def save(self):
+        """ Save the session. """
+        path = config.SAVE_DIRECTORY + 'save.p'
+        self.session.save(path)
+
+    def show_inventory(self):
+        """ Pop up the modal inventory viewer. """
+        x = BodyViewer(self.subject.body)
+        x.run()
+        raise event.Handled()
 
 
 class BodyViewer(Viewer):
