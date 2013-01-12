@@ -1,7 +1,22 @@
 ----------------------------------------------------------------------------
+12 January 2013
+
+Fixing follow-bumping. Add an order to the event listeners. Have followers
+put event listener on leader movement, earlier than the viewer. In the handler
+have the followers do their turn.
+
+----------------------------------------------------------------------------
 11 January 2013 05:45
 
+Fixed the tearing, step pacing and missing fow updates by adding a condition
+variable to synchronize the render and turn threads. Now the ass-bumping is
+back.
 
+To fix it this time I'll try having the player controller take the initiative
+and control all the followers in the same turn. The Follow mode controller
+might just turn into a nop. I need to move all the followers before the leader
+fires the move event (since that triggers rendering and blocks until it is
+done).
 
 ----------------------------------------------------------------------------
 10 January 2013

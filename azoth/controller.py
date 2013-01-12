@@ -142,7 +142,10 @@ class Follow(Controller):
         """ 'target' is the object to follow. """
         super(Follow, self).__init__(*args, **kwargs)
         self.target = target
+        # XXX: remove order stuff?
         self.subject.order = self.target.order + 1
+        # prepend to get in front of rendering
+        self.target.on('move', self.on_target_moved, prepend=True)
 
     def check_neighbor(self, pla, x, y):
         try:
@@ -170,6 +173,10 @@ class Follow(Controller):
         return nearness, cost
 
     def do_turn(self, session):
+        # Everything is done in on_target_moved
+        pass
+
+    def on_target_moved(self):
         p = path.find(self.subject.xy, self.target.xy, self.neighbors,
                       self.heuristic)
         logger.debug('xy={}'.format(self.subject.xy))

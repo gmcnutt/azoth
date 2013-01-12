@@ -1088,8 +1088,11 @@ class SessionViewer(Viewer):
 
     def save(self):
         """ Save the session. """
+        # I don't want the gui's hook to be saved
+        self.subject.un('move', self.on_subject_moved)
         path = config.SAVE_DIRECTORY + 'save.p'
         self.session.save(path)
+        self.subject.on('move', self.on_subject_moved)
 
     def show_inventory(self):
         """ Pop up the modal inventory viewer. """

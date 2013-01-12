@@ -1,4 +1,14 @@
 import collections
+import copy_reg
+import types
+
+
+# From http://stackoverflow.com/questions/1798450/: register a pickler for
+# handling instancemethods so I can save/load hooks.
+def reduce_method(m):
+    return (getattr, (m.__self__, m.__func__.__name__))
+
+copy_reg.pickle(types.MethodType, reduce_method)
 
 
 class BaseObject(object):
@@ -39,9 +49,12 @@ class BaseObject(object):
         else:
             return 'pragma'
 
-    def on(self, event, callback):
+    def on(self, event, callback, prepend=False):
         """ Add a callback on an event hook. """
-        self.hooks[event].append(callback)
+        if prepend:
+            self.hooks[event].insert(0, callback)
+        else:
+            self.hooks[event].append(callback)
 
     def un(self, event, callback):
         """ Remove a callback from an event hook. """
@@ -51,17 +64,6 @@ class BaseObject(object):
     def fire(self, event):
         for callback in self.hooks[event]:
             callback()
-
-    def __getstate__(self):
-        """ Override to prevent pickling the hooks. """
-        odict = self.__dict__.copy()
-        del odict['hooks']
-        return odict
-
-    def __setstate__(self, odict):
-        """ Override to prevent pickling the hooks. """
-        self.__dict__.update(odict)
-        self.hooks = collections.defaultdict(list)
 
 
 class TakesTurns(object):
