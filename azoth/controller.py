@@ -26,7 +26,8 @@ class Player(Controller):
         try:
             self.session.hax2.move_being_on_map(self.subject, dx, dy)
         except executor.Occupied, e:
-            self.session.hax2.rotate_beings_on_map(self.subject, e.occupant)
+            #self.session.hax2.rotate_beings_on_map(self.subject, e.occupant)
+            self.session.hax2.rotate_beings_on_map(e.occupant, self.subject)
 
     def move(self, dx, dy):
         """ Move the subject. """
