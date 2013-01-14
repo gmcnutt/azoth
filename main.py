@@ -26,7 +26,10 @@ if __name__ == "__main__":
         os.unlink('azoth.log')
     except OSError:
         pass
-    logging.basicConfig(filename=config.LOG_FILE, level=config.LOG_LEVEL)
+    logging.basicConfig(level=config.LOG_LEVEL,
+#                        filename=config.LOG_FILE,
+                        format='%(threadName)s|%(levelname)s|%(filename)s:'\
+                            '%(funcName)s:%(lineno)d|%(message)s')
 
     # Initialize pygame.
     pygame.init()

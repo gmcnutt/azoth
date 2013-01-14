@@ -5,6 +5,8 @@ Fixing follow-bumping. Add an order to the event listeners. Have followers
 put event listener on leader movement, earlier than the viewer. In the handler
 have the followers do their turn.
 
+Also added code to allow saving hooks. Viewer removes its hook while saving.
+
 ----------------------------------------------------------------------------
 11 January 2013 05:45
 

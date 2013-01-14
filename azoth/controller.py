@@ -26,7 +26,6 @@ class Player(Controller):
         try:
             self.session.hax2.move_being_on_map(self.subject, dx, dy)
         except executor.Occupied, e:
-            #self.session.hax2.rotate_beings_on_map(self.subject, e.occupant)
             self.session.hax2.rotate_beings_on_map(e.occupant, self.subject)
 
     def move(self, dx, dy):
@@ -37,9 +36,6 @@ class Player(Controller):
             return
         except executor.RuleError:
             return
-        import traceback
-        for x in traceback.format_stack():
-            logger.debug(x)
         logger.debug('moved {} {} {}'.format(self.subject, dx, dy))
         raise event.Handled()
 

@@ -2,6 +2,7 @@
 gui classes for azoth
 """
 
+import animation
 import colors
 import config
 import event
@@ -836,6 +837,7 @@ class PlaceWindow(Window):
 
     @locked
     def on_paint(self):
+        self.log.debug('start paint')
         self.surface.fill(self.background_color)
 
         # pass 1 - terrain
@@ -873,6 +875,7 @@ class PlaceWindow(Window):
             tile.top += tile.height
 
         # pass 3 - beings
+        notify = True
         tile = pygame.Rect(0, 0, self.cell_width, self.cell_height)
         for map_y in xrange(self.view.top, self.view.bottom):
             tile.left = 0
@@ -882,13 +885,18 @@ class PlaceWindow(Window):
                     occupant = self.place.get_occupant(map_x, map_y)
                     if occupant:
                         frame = occupant.get_current_frame()
+                        notify = notify and isinstance(occupant.animation,
+                                                       animation.Loop)
                         dest = tile.move(*frame.offset)
                         self.surface.blit(frame.image, dest)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1
         # notify anyone waiting on the render to complete
-        self.lock.notify()
+        if notify:
+            self.log.debug('notify')
+            self.lock.notify()
+        self.log.debug('paint done')
 
     def compute_fov(self, x, y, radius):
         libtcod.map_compute_fov(self.fov_map, x, y, radius, FOV_LIGHT_WALLS,
@@ -990,7 +998,10 @@ class SessionViewer(Viewer):
         take turns. """
         # Usually exits via a Quit exception. This runs concurrently with the
         # render loop.
+        loop = 0
         while True:
+            self.log.debug('---------- Turn %d -----------' % loop)
+            loop += 1
             for actor in sorted(self.session.world.actors,
                                 cmp=lambda x, y: cmp(x.subject.order, 
                                                      y.subject.order)):
@@ -1016,8 +1027,10 @@ class SessionViewer(Viewer):
         """ Called by render thread in every loop. Sends a tick update to all
         the animate-able objects."""
         # Currently only beings handle ticks.
+        self.log.debug('tick')
         for x in self.session.world.occupants.values():
             x.tick()
+        self.log.debug('tick done')
 
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Raises Handled
@@ -1062,10 +1075,14 @@ class SessionViewer(Viewer):
         """ Update field of view. """
         # Hold the map's render lock/cv to prevent screen tearing, and wait for
         # it to render to pace stepping.
+        self.log.debug('taking lock')
         with self.map.lock:
+            self.log.debug('locked')
             self.map.center = self.subject.x, self.subject.y
             self.map.compute_fov(self.subject.x, self.subject.y, 11)
+            self.log.debug('waiting')
             self.map.lock.wait()
+            self.log.debug('releasing lock')
 
     def quit(self):
         raise event.Quit()

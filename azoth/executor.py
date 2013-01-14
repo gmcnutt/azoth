@@ -210,7 +210,8 @@ class Executor(object):
         # commit
         obj.place.remove_occupant(obj.x, obj.y)
         obj.place.set_occupant(newx, newy, obj)
-        obj.loc = (obj.place, newx, newy)
+        obj.step(newx, newy, dx, dy)
+        #obj.loc = (obj.place, newx, newy)
         # hooks
         self.rules.on_put_occupant(obj)
 
