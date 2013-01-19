@@ -3,7 +3,7 @@
 from azoth import controller, being, executor, weapon, place, session, \
     terrain, terrainmap
 import cPickle
-import sys
+
 
 def generate():
 
@@ -20,9 +20,9 @@ def generate():
     sword = weapon.Sword()
     sesh.hax2.put_item_on_map(sword, sesh.world, 3, 3)
 
-    #troll = being.Troll('Skoligidornifor')
-    #troll.controller = controller.Follow(sesh.player, troll, sesh)
-    #sesh.hax2.put_being_on_map(troll, sesh.world, 0, 6)
+    troll = being.Troll('Skoligidornifor')
+    troll.controller = controller.Follow(sesh.player, troll, sesh)
+    sesh.hax2.put_being_on_map(troll, sesh.world, 0, 6)
 
     # unicorn = being.Unicorn('Whitey')
     # unicorn.controller = controller.Follow(sesh.player, unicorn, sesh)

@@ -828,15 +828,17 @@ class PlaceWindow(Window):
         # experiment with a fov (aka los) map
         self.fade = sprite.Fade(spr.width, spr.height).surf
         self.fov_map = libtcod.map_new(self.place.width, self.place.height)
-        self.lock = threading.Condition()
+        self.lock = threading.RLock()
+        self.animation_done = threading.Condition(self.lock)
+        self.tick_done = threading.Condition(self.lock)
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
                 libtcod.map_set_properties(self.fov_map, x, y, 
                                            not ter.blocks_sight, False)
 
-    @locked
     def on_paint(self):
+        # This assumes the lock has been acquired.
         self.log.debug('start paint')
         self.surface.fill(self.background_color)
 
@@ -895,7 +897,7 @@ class PlaceWindow(Window):
         # notify anyone waiting on the render to complete
         if notify:
             self.log.debug('notify')
-            self.lock.notify()
+            self.animation_done.notify()
         self.log.debug('paint done')
 
     def compute_fov(self, x, y, radius):
@@ -1019,9 +1021,20 @@ class SessionViewer(Viewer):
 
     def on_loop_finish(self):
         """ Called by tick thread at the bottom of every loop. """
+        # Release the lock during the FPS delay
+        self.log.debug('unlocking')
+        self.map.lock.release()
         # Let the superclass insert the FPS delay then record our frame rate.
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
+
+    def on_loop_start(self):
+        """ Called by the tick thread at the start of every loop. """
+        # Hold the lock while rendering and ticking
+        self.log.debug('locking')
+        self.map.lock.acquire()
+        self.log.debug('locked')
+        super(SessionViewer, self).on_loop_start()
 
     def on_update(self):
         """ Called by render thread in every loop. Sends a tick update to all
@@ -1030,7 +1043,8 @@ class SessionViewer(Viewer):
         self.log.debug('tick')
         for x in self.session.world.occupants.values():
             x.tick()
-        self.log.debug('tick done')
+        self.log.debug('notify tick done')
+        self.map.tick_done.notify()
 
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Raises Handled
@@ -1049,7 +1063,13 @@ class SessionViewer(Viewer):
             pygame.K_s: self.save,
             }.get(key)
         if handler:
-            handler()
+            self.log.debug('locking')
+            with self.map.lock:
+                self.log.debug('locked and waiting')
+                self.map.tick_done.wait()
+                self.log.debug('wait done')
+                handler()
+            self.log.debug('unlocking')
 
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
@@ -1058,7 +1078,8 @@ class SessionViewer(Viewer):
             if self.controller.pathfind_to(*dst):
                 if self.session.world.get_items(*dst):
                     self.controller.path.append(self.controller.get)
-                self.controller.follow_path()
+                with self.map.lock:
+                    self.controller.follow_path()
 
     def on_event(self, evt):
         """ Run the top of the event handler stack. If it does not handle the
@@ -1075,14 +1096,13 @@ class SessionViewer(Viewer):
         """ Update field of view. """
         # Hold the map's render lock/cv to prevent screen tearing, and wait for
         # it to render to pace stepping.
-        self.log.debug('taking lock')
+        # Map lock should be held already.
         with self.map.lock:
-            self.log.debug('locked')
+            self.log.debug('waiting')
+            self.map.animation_done.wait()
+            self.log.debug('releasing lock')
             self.map.center = self.subject.x, self.subject.y
             self.map.compute_fov(self.subject.x, self.subject.y, 11)
-            self.log.debug('waiting')
-            self.map.lock.wait()
-            self.log.debug('releasing lock')
 
     def quit(self):
         raise event.Quit()
@@ -1107,9 +1127,13 @@ class SessionViewer(Viewer):
         """ Save the session. """
         # I don't want the gui's hook to be saved
         self.subject.un('move', self.on_subject_moved)
-        path = config.SAVE_DIRECTORY + 'save.p'
-        self.session.save(path)
-        self.subject.on('move', self.on_subject_moved)
+        try:
+            path = config.SAVE_DIRECTORY + 'save.p'
+            self.session.save(path)
+            self.subject.on('move', self.on_subject_moved)
+        except Exception, e:
+            self.log.exception('{}'.format(e))
+            raise e
 
     def show_inventory(self):
         """ Pop up the modal inventory viewer. """

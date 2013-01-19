@@ -3,7 +3,6 @@
 from animation import Frame, Loop, Sequence
 import baseobject
 import body
-import logging
 
 
 DIRECTIONS = {
@@ -38,7 +37,6 @@ class Being(baseobject.BaseObject):
 
     @animation.setter
     def animation(self, val):
-        self.log.debug('change animation to %s' % val)
         self.animation_key = val
 
     def get_current_frame(self):
@@ -73,7 +71,7 @@ class Player(Being):
                 Frame(("player", "standing-0.png"), 0.1, offset=(16, 0)),
                 Frame(("player", "standing-1.png"), 1)]),
         "walking-east": Sequence(frames=[
-                Frame(("player", "standing-0.png"), 0.1, offset=(-16, 0)),
+                Frame(("player", "standing-0.png"), 0.01, offset=(-16, 0)),
                 Frame(("player", "standing-1.png"), 1)]),
         "walking-north": Sequence(frames=[
                 Frame(("player", "standing-0.png"), 0.1, offset=(0, 16)),
@@ -88,7 +86,6 @@ class Player(Being):
         self.mmode = 'walk'
         self.name = name
         self.body = body.Humanoid()
-        self.log = logging.getLogger(name)
 
 class Troll(Being):
 
@@ -115,7 +112,6 @@ class Troll(Being):
         self.mmode = 'walk'
         self.name = name
         self.body = body.Humanoid()
-        self.log = logging.getLogger(name)
 
 
 class Unicorn(Being):

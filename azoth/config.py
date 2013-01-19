@@ -38,7 +38,7 @@ REAGENT_DATA_FILE = os.path.join(OBJECT_DIRECTORY, 'reagents.json')
 DLL_DIRECTORY = os.path.join(BASE_DIRECTORY, 'dll')
 
 # The max frames per second
-FRAMES_PER_SECOND = 10
+FRAMES_PER_SECOND = 20
 MS_PER_FRAME = 1000 // FRAMES_PER_SECOND
 
 # The seconds to delay between scripted animation frames

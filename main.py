@@ -27,7 +27,7 @@ if __name__ == "__main__":
     except OSError:
         pass
     logging.basicConfig(level=config.LOG_LEVEL,
-#                        filename=config.LOG_FILE,
+                        filename=config.LOG_FILE,
                         format='%(threadName)s|%(levelname)s|%(filename)s:'\
                             '%(funcName)s:%(lineno)d|%(message)s')
 

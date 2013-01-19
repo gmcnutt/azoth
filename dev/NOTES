@@ -1,4 +1,45 @@
 ----------------------------------------------------------------------------
+18 January 2013
+
+Going to scale back the inter-tile ambitions and go for u6-level tech.
+
+----------------------------------------------------------------------------
+16 January 2013
+
+Tried adding more animation frames and smaller increments; tried re-centering
+the camera after instead of before moving. Neither helped.
+
+Left off trying some experimental camera-panning code.
+
+----------------------------------------------------------------------------
+15 January 2013
+
+Fixed the deadlock. All is now working; but it hurts my eyes. Something about
+the way the screen jumps AND the extra step of the characters hurts to watch. I
+bet in u6 they didn't actually do inter-tile transitions, they probably just
+advanced the animation on every move, and then used a timer to restore the guy
+to standing if the player didn't keep moving... found some u6 videos on youtube
+and I think that's basically it.
+
+Options. I could pursue the u6 style, which will require some actual art. I
+could ditch step transitions altogether and use iconography. I could explore
+other ways to move the camera.
+
+----------------------------------------------------------------------------
+14 January 2013
+
+Animated stepping implemented but there is still a bug: if the animation is
+changed at the wrong time then a frame is skipped. It has to be set after the
+tick but before the paint of the render loop. I could add another thread
+condition to synchronize but suspect that will cause jumpiness. 
+
+Might as well try it, I suppose. Hm. Deadlock. Yeah, I don't see how to avoid
+that without expanding the scope of the lock to span both tick and
+render. Well, might as well try that.
+
+Hrm. The notify() method doesn't release the lock. 
+
+----------------------------------------------------------------------------
 12 January 2013
 
 Fixing follow-bumping. Add an order to the event listeners. Have followers
