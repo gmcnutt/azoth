@@ -1,7 +1,23 @@
 ----------------------------------------------------------------------------
+19 January 2013 
+
+Since I don't have any facing animations, will have to do something else while
+I get those ready.
+
+If an area cannot be pathfound to give an error message:
+* Add Console class to function like cmdwin
+ console.clear: vanishes
+ console.error: sets message and level
+ console.on_paint: paints message if one available, sets x, y to llc
+* SessionViewer
+ __init__: create console, set x,y to lower left corner
+ on_mouse: if pathfind_to returns None, post error to console.
+ on_subject_moved: clear the console
+----------------------------------------------------------------------------
 18 January 2013
 
-Going to scale back the inter-tile ambitions and go for u6-level tech.
+Going to scale back the inter-tile ambitions and go for u6-level tech. The next
+step is to get some facing animations.
 
 ----------------------------------------------------------------------------
 16 January 2013

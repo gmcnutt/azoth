@@ -1,17 +1,7 @@
-Smooth step transitions:
- player controller push key/mouse handler
- player controller implement state machine for pathfinding
- player controller add state machine for stepping
- follow controller add state machine for stepping
- sprite should support [] to lookup animation or sub-sprite
- animation should support [] to lookup frame
- objects should support get_animation() to return the animation for their
-  current state and facing
- beings should get state from their controller
- beings: add velocity dx/dy for get_offset
+
 If an area cannot be pathfound to give an error message
 Keyboard shorcuts should highlight menu option briefly before processing
-
+Animated stepping and facings - need facing sprites
 Remove being.order?
 Custom pickler for being so I can refer to animation directly?
 Pathfinding should highlight destination tile

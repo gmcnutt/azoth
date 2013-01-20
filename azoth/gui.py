@@ -101,6 +101,8 @@ class Window(object):
         display surface if none is given. Subclasses should implement
         on_paint()."""
         self.on_paint()
+        if not self.surface:
+            return
         if to_surface is None:
             to_surface = pygame.display.get_surface()
         to_surface.blit(self.surface, (self.x, self.y))
@@ -942,11 +944,11 @@ class PlaceWindow(Window):
         self.view = self.view.clamp(self.place_rect)
 
 
-class FpsViewer(Window):
+class FpsWindow(Window):
     """ Show the FPS """
 
     def __init__(self, **kwargs):
-        super(FpsViewer, self).__init__()
+        super(FpsWindow, self).__init__()
         self.fps = 0
 
     @property
@@ -958,6 +960,27 @@ class FpsViewer(Window):
         self._fps = val
         self.surface = self.font.render('%d' % val, True, colors.white)
         self.width, self.height = self.surface.get_size()
+
+
+class ConsoleWindow(Window):
+    """ Show console messages at bottom of screen. """
+    def __init__(self, parent_rect=None, **kwargs):
+        super(ConsoleWindow, self).__init__()
+        self.message = None
+        self.parent_rect = parent_rect
+
+    def clear(self):
+        self.message = None
+        self.surface = None
+
+    def error(self, message):
+        self.message = message
+        self.surface = self.font.render(self.message, True, colors.red)
+        srect = self.surface.get_rect()
+        self.x = self.parent_rect.width // 2 - srect.width // 2
+        self.y = self.parent_rect.bottom - srect.height
+        self.width = srect.width
+        self.height = srect.height
 
 
 class LoopThread(threading.Thread):
@@ -991,8 +1014,10 @@ class SessionViewer(Viewer):
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
         self.render_thread = LoopThread(self)
-        self.fps_label = FpsViewer()
+        self.fps_label = FpsWindow()
         self.windows.append(self.fps_label)
+        self.console = ConsoleWindow(self.map.surface.get_rect())
+        self.windows.append(self.console)
         self.controller = None
 
     def _do_turn_loop(self):
@@ -1000,10 +1025,7 @@ class SessionViewer(Viewer):
         take turns. """
         # Usually exits via a Quit exception. This runs concurrently with the
         # render loop.
-        loop = 0
         while True:
-            self.log.debug('---------- Turn %d -----------' % loop)
-            loop += 1
             for actor in sorted(self.session.world.actors,
                                 cmp=lambda x, y: cmp(x.subject.order, 
                                                      y.subject.order)):
@@ -1074,8 +1096,12 @@ class SessionViewer(Viewer):
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
         dst = self.map.screen_to_map(x, y)
-        if self.map.explored(*dst):
-            if self.controller.pathfind_to(*dst):
+        if not self.map.explored(*dst):
+            self.console.error('Not in view!')
+        else:
+            if not self.controller.pathfind_to(*dst):
+                self.console.error('No path!')
+            else:
                 if self.session.world.get_items(*dst):
                     self.controller.path.append(self.controller.get)
                 with self.map.lock:
@@ -1097,6 +1123,7 @@ class SessionViewer(Viewer):
         # Hold the map's render lock/cv to prevent screen tearing, and wait for
         # it to render to pace stepping.
         # Map lock should be held already.
+        self.console.clear()
         with self.map.lock:
             self.log.debug('waiting')
             self.map.animation_done.wait()
