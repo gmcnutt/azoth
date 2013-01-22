@@ -30,7 +30,7 @@ class GuiTest(unittest.TestCase):
 class FpsViewerTest(GuiTest):
     
     def test_default(self):
-        self.target = gui.FpsViewer()
+        self.target = gui.FpsWindow()
         self.target.fps = 632
         self.show()
 

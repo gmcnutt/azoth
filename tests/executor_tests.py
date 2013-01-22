@@ -1,5 +1,5 @@
 from tools import *
-from azoth import baseobject, executor, place, terrain, terrainmap
+from azoth import baseobject, being, executor, place, terrain, terrainmap
 from azoth.container import Bag
 import unittest
 
@@ -108,14 +108,18 @@ class RemoveFromMap(Default):
 
 class MoveOnMap(Default):
 
+    def setUp(self):
+        super(MoveOnMap, self).setUp()
+        self.being = being.Being()
+
     def check_move(self, direction, dx, dy, newx, newy):
-        loc = self.obj.loc
-        self.hax2.move_being_on_map(self.obj, *DIRMAP[direction])
-        assert_being_at(self.obj, self.place, newx, newy)
-        assert_not_at(self.obj, self.place, loc[1], loc[2])
+        loc = self.being.loc
+        self.hax2.move_being_on_map(self.being, *DIRMAP[direction])
+        assert_being_at(self.being, self.place, newx, newy)
+        assert_not_at(self.being, self.place, loc[1], loc[2])
 
     def test_move(self):
-        self.hax2.put_being_on_map(self.obj, self.place, 0, 0)
+        self.hax2.put_being_on_map(self.being, self.place, 0, 0)
         self.check_move('east',  1,  0, 1, 0)
         self.check_move('south', 0,  1, 1, 1)
         self.check_move('west', -1,  0, 0, 1)
@@ -127,17 +131,17 @@ class MoveOnMap(Default):
         
     def test_impassable_terrain(self):
         wall = terrain.RockWall
-        self.obj.mmode = 'walk'
+        self.being.mmode = 'walk'
         self.rules.set_passability('walk', 'wall', executor.PASS_NONE)
         self.place.set_terrain(6, 5, wall)
-        self.hax2.put_being_on_map(self.obj, self.place, 5, 5)
+        self.hax2.put_being_on_map(self.being, self.place, 5, 5)
         assert_raises(executor.Impassable, self.hax2.move_being_on_map, 
-                      self.obj, *DIRMAP['east'])
-        assert_being_at(self.obj, self.place, 5, 5)
+                      self.being, *DIRMAP['east'])
+        assert_being_at(self.being, self.place, 5, 5)
 
     def test_occupant(self):
-        o1 = baseobject.BaseObject()
-        o2 = baseobject.BaseObject()
+        o1 = being.Being()
+        o2 = being.Being()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         assert_raises(executor.Occupied, self.hax2.move_being_on_map, o1,
@@ -146,8 +150,8 @@ class MoveOnMap(Default):
         assert_being_at(o2, self.place, 1, 0)
 
     def test_swap(self):
-        o1 = baseobject.BaseObject()
-        o2 = baseobject.BaseObject()
+        o1 = being.Being()
+        o2 = being.Being()
         self.hax2.put_being_on_map(o1, self.place, 0, 0)
         self.hax2.put_being_on_map(o2, self.place, 1, 0)
         try:
