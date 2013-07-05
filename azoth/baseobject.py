@@ -44,10 +44,7 @@ class BaseObject(object):
         self.fire('move')
     
     def __str__(self):
-        if hasattr(self, 'name'):
-            return self.name
-        else:
-            return 'pragma'
+        return self.name if hasattr(self, 'name') else super(self).__str__()
 
     def on(self, event, callback, prepend=False):
         """ Add a callback on an event hook. """
