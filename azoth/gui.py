@@ -1155,7 +1155,7 @@ class SessionViewer(Viewer):
         # I don't want the gui's hook to be saved
         self.subject.un('move', self.on_subject_moved)
         try:
-            path = config.SAVE_DIRECTORY + 'save.p'
+            path = os.path.join(config.SAVE_DIRECTORY, 'save.p')
             self.session.save(path)
             self.subject.on('move', self.on_subject_moved)
         except Exception, e:
@@ -1243,6 +1243,8 @@ class MainMenu(Viewer):
             session_viewer = SessionViewer(self.generator())
             session_viewer.run()
         elif selection == 'Load Saved Game':
+            if not os.path.isdir(config.SAVE_DIRECTORY):
+                os.makedirs(config.SAVE_DIRECTORY)
             selector = FileSelector(config.SAVE_DIRECTORY)
             fname = selector.run()
             self.log.debug(fname)
