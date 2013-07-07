@@ -951,14 +951,16 @@ class ConsoleWindow(Window):
         super(ConsoleWindow, self).__init__()
         self.message = None
         self.parent_rect = parent_rect
+        self.background = colors.black
 
     def clear(self):
         self.message = None
         self.surface = None
 
     def error(self, message):
-        self.message = message
-        self.surface = self.font.render(self.message, True, colors.red)
+        self.message = ' ' + message + ' '
+        self.surface = self.font.render(self.message, True, colors.red,
+                                        self.background)
         srect = self.surface.get_rect()
         self.x = self.parent_rect.width // 2 - srect.width // 2
         self.y = self.parent_rect.bottom - srect.height
