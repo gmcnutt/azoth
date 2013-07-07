@@ -1250,7 +1250,7 @@ class MainMenu(Viewer):
             self.log.debug(fname)
             if fname:
                 try:
-                    path = config.SAVE_DIRECTORY + fname
+                    path = os.path.join(config.SAVE_DIRECTORY, fname)
                     s = session.load(path)
                 except IOError, e:
                     self.log.exception('{}'.format(e))
