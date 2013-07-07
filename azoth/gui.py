@@ -996,16 +996,6 @@ class SessionViewer(Viewer):
                 actor.do_turn(self)
             self.on_loop_finish()
 
-    def handle_events(self):
-        """ Loop until an event handler raises an exception. """
-        # This is part of the turn thread. Override base class to not call
-        # on_loop_ hooks, since the render thread calls those.
-        while True:
-            try:
-                self.drain_events()
-            except event.Handled:
-                return
-
     def on_loop_finish(self):
         """ Called by tick thread at the bottom of every loop. """
         super(SessionViewer, self).on_loop_finish()

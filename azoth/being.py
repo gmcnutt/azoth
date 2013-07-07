@@ -3,7 +3,11 @@
 from animation import Frame, Loop, Sequence
 import baseobject
 import body
+import logging
+import time
 
+
+logger = logging.getLogger('being')
 
 DIRECTIONS = {
     (-1, -1): "northwest", (0, -1): "north", (1, -1): "northeast",
@@ -16,19 +20,19 @@ class Being(baseobject.BaseObject):
     """ Abstract base class for all beings. Subclasses should specify an
     animations table. """
     order = 0
+    default_animation_key = "standing"
+
     def __init__(self):
         super(Being, self).__init__()
         self.controller = None
         self.frameno = 0
+        self.time_last_frame = time.time()
         # Animations cannot be pickled, so I can't refer to them directly in my
         # instance fields, so I keep track of the current animation via its key
-        # XXX: use a custom pickler?
-        self.default_animation_key = "standing"
         self.animation_key = self.default_animation_key
 
     def __lt__(self, other):
         return self.controller < other.controller
-
 
     @property
     def animation(self):
@@ -40,6 +44,12 @@ class Being(baseobject.BaseObject):
 
     def get_current_frame(self):
         """ Return the current animation frame. """
+        now = time.time()
+        ticks = int(now - self.time_last_frame)
+        if ticks:
+            for x in xrange(ticks):
+                self.tick()
+            self.time_last_frame = now
         return self.animation[self.frameno]
 
     def step(self, x, y, dx, dy):
