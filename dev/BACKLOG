@@ -1,9 +1,7 @@
-
-If an area cannot be pathfound to give an error message
+Load big map
 Keyboard shorcuts should highlight menu option briefly before processing
-Animated stepping and facings - need facing sprites
-Remove being.order?
-Custom pickler for being so I can refer to animation directly?
+"Quitting" message for better feedback after main menu quit (lags - why?)
+Fix tests
 Pathfinding should highlight destination tile
 Pathfinding should highlight destination object that will be picked up
 Pathfinding should show ghostly footprints on intended path
@@ -22,7 +20,6 @@ Console
 action sounds: pickup, drop, walk (grass, trees, forest, cobblestone), door
 object creation editor
 name generator
-Fix animations to be independent of fps
 Basic working sprite set for first level.
 Basic sounds (owned property).
 RF:add copyright header to everything
@@ -34,6 +31,5 @@ Replace all sprite images with own or clearly licensed material
 Mouse following.
 Stitch multiple sectors.
 Terrain blending.
-Smooth-scrolling step animations.
 8-direction facings.
 Items should be obscured under brush (paint trees and shrubs as their own layer).

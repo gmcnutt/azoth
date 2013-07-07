@@ -20,6 +20,9 @@ class Forest(Terrain):
     name = 'forest'
     pclass = 'trees'
 
+class Hills(Terrain):
+    name = 'hills'
+    pclass = 'hills'
 
 class Grass(Terrain):
     name = 'grass'
@@ -76,3 +79,26 @@ class Window(Terrain):
 class Unmapped(Terrain):
     name = '?'
     pclass = '?'
+
+
+class Lava(Terrain):
+    name = 'lava'
+    pclass = 'sludge'
+
+
+class Fields(Terrain):
+    name = 'fields'
+    pclass = 'grass'
+
+class Mountains(Terrain):
+    name = 'mountains'
+    pclass = 'wall'
+    blocks_sight = True
+
+class Sea(Terrain):
+    name = 'sea'
+    pclass = 'water'
+
+class Lake(Terrain):
+    name = 'lake'
+    pclass = 'water'

@@ -1,6 +1,7 @@
 """ Terrain map module. Includes the base TerrainMap class and some factory
 functions that will create an instance from various file formats. """
 
+import pygame
 import terrain
 
 
@@ -74,3 +75,32 @@ def load_from_nazghul_scm(fname):
     # Note that tmap is in row, column order. The TerrainMap class reverses
     # this in the accessors.
     return TerrainMap(terrain=tmap)
+
+def translate_color(x):
+    return {
+        -16777088: terrain.Trail,
+         -16776961: terrain.Grass, # fixme:Lava,
+         -16760832: terrain.HeavyForest,
+         -16744448: terrain.Forest,
+         -16744320: terrain.Fields,
+         -16711936: terrain.Grass,
+         -12566464: terrain.Mountains,
+         -8388608: terrain.Sea,
+         -8388480: terrain.Bog,
+         -8355712: terrain.Hills,
+         -65536: terrain.Lake,
+         -65281: terrain.Grass, #fixme: towns
+         -256: terrain.Water,
+         -1: terrain.Mountains #fixme: peaks
+         }.get(x)
+
+def load_from_image(fname):
+    surface = pygame.image.load(fname)
+    pixels = pygame.surfarray.pixels2d(surface)
+    width, height = surface.get_size()
+    tmap = []
+    for y in xrange(height):
+        line = [translate_color(pixels[x][y]) for x in xrange(width)]
+        tmap.append(line)
+    return TerrainMap(terrain=tmap)
+    

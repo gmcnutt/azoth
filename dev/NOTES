@@ -1,4 +1,95 @@
 ----------------------------------------------------------------------------
+06 July 2013 16:54
+
+Things just about worked with python3. I had to change '\0' to b'\0' in one
+place, and change open('foo', 'w') to open('foo', 'wb') to get the new pickle
+working. After that build.py worked, but main.py gives me this:
+
+Traceback (most recent call last):
+  File "./main.py", line 42, in <module>
+    splash = gui.SplashScreen(path)
+  File "/home/gmcnutt/git/azoth/azoth/gui.py", line 1205, in __init__
+    splash = pygame.image.load(image_fname)
+pygame.error: File is not a Windows BMP file
+
+Googling reveals this as an unsolved problem. Most of the people having trouble
+are on OSX. 
+
+***
+
+Reverted the python3 changes and started looking at the some of the display lag
+issues on this desktop. Conclusion: rendering times are out of
+control. Sometimes they are as bad as 2 seconds. This was not happening on my
+laptop, so I suspect the video driver is the problem. Investigated updating
+them and it looks like I risk black-screen on boot, and don't want to risk that
+on this PC, so will give up on that approach. But something odd about this, I
+don't recall having any rendering lag problems with nazghul.
+
+Think I'll try going back to a single-threaded approach.
+
+***
+
+Did that. Everything is much better now.
+
+Next I want to start thinking about bringing in the big wilderness map. I
+designed it as an 18x18 map with 32x32 regions. Each pixel should zoom in to an
+area big enough for a combat map or town. Let's call the are summarized by a
+pixel as a sector. The current viewer spans 20x15 tiles, so that means at least
+15x15 per sector. If I use that then larger towns will span multiple pixels on
+the big map.
+
+I'd like to autogenerate these sectors based on the terrain type of the pixel
+and it's eight neighbors and the (x, y) coords as a random seed. This could be
+done on the fly or precomputed. I'll then want a way to manually override
+certain sectors for the town maps or special places.
+
+
+
+----------------------------------------------------------------------------
+05 July 2013
+
+Tried python3 in a venv. My steps went something like this:
+
+    sudo apt-get install python3.3
+    pyvenv-3.3 py3
+    source py3/bin/activate
+    wget http://python-distribute.org/distribute_setup.py
+    distribute_setup
+    easy_install pip
+    pip install pygame
+    
+Running it showed an error in the pygame lib:
+
+(py3) gmcnutt@gmcnutt-work:~/git/azoth$ python ./build.py 
+Traceback (most recent call last):
+  File "./build.py", line 3, in <module>
+    from azoth import controller, being, executor, weapon, place, session, \
+  File "/home/gmcnutt/git/azoth/azoth/controller.py", line 2, in <module>
+    from . import event
+  File "/home/gmcnutt/git/azoth/azoth/event.py", line 1, in <module>
+    import pygame
+  File "/home/gmcnutt/venvs/py3/lib/python3.3/site-packages/pygame/__init__.py", line 95, in <module>
+    from pygame.base import *
+ImportError: /home/gmcnutt/venvs/py3/lib/python3.3/site-packages/pygame/base.cpython-33m.so: undefined symbol: PyCObject_Check
+
+Googling around showed people worked around it by building from source. So:
+
+    pip uninstall pygame
+
+Then from http://www.pygame.org/wiki/CompileUbuntu:
+
+sudo apt-get install mercurial python3-dev python3-numpy ffmpeg \
+    libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
+    libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev \
+    libavcodec-dev
+
+hg clone https://bitbucket.org/pygame/pygame
+ 
+cd pygame
+python setup.py build
+sudo python setup.py install
+
+----------------------------------------------------------------------------
 19 January 2013 
 
 Since I don't have any facing animations, will have to do something else while
