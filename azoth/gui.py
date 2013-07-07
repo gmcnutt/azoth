@@ -19,14 +19,6 @@ FOV_LIGHT_WALLS = True
 FOV_ALGO = 0  # default
 
 
-def locked(fn):
-    """ Decorator to run a method while holding an object's lock. """
-    def wrapper(instance, *args, **kwargs):
-        with instance.lock:
-            return fn(instance, *args, **kwargs)
-    return wrapper
-
-
 class Window(object):
     """ Base class for terminal windows. """
     background_color = colors.black
@@ -830,9 +822,6 @@ class PlaceWindow(Window):
         # experiment with a fov (aka los) map
         self.fade = sprite.Fade(spr.width, spr.height).surf
         self.fov_map = libtcod.map_new(self.place.width, self.place.height)
-        self.lock = threading.RLock()
-        self.animation_done = threading.Condition(self.lock)
-        self.tick_done = threading.Condition(self.lock)
         for y in range(self.place.height):
             for x in range(self.place.width):
                 ter = self.place.get_terrain(x, y)
@@ -889,17 +878,11 @@ class PlaceWindow(Window):
                     occupant = self.place.get_occupant(map_x, map_y)
                     if occupant:
                         frame = occupant.get_current_frame()
-                        notify = notify and isinstance(occupant.animation,
-                                                       animation.Loop)
-                        dest = tile.move(*frame.offset)
+                        dest = tile.topleft
                         self.surface.blit(frame.image, dest)
                 tile.left += tile.width
             tile.top += tile.height
         self.animation_frame += 1
-        # notify anyone waiting on the render to complete
-        if notify:
-            self.log.debug('notify')
-            self.animation_done.notify()
         self.log.debug('paint done')
 
     def compute_fov(self, x, y, radius):
@@ -983,25 +966,6 @@ class ConsoleWindow(Window):
         self.height = srect.height
 
 
-class LoopThread(threading.Thread):
-    """ Generic loop that runs in its own thread. """
-
-    def __init__(self, subject, *args, **kwargs):
-        super(LoopThread, self).__init__(*args, **kwargs)
-        self.subject = subject
-        self.quit = False
-
-    def run(self):
-        while not self.quit:
-            self.subject.on_loop_start()
-            self.subject.on_update()
-            self.subject.on_loop_finish()
-
-    def join(self):
-        self.quit = True
-        super(LoopThread, self).join()
-
-
 class SessionViewer(Viewer):
     """ Main screen to run a session. """
 
@@ -1013,7 +977,6 @@ class SessionViewer(Viewer):
         self.subject = self.session.player
         self.map.center = self.subject.x, self.subject.y
         self.map.compute_fov(self.subject.x, self.subject.y, 11)
-        self.render_thread = LoopThread(self)
         self.fps_label = FpsWindow()
         self.windows.append(self.fps_label)
         self.console = ConsoleWindow(self.map.surface.get_rect())
@@ -1026,10 +989,12 @@ class SessionViewer(Viewer):
         # Usually exits via a Quit exception. This runs concurrently with the
         # render loop.
         while True:
+            self.on_loop_start()
             for actor in sorted(self.session.world.actors,
                                 cmp=lambda x, y: cmp(x.subject.order, 
                                                      y.subject.order)):
                 actor.do_turn(self)
+            self.on_loop_finish()
 
     def handle_events(self):
         """ Loop until an event handler raises an exception. """
@@ -1043,30 +1008,8 @@ class SessionViewer(Viewer):
 
     def on_loop_finish(self):
         """ Called by tick thread at the bottom of every loop. """
-        # Release the lock during the FPS delay
-        self.log.debug('unlocking')
-        self.map.lock.release()
-        # Let the superclass insert the FPS delay then record our frame rate.
         super(SessionViewer, self).on_loop_finish()
         self.fps_label.fps = self.clock.get_fps()
-
-    def on_loop_start(self):
-        """ Called by the tick thread at the start of every loop. """
-        # Hold the lock while rendering and ticking
-        self.log.debug('locking')
-        self.map.lock.acquire()
-        self.log.debug('locked')
-        super(SessionViewer, self).on_loop_start()
-
-    def on_update(self):
-        """ Called by render thread in every loop. Sends a tick update to all
-        the animate-able objects."""
-        # Currently only beings handle ticks.
-        self.log.debug('tick')
-        for x in self.session.world.occupants.values():
-            x.tick()
-        self.log.debug('notify tick done')
-        self.map.tick_done.notify()
 
     def on_keypress(self, key):
         """ Handle a key to control the subject during its turn. Raises Handled
@@ -1085,13 +1028,7 @@ class SessionViewer(Viewer):
             pygame.K_s: self.save,
             }.get(key)
         if handler:
-            self.log.debug('locking')
-            with self.map.lock:
-                self.log.debug('locked and waiting')
-                self.map.tick_done.wait()
-                self.log.debug('wait done')
-                handler()
-            self.log.debug('unlocking')
+            handler()
 
     def on_mouse(self, button, x, y):
         """ Dispatch mouse-clicks. """
@@ -1104,8 +1041,7 @@ class SessionViewer(Viewer):
             else:
                 if self.session.world.get_items(*dst):
                     self.controller.path.append(self.controller.get)
-                with self.map.lock:
-                    self.controller.follow_path()
+                self.controller.follow_path()
 
     def on_event(self, evt):
         """ Run the top of the event handler stack. If it does not handle the
@@ -1124,31 +1060,21 @@ class SessionViewer(Viewer):
         # it to render to pace stepping.
         # Map lock should be held already.
         self.console.clear()
-        with self.map.lock:
-            self.log.debug('waiting')
-            self.map.animation_done.wait()
-            self.log.debug('releasing lock')
-            self.map.center = self.subject.x, self.subject.y
-            self.map.compute_fov(self.subject.x, self.subject.y, 11)
+        self.map.center = self.subject.x, self.subject.y
+        self.map.compute_fov(self.subject.x, self.subject.y, 11)
 
     def quit(self):
         raise event.Quit()
 
     def run(self):
         """ Run the viewer. """
-        # Start the render loop in a separate thread and run the turn loop in
-        # this one.
-        self.render_thread.start()
+        self.subject.on('move', self.on_subject_moved)
         try:
-            self.subject.on('move', self.on_subject_moved)
-            try:
-                self._do_turn_loop()
-            except event.Quit:
-                pass
-            finally:
-                self.subject.un('move', self.on_subject_moved)
+            self._do_turn_loop()
+        except event.Quit:
+            pass
         finally:
-            self.render_thread.join()
+            self.subject.un('move', self.on_subject_moved)
 
     def save(self):
         """ Save the session. """
